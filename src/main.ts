@@ -16,10 +16,23 @@ import {
   ClaimReward,
   FundTask
 } from './task_contract';
+import prompts from 'prompts';
 
 async function main() {
   console.log("Let's say hello to a Solana account...");
+  const mode = (
+    await prompts({
+      type: 'select',
+      name: 'mode',
+      message: 'Select operation mode',
 
+      choices: [
+        { title: 'Service', value: 'service' },
+        { title: 'Witness', value: 'witness' }, // Indirect
+      ],
+    })
+  ).mode;
+  console.log(mode)
   // Establish connection to the cluster
   await establishConnection();
 
@@ -28,7 +41,7 @@ async function main() {
 
   // Check if the program has been deployed
   await checkProgram();
-
+ 
   // Interact with task contract
   console.log('CALLING CREATE TASK');
   let taskStateInfoKeypair = await createTask();

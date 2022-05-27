@@ -8,8 +8,9 @@
   "compilerOptions": {
     "declaration": false,
     "moduleResolution": "node",
-    "module": "es2015"
+    "module": "es2015",
+    "outDir": "build",
   },
-  "include": ["src/client/**/*"],
+  "include": ["src/*"],
   "exclude": ["node_modules"],
 }
