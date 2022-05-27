@@ -99,8 +99,7 @@ const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'helloworld.so');
  * Path to the keypair of the deployed program.
  * This file is created when running `solana program deploy task_contract-keypair.json`
  */
-const PROGRAM_KEYPAIR_PATH = "TaskMDbVartWDkgHrWZ6NiHUQUwdWpN3WDyRmSEoMTm.json";
-
+const PROGRAM_KEYPAIR_PATH = 'TaskMDbVartWDkgHrWZ6NiHUQUwdWpN3WDyRmSEoMTm.json';
 
 const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
   CreateTask: {
@@ -111,7 +110,7 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       BufferLayout.blob(64, 'task_audit_program'),
       BufferLayout.ns64('total_bounty_amount'),
       BufferLayout.ns64('bounty_amount_per_round'),
-      BufferLayout.ns64('deadline')
+      BufferLayout.ns64('deadline'),
 
       // publicKey('stake_pot_account')
     ]),
@@ -165,11 +164,12 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
 /**
  * Establish a connection to the cluster
  */
-export async function establishConnection(): Promise<void> {
+export async function establishConnection(): Promise<Connection> {
   const rpcUrl = await getRpcUrl();
   connection = new Connection(rpcUrl, 'confirmed');
   const version = await connection.getVersion();
   console.log('Connection to cluster established:', rpcUrl, version);
+  return connection
 }
 
 /**
@@ -191,10 +191,12 @@ export async function establishPayer(): Promise<void> {
 
   let lamports = await connection.getBalance(payer.publicKey);
   if (lamports < fees) {
+    console.error("Your balance is not sufficient: "+payer.publicKey.toBase58)
+    process.exit(0)
     // If current balance is not enough to pay for fees, request an airdrop
-    const sig = await connection.requestAirdrop(payer.publicKey, 100000000000+fees - lamports);
-    await connection.confirmTransaction(sig);
-    lamports = await connection.getBalance(payer.publicKey);
+    // const sig = await connection.requestAirdrop(payer.publicKey, 100000000000 + fees - lamports);
+    // await connection.confirmTransaction(sig);
+    // lamports = await connection.getBalance(payer.publicKey);
   }
 
   console.log(
@@ -212,7 +214,7 @@ export async function establishPayer(): Promise<void> {
 export async function checkProgram(): Promise<void> {
   // Read program id from keypair file
   try {
-    programId = new PublicKey("Koiitask22222222222222222222222222222222222");
+    programId = new PublicKey('Koiitask22222222222222222222222222222222222');
   } catch (err) {
     const errMsg = (err as Error).message;
     throw new Error(
@@ -232,7 +234,6 @@ export async function checkProgram(): Promise<void> {
     throw new Error(`Program is not executable`);
   }
   console.log(`Using program ${programId.toBase58()}`);
-
 }
 function encodeData(type: any, fields: any) {
   const allocLength = type.layout.span >= 0 ? type.layout.span : getAlloc(type, fields);
@@ -253,55 +254,54 @@ function getAlloc(type: any, fields: any) {
   return alloc;
 }
 
-function padStringWithSpaces(input:string,length:number){
-  if(input.length>length)throw Error("Input exceeds the maxiumum length of "+length);
-  input=input.padEnd(length);
-  return input
+function padStringWithSpaces(input: string, length: number) {
+  if (input.length > length) throw Error('Input exceeds the maxiumum length of ' + length);
+  input = input.padEnd(length);
+  return input;
 }
-export async function createTask(): Promise<Keypair> {
-  let createTaskData={
-    task_name: new TextEncoder().encode(padStringWithSpaces('My Test Task',24)),
-    task_audit_program: new TextEncoder().encode(padStringWithSpaces('test1111111111111111111111111111',64)), //must be 64 chracters long
-    total_bounty_amount: 1000000,
-    bounty_amount_per_round: 10000,
-    deadline: 1851836377,
-    rentExemptionAmount: 10000000000,
-    space: 10000,
-  }
-  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData );
+export async function createTask(
+  task_name: string,
+  task_audit_program: string,
+  total_bounty_amount: number,
+  bounty_amount_per_round:number,
+  deadline:number,
+  space:number
+): Promise<Keypair> {
+  let createTaskData = {
+    task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
+    task_audit_program: new TextEncoder().encode(padStringWithSpaces(task_audit_program, 64)), //must be 64 chracters long
+    total_bounty_amount: total_bounty_amount * LAMPORTS_PER_SOL,
+    bounty_amount_per_round: bounty_amount_per_round * LAMPORTS_PER_SOL,
+    deadline: deadline,
+    rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space))+1000,
+    space: space,
+  };
+  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData);
   let taskStateInfoKeypair = Keypair.generate();
   let stake_pot_account = Keypair.generate();
   STAKE_POT_ACCOUNT = stake_pot_account.publicKey;
 
   const createTaskStateTransaction = new Transaction().add(
-      SystemProgram.createAccount({
-      fromPubkey:payer.publicKey,
-      newAccountPubkey:taskStateInfoKeypair.publicKey,
-      lamports:createTaskData.rentExemptionAmount,
-      space:createTaskData.space,
-      programId:programId
-      
+    SystemProgram.createAccount({
+      fromPubkey: payer.publicKey,
+      newAccountPubkey: taskStateInfoKeypair.publicKey,
+      lamports: createTaskData.rentExemptionAmount,
+      space: createTaskData.space,
+      programId: programId,
     })
-  )
-  await sendAndConfirmTransaction(connection, createTaskStateTransaction, [
-    payer,
-    taskStateInfoKeypair,
-  ]);
+  );
+  await sendAndConfirmTransaction(connection, createTaskStateTransaction, [payer, taskStateInfoKeypair]);
   const createStakePotAccTransaction = new Transaction().add(
     SystemProgram.createAccount({
-    fromPubkey:payer.publicKey,
-    newAccountPubkey:stake_pot_account.publicKey,
-    lamports:await connection.getMinimumBalanceForRentExemption(100)+10000,
-    space:100,
-    programId:programId
-    
-  })
-)
-await sendAndConfirmTransaction(connection, createStakePotAccTransaction, [
-  payer,
-  stake_pot_account,
-]);
-  console.log("AAA",taskStateInfoKeypair.publicKey.toBase58())
+      fromPubkey: payer.publicKey,
+      newAccountPubkey: stake_pot_account.publicKey,
+      lamports: createTaskData.total_bounty_amount+(await connection.getMinimumBalanceForRentExemption(100)) + 10000,
+      space: 100,
+      programId: programId,
+    })
+  );
+  await sendAndConfirmTransaction(connection, createStakePotAccTransaction, [payer, stake_pot_account]);
+  console.log('AAA', taskStateInfoKeypair.publicKey.toBase58());
   await sleep(10000);
   const instruction = new TransactionInstruction({
     keys: [
@@ -326,28 +326,24 @@ async function sleep(ms: any) {
 
 export async function submitTask(taskStateInfoKeypair: Keypair): Promise<PublicKey> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SubmitTask, {
-    submission: new TextEncoder().encode(padStringWithSpaces('test1111111111111111111111111111',512)), //must be 512 chracters long
+    submission: new TextEncoder().encode(padStringWithSpaces('test1111111111111111111111111111', 512)), //must be 512 chracters long
     stakeAmount: 10000000,
   });
   let submitterKeypair = Keypair.generate();
-  console.log("Making new account", submitterKeypair.publicKey.toBase58())
+  console.log('Making new account', submitterKeypair.publicKey.toBase58());
 
   const createSubmitterAccTransaction = new Transaction().add(
-      SystemProgram.createAccount({
-      fromPubkey:payer.publicKey,
-      newAccountPubkey:submitterKeypair.publicKey,
-      lamports:10000000+await connection.getMinimumBalanceForRentExemption(100)+10000,//Adding 10,000 extra lamports for padding
-      space:100,
-      programId:programId
-      
+    SystemProgram.createAccount({
+      fromPubkey: payer.publicKey,
+      newAccountPubkey: submitterKeypair.publicKey,
+      lamports: 10000000 + (await connection.getMinimumBalanceForRentExemption(100)) + 10000, //Adding 10,000 extra lamports for padding
+      space: 100,
+      programId: programId,
     })
-  )
-  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [
-    payer,
-    submitterKeypair,
-  ]);
+  );
+  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payer, submitterKeypair]);
   await sleep(10000);
-  console.log("CAAALLL", submitterKeypair.publicKey.toBase58())
+  console.log('CAAALLL', submitterKeypair.publicKey.toBase58());
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
@@ -359,11 +355,15 @@ export async function submitTask(taskStateInfoKeypair: Keypair): Promise<PublicK
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer,submitterKeypair]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, submitterKeypair]);
   return submitterKeypair.publicKey;
 }
 
-export async function SetTaskToVoting(payerWallet:Keypair, taskStateInfoKeypair: PublicKey, deadline:number, ): Promise<void> {
+export async function SetTaskToVoting(
+  payerWallet: Keypair,
+  taskStateInfoKeypair: PublicKey,
+  deadline: number
+): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetTaskToVoting, {
     deadline: deadline,
   });
@@ -378,28 +378,28 @@ export async function SetTaskToVoting(payerWallet:Keypair, taskStateInfoKeypair:
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer]);
 }
-export async function Vote(payerWallet:Keypair, taskStateInfoKeypair: Keypair, submitterPubkey: PublicKey): Promise<void> {
+export async function Vote(
+  payerWallet: Keypair,
+  taskStateInfoKeypair: Keypair,
+  submitterPubkey: PublicKey
+): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Vote, {
     is_valid: 1,
     stake_amount: 100000,
   });
   let voterKeypair = Keypair.generate();
-  console.log("Making new account", voterKeypair.publicKey.toBase58())
+  console.log('Making new account', voterKeypair.publicKey.toBase58());
 
   const createSubmitterAccTransaction = new Transaction().add(
-      SystemProgram.createAccount({
-      fromPubkey:payer.publicKey,
-      newAccountPubkey:voterKeypair.publicKey,
-      lamports:100000+await connection.getMinimumBalanceForRentExemption(100)+1000,//adding 1000 extra lamports for padding
-      space:100,
-      programId:programId
-      
+    SystemProgram.createAccount({
+      fromPubkey: payer.publicKey,
+      newAccountPubkey: voterKeypair.publicKey,
+      lamports: 100000 + (await connection.getMinimumBalanceForRentExemption(100)) + 1000, //adding 1000 extra lamports for padding
+      space: 100,
+      programId: programId,
     })
-  )
-  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [
-    payer,
-    voterKeypair,
-  ]);
+  );
+  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payer, voterKeypair]);
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
@@ -412,12 +412,12 @@ export async function Vote(payerWallet:Keypair, taskStateInfoKeypair: Keypair, s
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer,voterKeypair]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, voterKeypair]);
 }
-export async function Whitelist(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
+export async function Whitelist(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
 
-  console.log("WHITELIST",programKeypair.publicKey.toBase58())
+  console.log('WHITELIST', programKeypair.publicKey.toBase58());
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Whitelist, {
     isWhitelisted: 1,
   });
@@ -431,7 +431,7 @@ export async function Whitelist(payerWallet:Keypair, taskStateInfoAddress: Publi
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, programKeypair]);
 }
-export async function SetActive(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
+export async function SetActive(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
 
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetActive, {
@@ -447,7 +447,7 @@ export async function SetActive(payerWallet:Keypair, taskStateInfoAddress: Publi
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, programKeypair]);
 }
-export async function Payout(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
+export async function Payout(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Payout, {});
   const instruction = new TransactionInstruction({
     keys: [
@@ -460,7 +460,7 @@ export async function Payout(payerWallet:Keypair, taskStateInfoAddress: PublicKe
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer]);
 }
-export async function ClaimReward(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
+export async function ClaimReward(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.ClaimReward, {});
   const instruction = new TransactionInstruction({
     keys: [
@@ -474,26 +474,23 @@ export async function ClaimReward(payerWallet:Keypair, taskStateInfoAddress: Pub
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer]);
 }
 
-export async function FundTask(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
+export async function FundTask(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
-    amount:100000
+    amount: 100000,
   });
   let funderKeypair = Keypair.generate();
-  console.log("Making new account", funderKeypair.publicKey.toBase58())
+  console.log('Making new account', funderKeypair.publicKey.toBase58());
 
   const createSubmitterAccTransaction = new Transaction().add(
-      SystemProgram.createAccount({
-      fromPubkey:payer.publicKey,
-      newAccountPubkey:funderKeypair.publicKey,
-      lamports:100000+await connection.getMinimumBalanceForRentExemption(100)+1000,//adding 1000 extra lamports for padding
-      space:100,
-      programId:programId
+    SystemProgram.createAccount({
+      fromPubkey: payer.publicKey,
+      newAccountPubkey: funderKeypair.publicKey,
+      lamports: 100000 + (await connection.getMinimumBalanceForRentExemption(100)) + 1000, //adding 1000 extra lamports for padding
+      space: 100,
+      programId: programId,
     })
-  )
-  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [
-    payer,
-    funderKeypair,
-  ]);
+  );
+  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payer, funderKeypair]);
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
@@ -505,5 +502,5 @@ export async function FundTask(payerWallet:Keypair, taskStateInfoAddress: Public
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer,funderKeypair]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, funderKeypair]);
 }
