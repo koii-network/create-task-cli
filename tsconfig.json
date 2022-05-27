@@ -6,7 +6,7 @@
     }
   },
   "compilerOptions": {
-    "declaration": false,
+    "declaration": true,
     "moduleResolution": "node",
     "module": "es2015",
     "outDir": "build",

@@ -363,13 +363,13 @@ export async function submitTask(taskStateInfoKeypair: Keypair): Promise<PublicK
   return submitterKeypair.publicKey;
 }
 
-export async function SetTaskToVoting(taskStateInfoKeypair: Keypair): Promise<void> {
+export async function SetTaskToVoting(taskStateInfoKeypair: PublicKey, deadline:number, ): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetTaskToVoting, {
-    deadline: 1851836377,
+    deadline: deadline,
   });
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
+      {pubkey: taskStateInfoKeypair, isSigner: false, isWritable: true},
       {pubkey: payer.publicKey, isSigner: true, isWritable: true},
       {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
     ],
