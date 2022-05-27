@@ -363,7 +363,7 @@ export async function submitTask(taskStateInfoKeypair: Keypair): Promise<PublicK
   return submitterKeypair.publicKey;
 }
 
-export async function SetTaskToVoting(taskStateInfoKeypair: PublicKey, deadline:number, ): Promise<void> {
+export async function SetTaskToVoting(payerWallet:Keypair, taskStateInfoKeypair: PublicKey, deadline:number, ): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetTaskToVoting, {
     deadline: deadline,
   });
@@ -378,7 +378,7 @@ export async function SetTaskToVoting(taskStateInfoKeypair: PublicKey, deadline:
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer]);
 }
-export async function Vote(taskStateInfoKeypair: Keypair, submitterPubkey: PublicKey): Promise<void> {
+export async function Vote(payerWallet:Keypair, taskStateInfoKeypair: Keypair, submitterPubkey: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Vote, {
     is_valid: 1,
     stake_amount: 100000,
@@ -414,7 +414,7 @@ export async function Vote(taskStateInfoKeypair: Keypair, submitterPubkey: Publi
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer,voterKeypair]);
 }
-export async function Whitelist(taskStateInfoKeypair: Keypair): Promise<void> {
+export async function Whitelist(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
 
   console.log("WHITELIST",programKeypair.publicKey.toBase58())
@@ -423,7 +423,7 @@ export async function Whitelist(taskStateInfoKeypair: Keypair): Promise<void> {
   });
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
+      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
       {pubkey: programKeypair.publicKey, isSigner: true, isWritable: false},
     ],
     programId,
@@ -431,7 +431,7 @@ export async function Whitelist(taskStateInfoKeypair: Keypair): Promise<void> {
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, programKeypair]);
 }
-export async function SetActive(taskStateInfoKeypair: Keypair): Promise<void> {
+export async function SetActive(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
 
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetActive, {
@@ -439,7 +439,7 @@ export async function SetActive(taskStateInfoKeypair: Keypair): Promise<void> {
   });
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
+      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
       {pubkey: programKeypair.publicKey, isSigner: true, isWritable: false},
     ],
     programId,
@@ -447,11 +447,11 @@ export async function SetActive(taskStateInfoKeypair: Keypair): Promise<void> {
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, programKeypair]);
 }
-export async function Payout(taskStateInfoKeypair: Keypair): Promise<void> {
+export async function Payout(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Payout, {});
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
+      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
       {pubkey: payer.publicKey, isSigner: true, isWritable: true},
       {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
     ],
@@ -460,11 +460,11 @@ export async function Payout(taskStateInfoKeypair: Keypair): Promise<void> {
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer]);
 }
-export async function ClaimReward(taskStateInfoKeypair: Keypair): Promise<void> {
+export async function ClaimReward(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.ClaimReward, {});
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
+      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
       {pubkey: payer.publicKey, isSigner: true, isWritable: true},
       {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
     ],
@@ -474,7 +474,7 @@ export async function ClaimReward(taskStateInfoKeypair: Keypair): Promise<void> 
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer]);
 }
 
-export async function FundTask(taskStateInfoKeypair: Keypair): Promise<void> {
+export async function FundTask(payerWallet:Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
     amount:100000
   });
@@ -496,7 +496,7 @@ export async function FundTask(taskStateInfoKeypair: Keypair): Promise<void> {
   ]);
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
+      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
       {pubkey: funderKeypair.publicKey, isSigner: true, isWritable: true},
       {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
       {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},

@@ -17,13 +17,15 @@ import {
   FundTask,
 } from './task_contract';
 import prompts from 'prompts';
-import { PublicKey } from '@solana/web3.js';
+import { Keypair, PublicKey } from '@solana/web3.js';
+import { fs } from 'mz';
 
 async function main() {
+  let payerWallet:Keypair;
+  let walletPath:string = process.env.wallet || "";
   if (!process.env.wallet) {
     console.error('No wallet found');
-
-    const walletPath = (
+    walletPath = (
       await prompts({
         type: 'text',
         name: 'wallet',
@@ -31,6 +33,16 @@ async function main() {
       })
     ).wallet;
     console.log(walletPath);
+    if(!fs.existsSync(walletPath))throw Error("Invalid Wallet Path")
+  }
+  try {
+    let wallet = fs.readFileSync(walletPath,"utf-8"); 
+    payerWallet = Keypair.fromSecretKey(
+      Uint8Array.from(JSON.parse(wallet)),
+    );
+  } catch (e) {
+    console.error("Wallet Doesn't Exist");
+    process.exit()
   }
 
   const mode = (
@@ -62,36 +74,118 @@ async function main() {
 
   switch (mode) {
     case 'create-task':
-      console.log('CALLING CREATE TASK');
+      console.log('Calling Create Task');
       let taskStateInfoKeypair = await createTask();
       console.log('TASK STATE INFO KEY:', taskStateInfoKeypair.publicKey.toBase58());
-
     case 'set-task-to-voting':
-      const {taskStateInfoAddress} = await takeInputForSetTaskToVoting()
-      await SetTaskToVoting(taskStateInfoAddress);
-      console.log('CALLING SetTaskToVoting');
+      {
+        const {taskStateInfoAddress, deadline} = await takeInputForSetTaskToVoting()
+        console.log('Calling SetTaskToVoting');
+        await SetTaskToVoting(payerWallet,taskStateInfoAddress, deadline);
+      }
     case 'whitelisting':
-      console.log('CALLING Whitelist');
-      await Whitelist(taskStateInfoKeypair);
+      {
+        const {taskStateInfoAddress} = await takeInputForWhitelisting()
+        console.log('Calling Whitelist');
+        await Whitelist(payerWallet, taskStateInfoAddress);
+      }
     case 'set-active':
-      console.log('CALLING SetActive');
-      await SetActive(taskStateInfoKeypair);
+      {
+        console.log('Calling SetActive');
+        const {taskStateInfoAddress} = await takeInputForSetActive()
+        await SetActive(payerWallet,taskStateInfoAddress);
+      }
     case 'payout':
-      console.log('CALLING Payout');
-      await Payout(taskStateInfoKeypair);
+      {
+        console.log('Calling Payout');
+        const {taskStateInfoAddress} = await takeInputForPayout()
+        await Payout(payerWallet,taskStateInfoAddress);
+      }
     case 'claim-reward':
-      console.log('CALLING ClaimReward');
-      await ClaimReward(taskStateInfoKeypair);
+      {  
+        console.log('Calling ClaimReward');
+        const {taskStateInfoAddress} = await takeInputForClaimReward()
+        await ClaimReward(payerWallet,taskStateInfoAddress);
+      }
     case 'fund-task':
-      console.log('CALLING FundTask');
-      await FundTask(taskStateInfoKeypair);
+      console.log('Calling FundTask');
+      const {taskStateInfoAddress} = await takeInputForFundTask()
+      await FundTask(payerWallet,taskStateInfoAddress);
     default:
       console.error('Invalid option selected');
   }
   console.log('Success');
 }
 
+async function takeInputForCreateTask(){
+  // const taskStateInfoAddress = (
+  //   await prompts({
+  //     type: 'text',
+  //     name: 'taskStateInfoAddress',
+  //     message: 'Enter the path to your wallet',
+  //   })
+  // ).taskStateInfoAddress;
+  // return {taskStateInfoAddress:new PublicKey(taskStateInfoAddress)}
+}
+
 async function takeInputForSetTaskToVoting(){
+  const taskStateInfoAddress = (
+    await prompts({
+      type: 'text',
+      name: 'taskStateInfoAddress',
+      message: 'Enter the path to your wallet',
+    })
+  ).taskStateInfoAddress;
+  const deadline = (
+    await prompts({
+      type: 'number',
+      name: 'taskStateInfoAddress',
+      message: 'Enter the path to your wallet',
+    })
+  ).taskStateInfoAddress;
+  return {deadline,taskStateInfoAddress:new PublicKey(taskStateInfoAddress)}
+}
+async function takeInputForWhitelisting(){
+  const taskStateInfoAddress = (
+    await prompts({
+      type: 'text',
+      name: 'taskStateInfoAddress',
+      message: 'Enter the path to your wallet',
+    })
+  ).taskStateInfoAddress;
+  return {taskStateInfoAddress:new PublicKey(taskStateInfoAddress)}
+}
+async function takeInputForSetActive(){
+  const taskStateInfoAddress = (
+    await prompts({
+      type: 'text',
+      name: 'taskStateInfoAddress',
+      message: 'Enter the path to your wallet',
+    })
+  ).taskStateInfoAddress;
+  return {taskStateInfoAddress:new PublicKey(taskStateInfoAddress)}
+}
+async function takeInputForPayout(){
+  const taskStateInfoAddress = (
+    await prompts({
+      type: 'text',
+      name: 'taskStateInfoAddress',
+      message: 'Enter the path to your wallet',
+    })
+  ).taskStateInfoAddress;
+  return {taskStateInfoAddress:new PublicKey(taskStateInfoAddress)}
+}
+async function takeInputForClaimReward(){
+  const taskStateInfoAddress = (
+    await prompts({
+      type: 'text',
+      name: 'taskStateInfoAddress',
+      message: 'Enter the path to your wallet',
+    })
+  ).taskStateInfoAddress;
+  return {taskStateInfoAddress:new PublicKey(taskStateInfoAddress)}
+}
+async function takeInputForFundTask(){
   const taskStateInfoAddress = (
     await prompts({
       type: 'text',
