@@ -60,7 +60,7 @@ import {getPayer, getRpcUrl, createKeypairFromFile} from './utils';
 
 const SYSTEM_PUBLIC_KEY = new PublicKey('11111111111111111111111111111111');
 const CLOCK_PUBLIC_KEY = new PublicKey('SysvarC1ock11111111111111111111111111111111');
-let STAKE_POT_ACCOUNT: PublicKey;
+// let STAKE_POT_ACCOUNT: PublicKey;
 // =new PublicKey("9XABSvWLMkUV1hPb4bXbJqvsH3Ab2mptxMMMnxfJUvG9")
 /**
  * Connection to the network
@@ -70,7 +70,7 @@ let connection: Connection;
 /**
  * Keypair associated to the fees' payer
  */
-let payer: Keypair;
+// let payerWallet: Keypair;
 
 /**
  * Hello world's program id
@@ -99,7 +99,7 @@ const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'helloworld.so');
  * Path to the keypair of the deployed program.
  * This file is created when running `solana program deploy task_contract-keypair.json`
  */
-const PROGRAM_KEYPAIR_PATH = 'TaskMDbVartWDkgHrWZ6NiHUQUwdWpN3WDyRmSEoMTm.json';
+// const PROGRAM_KEYPAIR_PATH = 'TaskMDbVartWDkgHrWZ6NiHUQUwdWpN3WDyRmSEoMTm.json';
 
 const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
   CreateTask: {
@@ -175,9 +175,9 @@ export async function establishConnection(): Promise<Connection> {
 /**
  * Establish an account to pay for everything
  */
-export async function establishPayer(): Promise<void> {
+export async function establishPayer(  payerWallet: Keypair): Promise<void> {
   let fees = 0;
-  if (!payer) {
+  if (!payerWallet) {
     const {feeCalculator} = await connection.getRecentBlockhash();
 
     // Calculate the cost to fund the greeter account
@@ -186,12 +186,12 @@ export async function establishPayer(): Promise<void> {
     // Calculate the cost of sending transactions
     fees += feeCalculator.lamportsPerSignature * 100; // wag
 
-    payer = await getPayer();
+    payerWallet = await getPayer();
   }
 
-  let lamports = await connection.getBalance(payer.publicKey);
+  let lamports = await connection.getBalance(payerWallet.publicKey);
   if (lamports < fees) {
-    console.error("Your balance is not sufficient: "+payer.publicKey.toBase58)
+    console.error("Your balance is not sufficient: "+payerWallet.publicKey.toBase58)
     process.exit(0)
     // If current balance is not enough to pay for fees, request an airdrop
     // const sig = await connection.requestAirdrop(payer.publicKey, 100000000000 + fees - lamports);
@@ -201,7 +201,7 @@ export async function establishPayer(): Promise<void> {
 
   console.log(
     'Using account',
-    payer.publicKey.toBase58(),
+    payerWallet.publicKey.toBase58(),
     'containing',
     lamports / LAMPORTS_PER_SOL,
     'SOL to pay for fees'
@@ -218,7 +218,7 @@ export async function checkProgram(): Promise<void> {
   } catch (err) {
     const errMsg = (err as Error).message;
     throw new Error(
-      `Failed to read program keypair at '${PROGRAM_KEYPAIR_PATH}' due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
+      `Failed to read program keypair at due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
     );
   }
 
@@ -260,13 +260,14 @@ function padStringWithSpaces(input: string, length: number) {
   return input;
 }
 export async function createTask(
+  payerWallet: Keypair,
   task_name: string,
   task_audit_program: string,
   total_bounty_amount: number,
   bounty_amount_per_round:number,
   deadline:number,
   space:number
-): Promise<Keypair> {
+): Promise<any> {
   let createTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
     task_audit_program: new TextEncoder().encode(padStringWithSpaces(task_audit_program, 64)), //must be 64 chracters long
@@ -279,85 +280,85 @@ export async function createTask(
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData);
   let taskStateInfoKeypair = Keypair.generate();
   let stake_pot_account = Keypair.generate();
-  STAKE_POT_ACCOUNT = stake_pot_account.publicKey;
+  // STAKE_POT_ACCOUNT = stake_pot_account.publicKey;
 
   const createTaskStateTransaction = new Transaction().add(
     SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
+      fromPubkey: payerWallet.publicKey,
       newAccountPubkey: taskStateInfoKeypair.publicKey,
       lamports: createTaskData.rentExemptionAmount,
       space: createTaskData.space,
       programId: programId,
     })
   );
-  await sendAndConfirmTransaction(connection, createTaskStateTransaction, [payer, taskStateInfoKeypair]);
+  await sendAndConfirmTransaction(connection, createTaskStateTransaction, [payerWallet, taskStateInfoKeypair]);
   const createStakePotAccTransaction = new Transaction().add(
     SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
+      fromPubkey: payerWallet.publicKey,
       newAccountPubkey: stake_pot_account.publicKey,
       lamports: createTaskData.total_bounty_amount+(await connection.getMinimumBalanceForRentExemption(100)) + 10000,
       space: 100,
       programId: programId,
     })
   );
-  await sendAndConfirmTransaction(connection, createStakePotAccTransaction, [payer, stake_pot_account]);
+  await sendAndConfirmTransaction(connection, createStakePotAccTransaction, [payerWallet, stake_pot_account]);
   console.log('AAA', taskStateInfoKeypair.publicKey.toBase58());
   await sleep(10000);
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: payer.publicKey, isSigner: true, isWritable: true},
+      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
       {pubkey: taskStateInfoKeypair.publicKey, isSigner: true, isWritable: true},
-      {pubkey: STAKE_POT_ACCOUNT, isSigner: true, isWritable: true},
+      {pubkey: stake_pot_account.publicKey, isSigner: true, isWritable: true},
       {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
     ],
     programId,
     data: data,
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [
-    payer,
+    payerWallet,
     taskStateInfoKeypair,
     stake_pot_account,
   ]);
-  return taskStateInfoKeypair;
+  return {taskStateInfoKeypair,stake_pot_account};
 }
 async function sleep(ms: any) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function submitTask(taskStateInfoKeypair: Keypair): Promise<PublicKey> {
-  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SubmitTask, {
-    submission: new TextEncoder().encode(padStringWithSpaces('test1111111111111111111111111111', 512)), //must be 512 chracters long
-    stakeAmount: 10000000,
-  });
-  let submitterKeypair = Keypair.generate();
-  console.log('Making new account', submitterKeypair.publicKey.toBase58());
+// export async function submitTask(taskStateInfoKeypair: Keypair): Promise<PublicKey> {
+//   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SubmitTask, {
+//     submission: new TextEncoder().encode(padStringWithSpaces('test1111111111111111111111111111', 512)), //must be 512 chracters long
+//     stakeAmount: 10000000,
+//   });
+//   let submitterKeypair = Keypair.generate();
+//   console.log('Making new account', submitterKeypair.publicKey.toBase58());
 
-  const createSubmitterAccTransaction = new Transaction().add(
-    SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
-      newAccountPubkey: submitterKeypair.publicKey,
-      lamports: 10000000 + (await connection.getMinimumBalanceForRentExemption(100)) + 10000, //Adding 10,000 extra lamports for padding
-      space: 100,
-      programId: programId,
-    })
-  );
-  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payer, submitterKeypair]);
-  await sleep(10000);
-  console.log('CAAALLL', submitterKeypair.publicKey.toBase58());
-  const instruction = new TransactionInstruction({
-    keys: [
-      {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
-      {pubkey: submitterKeypair.publicKey, isSigner: true, isWritable: true},
-      {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
-      {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
-      {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
-    ],
-    programId,
-    data: data,
-  });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, submitterKeypair]);
-  return submitterKeypair.publicKey;
-}
+//   const createSubmitterAccTransaction = new Transaction().add(
+//     SystemProgram.createAccount({
+//       fromPubkey: payer.publicKey,
+//       newAccountPubkey: submitterKeypair.publicKey,
+//       lamports: 10000000 + (await connection.getMinimumBalanceForRentExemption(100)) + 10000, //Adding 10,000 extra lamports for padding
+//       space: 100,
+//       programId: programId,
+//     })
+//   );
+//   await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payer, submitterKeypair]);
+//   await sleep(10000);
+//   console.log('CAAALLL', submitterKeypair.publicKey.toBase58());
+//   const instruction = new TransactionInstruction({
+//     keys: [
+//       {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
+//       {pubkey: submitterKeypair.publicKey, isSigner: true, isWritable: true},
+//       {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
+//       {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
+//       {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
+//     ],
+//     programId,
+//     data: data,
+//   });
+//   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, submitterKeypair]);
+//   return submitterKeypair.publicKey;
+// }
 
 export async function SetTaskToVoting(
   payerWallet: Keypair,
@@ -370,51 +371,51 @@ export async function SetTaskToVoting(
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: taskStateInfoKeypair, isSigner: false, isWritable: true},
-      {pubkey: payer.publicKey, isSigner: true, isWritable: true},
+      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
       {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
     ],
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
 }
-export async function Vote(
-  payerWallet: Keypair,
-  taskStateInfoKeypair: Keypair,
-  submitterPubkey: PublicKey
-): Promise<void> {
-  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Vote, {
-    is_valid: 1,
-    stake_amount: 100000,
-  });
-  let voterKeypair = Keypair.generate();
-  console.log('Making new account', voterKeypair.publicKey.toBase58());
+// export async function Vote(
+//   payerWallet: Keypair,
+//   taskStateInfoKeypair: Keypair,
+//   submitterPubkey: PublicKey
+// ): Promise<void> {
+//   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Vote, {
+//     is_valid: 1,
+//     stake_amount: 100000,
+//   });
+//   let voterKeypair = Keypair.generate();
+//   console.log('Making new account', voterKeypair.publicKey.toBase58());
 
-  const createSubmitterAccTransaction = new Transaction().add(
-    SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
-      newAccountPubkey: voterKeypair.publicKey,
-      lamports: 100000 + (await connection.getMinimumBalanceForRentExemption(100)) + 1000, //adding 1000 extra lamports for padding
-      space: 100,
-      programId: programId,
-    })
-  );
-  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payer, voterKeypair]);
-  const instruction = new TransactionInstruction({
-    keys: [
-      {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
-      {pubkey: voterKeypair.publicKey, isSigner: true, isWritable: true},
-      {pubkey: submitterPubkey, isSigner: false, isWritable: false}, //Candidate public key who submitted the task and you are approving whose task is correct
-      {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
-      {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
-      {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
-    ],
-    programId,
-    data: data,
-  });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, voterKeypair]);
-}
-export async function Whitelist(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
+//   const createSubmitterAccTransaction = new Transaction().add(
+//     SystemProgram.createAccount({
+//       fromPubkey: payerWallet.publicKey,
+//       newAccountPubkey: voterKeypair.publicKey,
+//       lamports: 100000 + (await connection.getMinimumBalanceForRentExemption(100)) + 1000, //adding 1000 extra lamports for padding
+//       space: 100,
+//       programId: programId,
+//     })
+//   );
+//   await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payerWallet, voterKeypair]);
+//   const instruction = new TransactionInstruction({
+//     keys: [
+//       {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
+//       {pubkey: voterKeypair.publicKey, isSigner: true, isWritable: true},
+//       {pubkey: submitterPubkey, isSigner: false, isWritable: false}, //Candidate public key who submitted the task and you are approving whose task is correct
+//       {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
+//       {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
+//       {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
+//     ],
+//     programId,
+//     data: data,
+//   });
+//   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, voterKeypair]);
+// }
+export async function Whitelist(payerWallet: Keypair, taskStateInfoAddress: PublicKey, PROGRAM_KEYPAIR_PATH: string): Promise<void> {
   const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
 
   console.log('WHITELIST', programKeypair.publicKey.toBase58());
@@ -429,52 +430,50 @@ export async function Whitelist(payerWallet: Keypair, taskStateInfoAddress: Publ
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, programKeypair]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, programKeypair]);
 }
-export async function SetActive(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
-  const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
-
+export async function SetActive(payerWallet: Keypair, taskStateInfoAddress: PublicKey, setActive: boolean): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetActive, {
-    isActive: 1,
+    isActive: setActive?1:0,
   });
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
-      {pubkey: programKeypair.publicKey, isSigner: true, isWritable: false},
+      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: false},
     ],
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, programKeypair]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
 }
 export async function Payout(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Payout, {});
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
-      {pubkey: payer.publicKey, isSigner: true, isWritable: true},
+      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
       {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
     ],
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
 }
-export async function ClaimReward(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
+export async function ClaimReward(payerWallet: Keypair, taskStateInfoAddress: PublicKey, stakePotAccount: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.ClaimReward, {});
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
-      {pubkey: payer.publicKey, isSigner: true, isWritable: true},
-      {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
+      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
+      {pubkey: stakePotAccount, isSigner: false, isWritable: true},
     ],
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
 }
 
-export async function FundTask(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
+export async function FundTask(payerWallet: Keypair, taskStateInfoAddress: PublicKey, stakePotAccount: PublicKey): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
     amount: 100000,
   });
@@ -483,24 +482,24 @@ export async function FundTask(payerWallet: Keypair, taskStateInfoAddress: Publi
 
   const createSubmitterAccTransaction = new Transaction().add(
     SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
+      fromPubkey: payerWallet.publicKey,
       newAccountPubkey: funderKeypair.publicKey,
       lamports: 100000 + (await connection.getMinimumBalanceForRentExemption(100)) + 1000, //adding 1000 extra lamports for padding
       space: 100,
       programId: programId,
     })
   );
-  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payer, funderKeypair]);
+  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payerWallet, funderKeypair]);
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
       {pubkey: funderKeypair.publicKey, isSigner: true, isWritable: true},
-      {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
+      {pubkey: stakePotAccount, isSigner: false, isWritable: true},
       {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
       {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
     ],
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, funderKeypair]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, funderKeypair]);
 }

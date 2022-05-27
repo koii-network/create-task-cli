@@ -7,9 +7,7 @@ import {
   establishPayer,
   checkProgram,
   createTask,
-  submitTask,
   SetTaskToVoting,
-  Vote,
   Whitelist,
   SetActive,
   Payout,
@@ -65,7 +63,7 @@ async function main() {
   const connection = await establishConnection();
 
   // Determine who pays for the fees
-  await establishPayer();
+  await establishPayer(payerWallet);
 
   // Check if the program has been deployed
   await checkProgram();
@@ -80,8 +78,17 @@ async function main() {
         10000 +
         (await connection.getMinimumBalanceForRentExemption(space)) +
         10000;
+      let response = (
+        await prompts({
+          type: 'confirm',
+          name: 'response',
+          message: `Your account will be subtract ${totalAmount} KOII for creating the task, which includes the rent exemption and bounty amount fees`,
+        })
+      ).response;
+      if (!response) process.exit(0);
       console.log('Calling Create Task');
-      let taskStateInfoKeypair = await createTask(
+      let {taskStateInfoKeypair, stake_pot_account} = await createTask(
+        payerWallet,
         task_name,
         task_audit_program,
         total_bounty_amount,
@@ -89,21 +96,24 @@ async function main() {
         deadline,
         space
       );
-      console.log('TASK STATE INFO KEY:', taskStateInfoKeypair.publicKey.toBase58());
+      fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
+      fs.writeFileSync('stake_pot_account.json', JSON.stringify(Array.from(stake_pot_account.secretKey)));
+      console.log('Task State Info Pubkey:', taskStateInfoKeypair.publicKey.toBase58());
+      console.log('Stake Pot Account Pubkey:', taskStateInfoKeypair.publicKey.toBase58());
     case 'set-task-to-voting': {
       const {taskStateInfoAddress, deadline} = await takeInputForSetTaskToVoting();
       console.log('Calling SetTaskToVoting');
       await SetTaskToVoting(payerWallet, taskStateInfoAddress, deadline);
     }
     case 'whitelisting': {
-      const {taskStateInfoAddress} = await takeInputForWhitelisting();
+      const {taskOwnerAddress,taskStateInfoAddress} = await takeInputForWhitelisting();
       console.log('Calling Whitelist');
-      await Whitelist(payerWallet, taskStateInfoAddress);
+      await Whitelist(payerWallet, taskStateInfoAddress,taskOwnerAddress);
     }
     case 'set-active': {
       console.log('Calling SetActive');
-      const {taskStateInfoAddress} = await takeInputForSetActive();
-      await SetActive(payerWallet, taskStateInfoAddress);
+      const {isActive,taskStateInfoAddress} = await takeInputForSetActive();
+      await SetActive(payerWallet, taskStateInfoAddress,isActive);
     }
     case 'payout': {
       console.log('Calling Payout');
@@ -112,13 +122,13 @@ async function main() {
     }
     case 'claim-reward': {
       console.log('Calling ClaimReward');
-      const {taskStateInfoAddress} = await takeInputForClaimReward();
-      await ClaimReward(payerWallet, taskStateInfoAddress);
+      const {stakePotAccount,taskStateInfoAddress} = await takeInputForClaimReward();
+      await ClaimReward(payerWallet, taskStateInfoAddress,stakePotAccount);
     }
     case 'fund-task':
       console.log('Calling FundTask');
-      const {taskStateInfoAddress} = await takeInputForFundTask();
-      await FundTask(payerWallet, taskStateInfoAddress);
+      const {stakePotAccount,taskStateInfoAddress} = await takeInputForFundTask();
+      await FundTask(payerWallet, taskStateInfoAddress,stakePotAccount);
     default:
       console.error('Invalid option selected');
   }
@@ -161,13 +171,13 @@ async function takeInputForCreateTask() {
       })
     ).task_audit_program;
   } while (task_audit_program.length > 64);
-  
+
   const total_bounty_amount = (
     await prompts({
       type: 'number',
       name: 'total_bounty_amount',
       message: 'Enter the total bounty you want to allocate for the task (In KOII)',
-      min: 10
+      min: 5,
     })
   ).total_bounty_amount;
   const bounty_amount_per_round = (
@@ -176,7 +186,7 @@ async function takeInputForCreateTask() {
       name: 'bounty_amount_per_round',
       message: 'Enter the bounty amount per round',
       max: total_bounty_amount,
-      min: 1
+      min: 5,
     })
   ).bounty_amount_per_round;
   const deadline = (
@@ -184,7 +194,7 @@ async function takeInputForCreateTask() {
       type: 'number',
       name: 'deadline',
       message: 'Enter the deadline for task accepting submissions in unix',
-      min: parseInt((Date.now()/1000).toFixed(2))
+      min: parseInt((Date.now() / 1000).toFixed(2)),
     })
   ).deadline;
   const space = (
@@ -192,6 +202,7 @@ async function takeInputForCreateTask() {
       type: 'number',
       name: 'space',
       message: 'Enter the space, you want to allocate for task account (in MBs)',
+      min: 2,
     })
   ).space;
   return {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, deadline, space};
@@ -202,16 +213,17 @@ async function takeInputForSetTaskToVoting() {
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the path to your wallet',
+      message: 'Enter the task account address',
     })
   ).taskStateInfoAddress;
   const deadline = (
     await prompts({
       type: 'number',
-      name: 'taskStateInfoAddress',
-      message: 'Enter the path to your wallet',
+      name: 'deadline',
+      message: 'Enter the deadline for task accepting votes in unix',
+      min: parseInt((Date.now() / 1000).toFixed(2)),
     })
-  ).taskStateInfoAddress;
+  ).deadline;
   return {deadline, taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 async function takeInputForWhitelisting() {
@@ -219,27 +231,45 @@ async function takeInputForWhitelisting() {
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the path to your wallet',
+      message: 'Enter the task account address',
     })
   ).taskStateInfoAddress;
-  return {taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  const taskOwnerAddress = (
+    await prompts({
+      type: 'text',
+      name: 'taskOwnerAddress',
+      message: 'Enter the path to taskOwnerAddress wallet',
+    })
+  ).taskOwnerAddress;
+  return {taskOwnerAddress,taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 async function takeInputForSetActive() {
   const taskStateInfoAddress = (
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the path to your wallet',
+      message: 'Enter the task account address',
     })
   ).taskStateInfoAddress;
-  return {taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  const isActive = (
+    await prompts({
+      type: 'select',
+      name: 'isActive',
+      message: 'Do you want to set the task to Active or Inactive?',
+      choices: [
+        { title: 'Active', description: 'Set the task active', value: '#00ff00'},
+        { title: 'Inactive', description: 'Deactivate the task', value: '#ff0000' }
+      ]
+    })
+  ).isActive;
+  return {isActive:isActive=="Active",taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 async function takeInputForPayout() {
   const taskStateInfoAddress = (
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the path to your wallet',
+      message: 'Enter the task account address',
     })
   ).taskStateInfoAddress;
   return {taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
@@ -249,20 +279,34 @@ async function takeInputForClaimReward() {
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the path to your wallet',
+      message: 'Enter the task account address',
     })
   ).taskStateInfoAddress;
-  return {taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  const stakePotAccount = (
+    await prompts({
+      type: 'text',
+      name: 'stakePotAccount',
+      message: 'Enter the stakePotAccount address',
+    })
+  ).stakePotAccount;
+  return {stakePotAccount: new PublicKey(stakePotAccount),taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 async function takeInputForFundTask() {
   const taskStateInfoAddress = (
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the path to your wallet',
+      message: 'Enter the task account address',
     })
   ).taskStateInfoAddress;
-  return {taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  const stakePotAccount = (
+    await prompts({
+      type: 'text',
+      name: 'stakePotAccount',
+      message: 'Enter the stakePotAccount address',
+    })
+  ).stakePotAccount;
+  return {stakePotAccount: new PublicKey(stakePotAccount),taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 main().then(
   () => process.exit(),
