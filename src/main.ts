@@ -106,7 +106,7 @@ async function main() {
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
       fs.writeFileSync('stake_pot_account.json', JSON.stringify(Array.from(stake_pot_account.secretKey)));
       console.log('Task State Info Pubkey:', taskStateInfoKeypair.publicKey.toBase58());
-      console.log('Stake Pot Account Pubkey:', taskStateInfoKeypair.publicKey.toBase58());
+      console.log('Stake Pot Account Pubkey:', stake_pot_account.publicKey.toBase58());
       break;
     }
     case 'set-task-to-voting': {
@@ -230,9 +230,8 @@ async function takeInputForCreateTask() {
     })
   ).deadline;
   deadline = Number(deadline);
-  console.log(deadline, parseInt((Date.now() / 1000).toFixed(2)));
-  while (deadline < parseInt((Date.now() / 1000).toFixed(2))) {
-    console.error('The deadline cannot be of a past date');
+  while (isNaN(deadline) || deadline < parseInt((Date.now() / 1000).toFixed(2))) {
+    console.error('The deadline cannot be of a past date or non unix');
     deadline = (
       await prompts({
         type: 'number',
