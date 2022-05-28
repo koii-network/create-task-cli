@@ -10,7 +10,7 @@ import {
   TransactionInstruction,
   Transaction,
   sendAndConfirmTransaction,
-} from '@solana/web3.js';
+} from '@_koi/web3.js';
 import fs from 'mz/fs';
 import path from 'path';
 const BufferLayout = require('@solana/buffer-layout');
@@ -169,13 +169,13 @@ export async function establishConnection(): Promise<Connection> {
   connection = new Connection(rpcUrl, 'confirmed');
   const version = await connection.getVersion();
   console.log('Connection to cluster established:', rpcUrl, version);
-  return connection
+  return connection;
 }
 
 /**
  * Establish an account to pay for everything
  */
-export async function establishPayer(  payerWallet: Keypair): Promise<void> {
+export async function establishPayer(payerWallet: Keypair): Promise<void> {
   let fees = 0;
   if (!payerWallet) {
     const {feeCalculator} = await connection.getRecentBlockhash();
@@ -191,8 +191,8 @@ export async function establishPayer(  payerWallet: Keypair): Promise<void> {
 
   let lamports = await connection.getBalance(payerWallet.publicKey);
   if (lamports < fees) {
-    console.error("Your balance is not sufficient: "+payerWallet.publicKey.toBase58)
-    process.exit(0)
+    console.error('Your balance is not sufficient: ' + payerWallet.publicKey.toBase58);
+    process.exit(0);
     // If current balance is not enough to pay for fees, request an airdrop
     // const sig = await connection.requestAirdrop(payer.publicKey, 100000000000 + fees - lamports);
     // await connection.confirmTransaction(sig);
@@ -264,9 +264,9 @@ export async function createTask(
   task_name: string,
   task_audit_program: string,
   total_bounty_amount: number,
-  bounty_amount_per_round:number,
-  deadline:number,
-  space:number
+  bounty_amount_per_round: number,
+  deadline: number,
+  space: number
 ): Promise<any> {
   let createTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
@@ -274,7 +274,7 @@ export async function createTask(
     total_bounty_amount: total_bounty_amount * LAMPORTS_PER_SOL,
     bounty_amount_per_round: bounty_amount_per_round * LAMPORTS_PER_SOL,
     deadline: deadline,
-    rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space))+1000,
+    rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
     space: space,
   };
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData);
@@ -296,13 +296,12 @@ export async function createTask(
     SystemProgram.createAccount({
       fromPubkey: payerWallet.publicKey,
       newAccountPubkey: stake_pot_account.publicKey,
-      lamports: createTaskData.total_bounty_amount+(await connection.getMinimumBalanceForRentExemption(100)) + 10000,
+      lamports: createTaskData.total_bounty_amount + (await connection.getMinimumBalanceForRentExemption(100)) + 10000,
       space: 100,
       programId: programId,
     })
   );
   await sendAndConfirmTransaction(connection, createStakePotAccTransaction, [payerWallet, stake_pot_account]);
-  console.log('AAA', taskStateInfoKeypair.publicKey.toBase58());
   await sleep(10000);
   const instruction = new TransactionInstruction({
     keys: [
@@ -319,7 +318,7 @@ export async function createTask(
     taskStateInfoKeypair,
     stake_pot_account,
   ]);
-  return {taskStateInfoKeypair,stake_pot_account};
+  return {taskStateInfoKeypair, stake_pot_account};
 }
 async function sleep(ms: any) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -415,7 +414,11 @@ export async function SetTaskToVoting(
 //   });
 //   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, voterKeypair]);
 // }
-export async function Whitelist(payerWallet: Keypair, taskStateInfoAddress: PublicKey, PROGRAM_KEYPAIR_PATH: string): Promise<void> {
+export async function Whitelist(
+  payerWallet: Keypair,
+  taskStateInfoAddress: PublicKey,
+  PROGRAM_KEYPAIR_PATH: string
+): Promise<void> {
   const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
 
   console.log('WHITELIST', programKeypair.publicKey.toBase58());
@@ -432,9 +435,13 @@ export async function Whitelist(payerWallet: Keypair, taskStateInfoAddress: Publ
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, programKeypair]);
 }
-export async function SetActive(payerWallet: Keypair, taskStateInfoAddress: PublicKey, setActive: boolean): Promise<void> {
+export async function SetActive(
+  payerWallet: Keypair,
+  taskStateInfoAddress: PublicKey,
+  setActive: boolean
+): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetActive, {
-    isActive: setActive?1:0,
+    isActive: setActive ? 1 : 0,
   });
   const instruction = new TransactionInstruction({
     keys: [
@@ -459,7 +466,11 @@ export async function Payout(payerWallet: Keypair, taskStateInfoAddress: PublicK
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
 }
-export async function ClaimReward(payerWallet: Keypair, taskStateInfoAddress: PublicKey, stakePotAccount: PublicKey): Promise<void> {
+export async function ClaimReward(
+  payerWallet: Keypair,
+  taskStateInfoAddress: PublicKey,
+  stakePotAccount: PublicKey
+): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.ClaimReward, {});
   const instruction = new TransactionInstruction({
     keys: [
@@ -473,7 +484,11 @@ export async function ClaimReward(payerWallet: Keypair, taskStateInfoAddress: Pu
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
 }
 
-export async function FundTask(payerWallet: Keypair, taskStateInfoAddress: PublicKey, stakePotAccount: PublicKey): Promise<void> {
+export async function FundTask(
+  payerWallet: Keypair,
+  taskStateInfoAddress: PublicKey,
+  stakePotAccount: PublicKey
+): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
     amount: 100000,
   });

@@ -15,8 +15,8 @@ import {
   FundTask,
 } from './task_contract';
 import prompts from 'prompts';
-import {Keypair, PublicKey} from '@solana/web3.js';
-import {fs} from 'mz';
+import {Keypair, PublicKey, LAMPORTS_PER_SOL} from '@_koi/web3.js';
+import fs from 'fs';
 
 async function main() {
   let payerWallet: Keypair;
@@ -69,11 +69,11 @@ async function main() {
   await checkProgram();
 
   switch (mode) {
-    case 'create-task':
+    case 'create-task': {
       const {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, deadline, space} =
         await takeInputForCreateTask();
       let totalAmount =
-        total_bounty_amount +
+        LAMPORTS_PER_SOL * total_bounty_amount +
         (await connection.getMinimumBalanceForRentExemption(100)) +
         10000 +
         (await connection.getMinimumBalanceForRentExemption(space)) +
@@ -82,10 +82,17 @@ async function main() {
         await prompts({
           type: 'confirm',
           name: 'response',
-          message: `Your account will be subtract ${totalAmount} KOII for creating the task, which includes the rent exemption and bounty amount fees`,
+          message: `Your account will be subtract ${
+            totalAmount / LAMPORTS_PER_SOL
+          } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
         })
       ).response;
       if (!response) process.exit(0);
+      let lamports = await connection.getBalance(payerWallet.publicKey);
+      if (lamports < totalAmount) {
+        console.error('Insufficient balance for this operation');
+        process.exit(0);
+      }
       console.log('Calling Create Task');
       let {taskStateInfoKeypair, stake_pot_account} = await createTask(
         payerWallet,
@@ -100,35 +107,43 @@ async function main() {
       fs.writeFileSync('stake_pot_account.json', JSON.stringify(Array.from(stake_pot_account.secretKey)));
       console.log('Task State Info Pubkey:', taskStateInfoKeypair.publicKey.toBase58());
       console.log('Stake Pot Account Pubkey:', taskStateInfoKeypair.publicKey.toBase58());
+      break;
+    }
     case 'set-task-to-voting': {
       const {taskStateInfoAddress, deadline} = await takeInputForSetTaskToVoting();
       console.log('Calling SetTaskToVoting');
       await SetTaskToVoting(payerWallet, taskStateInfoAddress, deadline);
+      break;
     }
     case 'whitelisting': {
-      const {taskOwnerAddress,taskStateInfoAddress} = await takeInputForWhitelisting();
+      const {taskOwnerAddress, taskStateInfoAddress} = await takeInputForWhitelisting();
       console.log('Calling Whitelist');
-      await Whitelist(payerWallet, taskStateInfoAddress,taskOwnerAddress);
+      await Whitelist(payerWallet, taskStateInfoAddress, taskOwnerAddress);
+      break;
     }
     case 'set-active': {
       console.log('Calling SetActive');
-      const {isActive,taskStateInfoAddress} = await takeInputForSetActive();
-      await SetActive(payerWallet, taskStateInfoAddress,isActive);
+      const {isActive, taskStateInfoAddress} = await takeInputForSetActive();
+      await SetActive(payerWallet, taskStateInfoAddress, isActive);
+      break;
     }
     case 'payout': {
       console.log('Calling Payout');
       const {taskStateInfoAddress} = await takeInputForPayout();
       await Payout(payerWallet, taskStateInfoAddress);
+      break;
     }
     case 'claim-reward': {
       console.log('Calling ClaimReward');
-      const {stakePotAccount,taskStateInfoAddress} = await takeInputForClaimReward();
-      await ClaimReward(payerWallet, taskStateInfoAddress,stakePotAccount);
+      const {stakePotAccount, taskStateInfoAddress} = await takeInputForClaimReward();
+      await ClaimReward(payerWallet, taskStateInfoAddress, stakePotAccount);
+      break;
     }
     case 'fund-task':
       console.log('Calling FundTask');
-      const {stakePotAccount,taskStateInfoAddress} = await takeInputForFundTask();
-      await FundTask(payerWallet, taskStateInfoAddress,stakePotAccount);
+      const {stakePotAccount, taskStateInfoAddress} = await takeInputForFundTask();
+      await FundTask(payerWallet, taskStateInfoAddress, stakePotAccount);
+      break;
     default:
       console.error('Invalid option selected');
   }
@@ -143,7 +158,7 @@ async function takeInputForCreateTask() {
       message: 'Enter the name of the task',
     })
   ).task_name;
-  do {
+  while (task_name.length > 24) {
     console.error('The task name cannot be greater than 24 characters');
     task_name = (
       await prompts({
@@ -152,7 +167,7 @@ async function takeInputForCreateTask() {
         message: 'Enter the name of the task',
       })
     ).task_name;
-  } while (task_name.length > 24);
+  }
 
   let task_audit_program = (
     await prompts({
@@ -161,7 +176,7 @@ async function takeInputForCreateTask() {
       message: 'Enter Arweave id of the executable program',
     })
   ).task_audit_program;
-  do {
+  while (task_audit_program.length > 64) {
     console.error('The task audit program length cannot be greater than 64 characters');
     task_audit_program = (
       await prompts({
@@ -170,41 +185,79 @@ async function takeInputForCreateTask() {
         message: 'Enter the name of the task',
       })
     ).task_audit_program;
-  } while (task_audit_program.length > 64);
+  }
 
-  const total_bounty_amount = (
+  let total_bounty_amount = (
     await prompts({
       type: 'number',
       name: 'total_bounty_amount',
       message: 'Enter the total bounty you want to allocate for the task (In KOII)',
-      min: 5,
     })
   ).total_bounty_amount;
-  const bounty_amount_per_round = (
+  while (total_bounty_amount < 10) {
+    console.error('The total_bounty_amount cannot be less than 10');
+    total_bounty_amount = (
+      await prompts({
+        type: 'number',
+        name: 'total_bounty_amount',
+        message: 'Enter the total bounty you want to allocate for the task (In KOII)',
+      })
+    ).total_bounty_amount;
+  }
+  let bounty_amount_per_round = (
     await prompts({
       type: 'number',
       name: 'bounty_amount_per_round',
       message: 'Enter the bounty amount per round',
-      max: total_bounty_amount,
-      min: 5,
+      // max: total_bounty_amount,
     })
   ).bounty_amount_per_round;
-  const deadline = (
+  while (bounty_amount_per_round > total_bounty_amount) {
+    console.error('The bounty_amount_per_round cannot be greater than total_bounty_amount');
+    bounty_amount_per_round = (
+      await prompts({
+        type: 'number',
+        name: 'bounty_amount_per_round',
+        message: 'Enter the bounty amount per round',
+      })
+    ).bounty_amount_per_round;
+  }
+  let deadline = (
     await prompts({
-      type: 'number',
+      type: 'text',
       name: 'deadline',
       message: 'Enter the deadline for task accepting submissions in unix',
-      min: parseInt((Date.now() / 1000).toFixed(2)),
     })
   ).deadline;
-  const space = (
+  deadline = Number(deadline);
+  console.log(deadline, parseInt((Date.now() / 1000).toFixed(2)));
+  while (deadline < parseInt((Date.now() / 1000).toFixed(2))) {
+    console.error('The deadline cannot be of a past date');
+    deadline = (
+      await prompts({
+        type: 'number',
+        name: 'deadline',
+        message: 'Enter the deadline for task accepting submissions in unix',
+      })
+    ).deadline;
+  }
+  let space = (
     await prompts({
       type: 'number',
       name: 'space',
       message: 'Enter the space, you want to allocate for task account (in MBs)',
-      min: 2,
     })
   ).space;
+  while (space < 3) {
+    console.error('Space cannot be less than 3 mb');
+    space = (
+      await prompts({
+        type: 'number',
+        name: 'space',
+        message: 'Enter the space, you want to allocate for task account (in MBs)',
+      })
+    ).space;
+  }
   return {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, deadline, space};
 }
 
@@ -241,7 +294,7 @@ async function takeInputForWhitelisting() {
       message: 'Enter the path to taskOwnerAddress wallet',
     })
   ).taskOwnerAddress;
-  return {taskOwnerAddress,taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return {taskOwnerAddress, taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 async function takeInputForSetActive() {
   const taskStateInfoAddress = (
@@ -257,12 +310,12 @@ async function takeInputForSetActive() {
       name: 'isActive',
       message: 'Do you want to set the task to Active or Inactive?',
       choices: [
-        { title: 'Active', description: 'Set the task active', value: '#00ff00'},
-        { title: 'Inactive', description: 'Deactivate the task', value: '#ff0000' }
-      ]
+        {title: 'Active', description: 'Set the task active', value: '#00ff00'},
+        {title: 'Inactive', description: 'Deactivate the task', value: '#ff0000'},
+      ],
     })
   ).isActive;
-  return {isActive:isActive=="Active",taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return {isActive: isActive == 'Active', taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 async function takeInputForPayout() {
   const taskStateInfoAddress = (
@@ -289,7 +342,7 @@ async function takeInputForClaimReward() {
       message: 'Enter the stakePotAccount address',
     })
   ).stakePotAccount;
-  return {stakePotAccount: new PublicKey(stakePotAccount),taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return {stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 async function takeInputForFundTask() {
   const taskStateInfoAddress = (
@@ -306,7 +359,7 @@ async function takeInputForFundTask() {
       message: 'Enter the stakePotAccount address',
     })
   ).stakePotAccount;
-  return {stakePotAccount: new PublicKey(stakePotAccount),taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return {stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 main().then(
   () => process.exit(),
