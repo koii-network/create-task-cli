@@ -124,6 +124,7 @@ async function main() {
     case 'set-active': {
       console.log('Calling SetActive');
       const {isActive, taskStateInfoAddress} = await takeInputForSetActive();
+      console.log("ISACTIVE",isActive)
       await SetActive(payerWallet, taskStateInfoAddress, isActive);
       break;
     }
@@ -309,8 +310,8 @@ async function takeInputForSetActive() {
       name: 'isActive',
       message: 'Do you want to set the task to Active or Inactive?',
       choices: [
-        {title: 'Active', description: 'Set the task active', value: '#00ff00'},
-        {title: 'Inactive', description: 'Deactivate the task', value: '#ff0000'},
+        {title: 'Active', description: 'Set the task active', value: 'Active'},
+        {title: 'Inactive', description: 'Deactivate the task', value: 'Inactive'},
       ],
     })
   ).isActive;
