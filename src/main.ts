@@ -124,7 +124,6 @@ async function main() {
     case 'set-active': {
       console.log('Calling SetActive');
       const {isActive, taskStateInfoAddress} = await takeInputForSetActive();
-      console.log("ISACTIVE",isActive)
       await SetActive(payerWallet, taskStateInfoAddress, isActive);
       break;
     }
