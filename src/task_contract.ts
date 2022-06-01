@@ -469,7 +469,8 @@ export async function Payout(payerWallet: Keypair, taskStateInfoAddress: PublicK
 export async function ClaimReward(
   payerWallet: Keypair,
   taskStateInfoAddress: PublicKey,
-  stakePotAccount: PublicKey
+  stakePotAccount: PublicKey,
+  beneficiaryAccount: PublicKey
 ): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.ClaimReward, {});
   const instruction = new TransactionInstruction({
@@ -477,6 +478,7 @@ export async function ClaimReward(
       {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
       {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
       {pubkey: stakePotAccount, isSigner: false, isWritable: true},
+      {pubkey: beneficiaryAccount, isSigner: false, isWritable: true},
     ],
     programId,
     data: data,
