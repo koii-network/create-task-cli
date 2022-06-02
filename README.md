@@ -1,5 +1,7 @@
 # CREATE TASK CLI
 
+![alt text](image.png "Task Contract Flow")
+
 This utility CLI allows to create tasks on k2 native task contract. Simplifying the process of going through the code to create the tasks. You just need the executable file deployed on arweave and a wallet to fund the task and you should be able to create a task. The functionality of this CLI includes the following:
 
 1. **Create a new task:** As name suggests this option allows you to create new task, once you select this option you will be asked for all necessary inputs required to create a new task.
