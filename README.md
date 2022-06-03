@@ -19,4 +19,23 @@ A KOII task created will be visible to millions of KOII nodes running. They will
 
 ## Steps to create a new task
 
-1. First of all you will need to create a executable(js file containing core logic). This executable will be responsible for performing the respective task, submitting the result to the chain (`SubmitTask`) and an audit function responsible for verifying the submissions of other nodes. [Example Here](https://github.com/koii-network/k2-node/blob/main/executables/rxFqHWJdej89Z-QchR_yF8jNpQMOD0l6-dj0CgAUqIg.js)
+1. First of all you will need to create a executable (javascript file containing core logic). This executable will be responsible for performing the respective task, submitting the result to the chain (`SubmitTask`) and an audit function responsible for verifying the submissions of other nodes and submitting vote to the chain verifying their submissions (`Vote`). [Example Here](https://github.com/koii-network/k2-node/blob/raj-test/executables/cjnebwkjvbwjkbwvjkvbkbvhvbb.js)
+
+2. Second step would be to upload this executable on the Arweave and in return you will get the tx id which will be point to that js file. You will need this transaction id when creating the task. 
+<strong>NOTE:</strong> When running the task-node in development mode, the task-node will try to find the file in executables folder with the same name (tx id) you put when creating the contract. So, you don't have to deploy your file on arweave again and again to test.
+
+3. The third step would be running the test-validator (k2 local testnet). [Refer here](https://github.com/koii-network/k2/blob/dev/README.md#running-a-test-validator)
+
+4. Fourth step would be creating the actual contract instance on the task-contract using the cli as referred on the top (`Create a new task`). Once the task is created you will need to mark the task as active (`Mark task as active`) and whitelist the task (`Whitelist the task`) as referred above. In actual production environment the whitelisting will be done by the KOII team. But currently you will need access to one secret key to whitelist the task (Can be asked by any KOII team member).
+ 
+5. Once you have the task created, you should be able to see your task once you run the task-node. Then you can specify the id of your task in the environment variable or manually select the task in the prompt.
+
+6. Your task should submit the results to the chain.
+
+7. Once submission period is over you can change the task to voting mode (`Set task to voting`) as referred above.
+
+8. Once the task is set to voting the executable which was continuously checking the status of the task will start submitting votes for the other submissions.
+
+9. Once the voting period is over the task owner will trigger the payout. (`Trigger payout`) which will update the balance of the submitter and voters on the basis of the correctness of their submissions and votes.
+
+10. The submitters and voters can call (`Claim reward`) to get the rewarded KOII to their respective wallet addresses.
