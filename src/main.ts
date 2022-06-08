@@ -135,8 +135,8 @@ async function main() {
     }
     case 'claim-reward': {
       console.log('Calling ClaimReward');
-      const {beneficiaryAccount, stakePotAccount, taskStateInfoAddress} = await takeInputForClaimReward();
-      await ClaimReward(payerWallet, taskStateInfoAddress, stakePotAccount, beneficiaryAccount);
+      const {beneficiaryAccount, stakePotAccount, taskStateInfoAddress, claimerKeypair} = await takeInputForClaimReward();
+      await ClaimReward(payerWallet, taskStateInfoAddress, stakePotAccount, beneficiaryAccount, claimerKeypair);
       break;
     }
     case 'fund-task':
@@ -348,7 +348,14 @@ async function takeInputForClaimReward() {
       message: 'Enter the beneficiaryAccount address (Address that the funds will be transferred to)',
     })
   ).beneficiaryAccount;
-  return {beneficiaryAccount:new PublicKey(beneficiaryAccount),stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  const claimerKeypair = (
+    await prompts({
+      type: 'text',
+      name: 'claimerKeypair',
+      message: 'Enter the path to Claimer wallet',
+    })
+  ).claimerKeypair;
+  return {claimerKeypair,beneficiaryAccount:new PublicKey(beneficiaryAccount),stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 async function takeInputForFundTask() {
   const taskStateInfoAddress = (

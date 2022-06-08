@@ -470,20 +470,22 @@ export async function ClaimReward(
   payerWallet: Keypair,
   taskStateInfoAddress: PublicKey,
   stakePotAccount: PublicKey,
-  beneficiaryAccount: PublicKey
+  beneficiaryAccount: PublicKey,
+  claimerKeypairPath: string,
 ): Promise<void> {
+  const claimerKeypair = await createKeypairFromFile(claimerKeypairPath);
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.ClaimReward, {});
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
-      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
+      {pubkey: claimerKeypair.publicKey, isSigner: true, isWritable: true},
       {pubkey: stakePotAccount, isSigner: false, isWritable: true},
       {pubkey: beneficiaryAccount, isSigner: false, isWritable: true},
     ],
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet,claimerKeypair]);
 }
 
 export async function FundTask(
