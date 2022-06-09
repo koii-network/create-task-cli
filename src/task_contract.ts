@@ -492,7 +492,7 @@ export async function FundTask(
   payerWallet: Keypair,
   taskStateInfoAddress: PublicKey,
   stakePotAccount: PublicKey,
-  amount
+  amount: number
 ): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
     amount,
