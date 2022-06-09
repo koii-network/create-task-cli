@@ -141,8 +141,8 @@ async function main() {
     }
     case 'fund-task':
       console.log('Calling FundTask');
-      const {stakePotAccount, taskStateInfoAddress} = await takeInputForFundTask();
-      await FundTask(payerWallet, taskStateInfoAddress, stakePotAccount);
+      const {stakePotAccount, taskStateInfoAddress, amount} = await takeInputForFundTask();
+      await FundTask(payerWallet, taskStateInfoAddress, stakePotAccount, amount);
       break;
     default:
       console.error('Invalid option selected');
@@ -372,7 +372,14 @@ async function takeInputForFundTask() {
       message: 'Enter the stakePotAccount address',
     })
   ).stakePotAccount;
-  return {stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  const amount = (
+    await prompts({
+      type: 'text',
+      name: 'amount',
+      message: 'Enter the amount(in KOII) to fund',
+    })
+  ).amount;
+  return {amount:amount*LAMPORTS_PER_SOL, stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 main().then(
   () => process.exit(),

@@ -491,10 +491,11 @@ export async function ClaimReward(
 export async function FundTask(
   payerWallet: Keypair,
   taskStateInfoAddress: PublicKey,
-  stakePotAccount: PublicKey
+  stakePotAccount: PublicKey,
+  amount
 ): Promise<void> {
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
-    amount: 100000,
+    amount,
   });
   let funderKeypair = Keypair.generate();
   console.log('Making new account', funderKeypair.publicKey.toBase58());
@@ -503,7 +504,7 @@ export async function FundTask(
     SystemProgram.createAccount({
       fromPubkey: payerWallet.publicKey,
       newAccountPubkey: funderKeypair.publicKey,
-      lamports: 100000 + (await connection.getMinimumBalanceForRentExemption(100)) + 1000, //adding 1000 extra lamports for padding
+      lamports: amount + (await connection.getMinimumBalanceForRentExemption(100)) + 1000, //adding 1000 extra lamports for padding
       space: 100,
       programId: programId,
     })
