@@ -17,6 +17,9 @@ import {
 import prompts from 'prompts';
 import {Keypair, PublicKey, LAMPORTS_PER_SOL} from '@_koi/web3.js';
 import fs from 'fs';
+import { config } from 'dotenv';
+
+config();
 
 async function main() {
   let payerWallet: Keypair;
