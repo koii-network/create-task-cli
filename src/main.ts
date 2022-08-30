@@ -108,8 +108,9 @@ async function main() {
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
       fs.writeFileSync('stake_pot_account.json', JSON.stringify(Array.from(stake_pot_account.secretKey)));
-      console.log('Task State Info Pubkey:', taskStateInfoKeypair.publicKey.toBase58());
+      console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
       console.log('Stake Pot Account Pubkey:', stake_pot_account.publicKey.toBase58());
+      console.log("Note: Task Id is basically the public key of taskStateInfoKeypair.json")
       break;
     }
     case 'set-task-to-voting': {
@@ -119,9 +120,9 @@ async function main() {
       break;
     }
     case 'whitelisting': {
-      const {taskOwnerAddress, taskStateInfoAddress} = await takeInputForWhitelisting();
+      const {programOwnerAddress, taskStateInfoAddress} = await takeInputForWhitelisting();
       console.log('Calling Whitelist');
-      await Whitelist(payerWallet, taskStateInfoAddress, taskOwnerAddress);
+      await Whitelist(payerWallet, taskStateInfoAddress, programOwnerAddress);
       break;
     }
     case 'set-active': {
@@ -268,7 +269,7 @@ async function takeInputForSetTaskToVoting() {
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task account address',
+      message: 'Enter the task id',
     })
   ).taskStateInfoAddress;
   const deadline = (
@@ -286,24 +287,24 @@ async function takeInputForWhitelisting() {
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task account address',
+      message: 'Enter the task id',
     })
   ).taskStateInfoAddress;
-  const taskOwnerAddress = (
+  const programOwnerAddress = (
     await prompts({
       type: 'text',
-      name: 'taskOwnerAddress',
-      message: 'Enter the path to taskOwnerAddress wallet',
+      name: 'programOwnerAddress',
+      message: 'Enter the path to program owner wallet (Only available to KOII team)',
     })
-  ).taskOwnerAddress;
-  return {taskOwnerAddress, taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  ).programOwnerAddress;
+  return {programOwnerAddress, taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
 }
 async function takeInputForSetActive() {
   const taskStateInfoAddress = (
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task account address',
+      message: 'Enter the task id',
     })
   ).taskStateInfoAddress;
   const isActive = (
@@ -324,7 +325,7 @@ async function takeInputForPayout() {
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task account address',
+      message: 'Enter the task id',
     })
   ).taskStateInfoAddress;
   return {taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
@@ -334,7 +335,7 @@ async function takeInputForClaimReward() {
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task account address',
+      message: 'Enter the task id',
     })
   ).taskStateInfoAddress;
   const stakePotAccount = (
@@ -365,7 +366,7 @@ async function takeInputForFundTask() {
     await prompts({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task account address',
+      message: 'Enter the task id',
     })
   ).taskStateInfoAddress;
   const stakePotAccount = (
