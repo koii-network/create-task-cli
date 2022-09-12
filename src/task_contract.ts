@@ -218,7 +218,7 @@ export async function checkProgram(): Promise<void> {
   } catch (err) {
     const errMsg = (err as Error).message;
     throw new Error(
-      `Failed to read program keypair at due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
+      `Failed to read program keypair at due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``  // There's a error msg said solana program, should it change to Koii program
     );
   }
 
@@ -226,7 +226,7 @@ export async function checkProgram(): Promise<void> {
   const programInfo = await connection.getAccountInfo(programId);
   if (programInfo === null) {
     if (fs.existsSync(PROGRAM_SO_PATH)) {
-      throw new Error('Program needs to be deployed with `solana program deploy dist/program/helloworld.so`');
+      throw new Error('Program needs to be deployed with `solana program deploy dist/program/helloworld.so`'); //Also here
     } else {
       throw new Error('Program needs to be built and deployed');
     }
