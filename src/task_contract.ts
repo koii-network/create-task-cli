@@ -218,7 +218,7 @@ export async function checkProgram(): Promise<void> {
   } catch (err) {
     const errMsg = (err as Error).message;
     throw new Error(
-      `Failed to read program keypair at due to error: ${errMsg}. The task executable need to be uploaded to arweave. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
+      `Failed to read program keypair at due to error: ${errMsg}. The task executable need to be uploaded. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
     );
   }
 
@@ -228,7 +228,7 @@ export async function checkProgram(): Promise<void> {
     if (fs.existsSync(PROGRAM_SO_PATH)) {
       throw new Error('Program needs to be deployed with `solana program deploy dist/program/helloworld.so`');
     } else {
-      throw new Error('Program needs to be built and deployed to arweave');
+      throw new Error('Program needs to be built and deployed');
     }
   } else if (!programInfo.executable) {
     throw new Error(`Program is not executable`);
