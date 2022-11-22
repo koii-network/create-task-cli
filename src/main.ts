@@ -177,7 +177,7 @@ async function takeInputForCreateTask() {
     await prompts({
       type: 'text',
       name: 'task_audit_program',
-      message: 'Enter Arweave id of the executable program',
+      message: 'Enter Koii task id of the executable program',
     })
   ).task_audit_program;
   while (task_audit_program.length > 64) {

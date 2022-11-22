@@ -218,7 +218,7 @@ export async function checkProgram(): Promise<void> {
   } catch (err) {
     const errMsg = (err as Error).message;
     throw new Error(
-      `Failed to read program keypair at due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
+      `Failed to read program keypair at due to error: ${errMsg}. The task executable need to be uploaded. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
     );
   }
 
