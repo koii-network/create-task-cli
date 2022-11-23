@@ -159,6 +159,17 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
     index: 9,
     layout: BufferLayout.struct([BufferLayout.u8('instruction'), BufferLayout.ns64('amount')]),
   },
+  Stake: {
+    index: 10,
+    layout: BufferLayout.struct([
+      BufferLayout.u8("instruction"),
+      BufferLayout.ns64("stakeAmount"),
+    ]),
+  },
+  Withdraw: {
+    index: 11,
+    layout: BufferLayout.struct([BufferLayout.u8("instruction")]),
+  }
 });
 
 /**
@@ -522,4 +533,26 @@ export async function FundTask(
     data: data,
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, funderKeypair]);
+}
+
+export async function Withdraw(
+  payerWallet: Keypair,
+  taskStateInfoAddress: PublicKey,
+  submitterKeypair: Keypair
+): Promise<void> {
+  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Withdraw, {});
+
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
+      { pubkey: submitterKeypair.publicKey, isSigner: true, isWritable: true },
+    ],
+    programId,
+    data: data,
+  });
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payerWallet, submitterKeypair]
+  );
 }
