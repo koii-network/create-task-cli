@@ -107,10 +107,14 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
     layout: BufferLayout.struct([
       BufferLayout.u8('instruction'),
       BufferLayout.blob(24, 'task_name'),
+      BufferLayout.blob(64, 'task_description'),
       BufferLayout.blob(64, 'task_audit_program'),
+      BufferLayout.blob(64, 'task_executable_network'),
       BufferLayout.ns64('total_bounty_amount'),
       BufferLayout.ns64('bounty_amount_per_round'),
-      BufferLayout.ns64('deadline'),
+      BufferLayout.ns64('round_time'),
+      BufferLayout.ns64('audit_window'),
+      BufferLayout.ns64('submission_window'),
 
       // publicKey('stake_pot_account')
     ]),
@@ -265,21 +269,34 @@ export async function createTask(
   task_audit_program: string,
   total_bounty_amount: number,
   bounty_amount_per_round: number,
-  deadline: number,
-  space: number
+  space: number,
+  task_description: string,
+  task_executable_network: string,
+  round_time: number,
+  audit_window: number,
+  submission_window: number
 ): Promise<any> {
+  // Checks
+  if (round_time < audit_window + submission_window)
+    throw new Error('Round time cannot be less than audit_window + submission_window');
+  if (task_description.length > 64) throw new Error('task_description cannot be greater than 64 characters');
+
   let createTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
+    task_description: new TextEncoder().encode(padStringWithSpaces(task_description, 64)),
     task_audit_program: new TextEncoder().encode(padStringWithSpaces(task_audit_program, 64)), //must be 64 chracters long
+    task_executable_network: new TextEncoder().encode(padStringWithSpaces(task_executable_network, 64)), //must be 64 chracters long
     total_bounty_amount: total_bounty_amount * LAMPORTS_PER_SOL,
     bounty_amount_per_round: bounty_amount_per_round * LAMPORTS_PER_SOL,
-    deadline: deadline,
+    round_time: round_time,
+    audit_window: audit_window,
+    submission_window: submission_window,
     rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
     space: space,
   };
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData);
   let taskStateInfoKeypair = Keypair.generate();
-  let stake_pot_account = Keypair.generate();
+  let stake_pot_account_pubkey: PublicKey = getStakePotAccount();
   // STAKE_POT_ACCOUNT = stake_pot_account.publicKey;
 
   const createTaskStateTransaction = new Transaction().add(
@@ -295,7 +312,7 @@ export async function createTask(
   const createStakePotAccTransaction = new Transaction().add(
     SystemProgram.createAccount({
       fromPubkey: payerWallet.publicKey,
-      newAccountPubkey: stake_pot_account.publicKey,
+      newAccountPubkey: stake_pot_account_pubkey,
       lamports: createTaskData.total_bounty_amount + (await connection.getMinimumBalanceForRentExemption(100)) + 10000,
       space: 100,
       programId: programId,
@@ -307,18 +324,14 @@ export async function createTask(
     keys: [
       {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
       {pubkey: taskStateInfoKeypair.publicKey, isSigner: true, isWritable: true},
-      {pubkey: stake_pot_account.publicKey, isSigner: true, isWritable: true},
+      {pubkey: stake_pot_account_pubkey, isSigner: true, isWritable: true},
       {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
     ],
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [
-    payerWallet,
-    taskStateInfoKeypair,
-    stake_pot_account,
-  ]);
-  return {taskStateInfoKeypair, stake_pot_account};
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, taskStateInfoKeypair]);
+  return {taskStateInfoKeypair, stake_pot_account_pubkey};
 }
 async function sleep(ms: any) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -471,7 +484,7 @@ export async function ClaimReward(
   taskStateInfoAddress: PublicKey,
   stakePotAccount: PublicKey,
   beneficiaryAccount: PublicKey,
-  claimerKeypairPath: string,
+  claimerKeypairPath: string
 ): Promise<void> {
   const claimerKeypair = await createKeypairFromFile(claimerKeypairPath);
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.ClaimReward, {});
@@ -485,7 +498,7 @@ export async function ClaimReward(
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet,claimerKeypair]);
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, claimerKeypair]);
 }
 
 export async function FundTask(
@@ -522,4 +535,19 @@ export async function FundTask(
     data: data,
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, funderKeypair]);
+}
+
+function getStakePotAccount(): PublicKey {
+  let pubkey;
+  while (true) {
+    let keypair = new Keypair();
+    let pubkeyString = keypair.publicKey.toBase58();
+    pubkeyString.replace(pubkeyString.substring(0, 15), 'stakepotaccount');
+    console.log('PUBKEY', pubkeyString);
+    pubkey = new PublicKey(pubkeyString);
+    if (PublicKey.isOnCurve(pubkey.toBytes())) {
+      break;
+    }
+  }
+  return pubkey;
 }

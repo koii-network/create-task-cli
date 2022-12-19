@@ -73,7 +73,7 @@ async function main() {
 
   switch (mode) {
     case 'create-task': {
-      const {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, deadline, space} =
+      const {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space} =
         await takeInputForCreateTask();
       let totalAmount =
         LAMPORTS_PER_SOL * total_bounty_amount +
@@ -97,19 +97,22 @@ async function main() {
         process.exit(0);
       }
       console.log('Calling Create Task');
-      let {taskStateInfoKeypair, stake_pot_account} = await createTask(
+      let {taskStateInfoKeypair, stake_pot_account_pubkey} = await createTask(
         payerWallet,
         task_name,
         task_audit_program,
         total_bounty_amount,
         bounty_amount_per_round,
-        deadline,
-        space
+        space,
+        "TEST TASK DESCRIPTION",
+        "ARWEAVE",
+        30,
+        10,
+        10
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
-      fs.writeFileSync('stake_pot_account.json', JSON.stringify(Array.from(stake_pot_account.secretKey)));
       console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
-      console.log('Stake Pot Account Pubkey:', stake_pot_account.publicKey.toBase58());
+      console.log('Stake Pot Account Pubkey:', stake_pot_account_pubkey.toBase58());
       console.log("Note: Task Id is basically the public key of taskStateInfoKeypair.json")
       break;
     }
@@ -226,24 +229,7 @@ async function takeInputForCreateTask() {
       })
     ).bounty_amount_per_round;
   }
-  let deadline = (
-    await prompts({
-      type: 'text',
-      name: 'deadline',
-      message: 'Enter the deadline for task accepting submissions in unix',
-    })
-  ).deadline;
-  deadline = Number(deadline);
-  while (isNaN(deadline) || deadline < parseInt((Date.now() / 1000).toFixed(2))) {
-    console.error('The deadline cannot be of a past date or non unix');
-    deadline = (
-      await prompts({
-        type: 'number',
-        name: 'deadline',
-        message: 'Enter the deadline for task accepting submissions in unix',
-      })
-    ).deadline;
-  }
+
   let space = (
     await prompts({
       type: 'number',
@@ -261,7 +247,7 @@ async function takeInputForCreateTask() {
       })
     ).space;
   }
-  return {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, deadline, space};
+  return {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space};
 }
 
 async function takeInputForSetTaskToVoting() {
