@@ -75,6 +75,7 @@ async function main() {
     case 'create-task': {
       const {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space} =
         await takeInputForCreateTask();
+      // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
       let totalAmount =
         LAMPORTS_PER_SOL * total_bounty_amount +
         (await connection.getMinimumBalanceForRentExemption(100)) +
@@ -97,6 +98,7 @@ async function main() {
         process.exit(0);
       }
       console.log('Calling Create Task');
+      // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
       let {taskStateInfoKeypair, stake_pot_account_pubkey} = await createTask(
         payerWallet,
         task_name,

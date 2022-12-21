@@ -297,7 +297,6 @@ export async function createTask(
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData);
   let taskStateInfoKeypair = Keypair.generate();
   let stake_pot_account_pubkey: PublicKey = getStakePotAccount();
-  // STAKE_POT_ACCOUNT = stake_pot_account.publicKey;
 
   const createTaskStateTransaction = new Transaction().add(
     SystemProgram.createAccount({
@@ -309,23 +308,12 @@ export async function createTask(
     })
   );
   await sendAndConfirmTransaction(connection, createTaskStateTransaction, [payerWallet, taskStateInfoKeypair]);
-  const createStakePotAccTransaction = new Transaction().add(
-    SystemProgram.createAccount({
-      fromPubkey: payerWallet.publicKey,
-      newAccountPubkey: stake_pot_account_pubkey,
-      lamports: createTaskData.total_bounty_amount + (await connection.getMinimumBalanceForRentExemption(100)) + 10000,
-      space: 100,
-      programId: programId,
-    })
-  );
-  await sendAndConfirmTransaction(connection, createStakePotAccTransaction, [payerWallet, stake_pot_account]);
-  await sleep(10000);
   const instruction = new TransactionInstruction({
     keys: [
       {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
       {pubkey: taskStateInfoKeypair.publicKey, isSigner: true, isWritable: true},
-      {pubkey: stake_pot_account_pubkey, isSigner: true, isWritable: true},
-      {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
+      {pubkey: stake_pot_account_pubkey, isSigner: false, isWritable: true},
+      {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
     ],
     programId,
     data: data,
@@ -540,14 +528,15 @@ export async function FundTask(
 function getStakePotAccount(): PublicKey {
   let pubkey;
   while (true) {
-    let keypair = new Keypair();
-    let pubkeyString = keypair.publicKey.toBase58();
-    pubkeyString.replace(pubkeyString.substring(0, 15), 'stakepotaccount');
-    console.log('PUBKEY', pubkeyString);
-    pubkey = new PublicKey(pubkeyString);
-    if (PublicKey.isOnCurve(pubkey.toBytes())) {
-      break;
-    }
+    try {
+      let keypair = new Keypair();
+      let pubkeyString = keypair.publicKey.toBase58();
+      pubkeyString = pubkeyString.replace(pubkeyString.substring(0, 15), 'stakepotaccount');
+      pubkey = new PublicKey(pubkeyString);
+      if (PublicKey.isOnCurve(pubkey.toBytes())) {
+        break;
+      }
+    } catch (e) {}
   }
   return pubkey;
 }
