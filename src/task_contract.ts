@@ -124,44 +124,68 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
     layout: BufferLayout.struct([
       BufferLayout.u8('instruction'),
       BufferLayout.blob(512, 'submission'),
-      BufferLayout.ns64('stakeAmount'),
+      BufferLayout.ns64('round'),
     ]),
   },
-  SetTaskToVoting: {
+  AuditSubmissions: {
     index: 2,
-    layout: BufferLayout.struct([BufferLayout.u8('instruction'), BufferLayout.ns64('deadline')]),
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      BufferLayout.ns64('is_valid'),
+      BufferLayout.ns64('round'),
+    ]),
   },
-  Vote: {
+  AuditDistribution: {
     index: 3,
     layout: BufferLayout.struct([
       BufferLayout.u8('instruction'),
       BufferLayout.ns64('is_valid'),
-      BufferLayout.ns64('stake_amount'),
+      BufferLayout.ns64('round'),
     ]),
   },
   Payout: {
     index: 4,
-    layout: BufferLayout.struct([BufferLayout.u8('instruction')]),
-  },
-  WithdrawSubmission: {
-    index: 5,
-    layout: BufferLayout.struct([BufferLayout.u8('instruction')]),
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      BufferLayout.ns64('round')
+    ]),
   },
   Whitelist: {
-    index: 6,
-    layout: BufferLayout.struct([BufferLayout.u8('instruction'), BufferLayout.ns64('isWhitelisted')]),
+    index: 5,
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'), 
+      BufferLayout.ns64('isWhitelisted')
+  ]),
   },
   SetActive: {
-    index: 7,
-    layout: BufferLayout.struct([BufferLayout.u8('instruction'), BufferLayout.ns64('isActive')]),
+    index: 6,
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'), 
+    BufferLayout.ns64('isActive')]),
   },
   ClaimReward: {
-    index: 8,
+    index: 7,
     layout: BufferLayout.struct([BufferLayout.u8('instruction')]),
   },
   FundTask: {
+    index: 8,
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'), 
+      BufferLayout.ns64('amount')
+    ]),
+  },
+  Stake: {
     index: 9,
-    layout: BufferLayout.struct([BufferLayout.u8('instruction'), BufferLayout.ns64('amount')]),
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'), 
+      BufferLayout.ns64('stakeAmount')
+  ]),
+  },
+  Withdraw: { //WithDraw Stake
+    index: 10,
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction')
+  ]),
   },
 });
 
