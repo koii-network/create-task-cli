@@ -190,8 +190,9 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
   UploadDistributionList: { //Upload Distribution complex flow, seperate script
     index: 11,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction')
-  ]),
+      BufferLayout.u8('instruction'),
+      BufferLayout.blob(512, "instruction_data"),
+    ])
   },
   SubmitDistributionList: { //WithDraw Stake
     index: 12,
