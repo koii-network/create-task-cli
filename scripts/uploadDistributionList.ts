@@ -1,7 +1,6 @@
 import {
   Keypair,
   LAMPORTS_PER_SOL,
-  AttentionProgram,
   TransactionInstruction,
   Transaction,
   PublicKey,
@@ -165,7 +164,6 @@ export async function uploadDistributionList(
   return distributionListAccount.publicKey;
 }
 
-// The function to send Account containing recipeints data to attention program
 
 
 function makeChunks(data: Buffer, size: number): any[] {
