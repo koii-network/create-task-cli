@@ -9,7 +9,6 @@ import {
 } from "@_koi/web3.js";
 import * as BufferLayout from "buffer-layout";
 
-import { getAttentionAccount } from "./accountManagement";
 
 // BELOW ALL CODE FOR SUBMITTING DATA TO K2 CHAIN
 
@@ -45,8 +44,8 @@ export async function uploadDistributionList(
 
   console.log("Data will be uploaded over", chunks.length, "calls");
 
-  const { feeCalculator } = await connection.getRecentBlockhash();
-  const costOfAccountRent = await connection.getMinimumBalanceForRentExemption(
+  const { feeCalculator } = await this.connection.getRecentBlockhash();
+  const costOfAccountRent = await this.connection.getMinimumBalanceForRentExemption(
     numBytes
   );
 
@@ -68,7 +67,7 @@ export async function uploadDistributionList(
     ")"
   );
 
-  let bal = await connection.getBalance(mainSystemAccountPubkey);
+  let bal = await this.connection.getBalance(mainSystemAccountPubkey);
 
   if (bal < total) {
     console.error(
@@ -103,7 +102,7 @@ export async function uploadDistributionList(
   
   await sleep(20000); //To make sure the above account is created before uploading data
 
-  const balBeforeUpload = await connection.getBalance(mainSystemAccountPubkey);
+  const balBeforeUpload = await this.connection.getBalance(mainSystemAccountPubkey);
 
   for (let i = 0; i < chunks.length; i++) {
     const data = chunks[i];
@@ -131,7 +130,7 @@ export async function uploadDistributionList(
     );
     // console.log({ DATALENGTG: encodedTransactionInstruction.length });
 
-    const balBeforeUploadChunk = await connection.getBalance(
+    const balBeforeUploadChunk = await this.connection.getBalance(
       mainSystemAccountPubkey
     );
 
@@ -152,14 +151,13 @@ export async function uploadDistributionList(
     await sleep(100);
   }
 
-  const balAfterUpload = await connection.getBalance(mainSystemAccountPubkey);
+  const balAfterUpload = await this.connection.getBalance(mainSystemAccountPubkey);
   const costOfUpload = balBeforeUpload - balAfterUpload;
-  const totalCost = costAccount + costOfUpload;
   console.log(
     "Total cost was",
-    totalCost,
+    costOfUpload,
     "lamports (",
-    totalCost / LAMPORTS_PER_SOL,
+    costOfUpload / LAMPORTS_PER_SOL,
     ")"
   );
   // TODO: Verify Retry Failed Transactions (logic changed)
@@ -168,41 +166,6 @@ export async function uploadDistributionList(
 }
 
 // The function to send Account containing recipeints data to attention program
-
-export function calculateDataChunks(data: any): any[] {
-  let PADDED_MAX_DATA_ACCOUNT_SIZE = MAX_DATA_ACCOUNT_SIZE - 1000;
-  let chunks = [];
-  let json = {};
-  let i = 0;
-  for (let e of Object.keys(data)) {
-    if (
-      JSON.stringify(json).length + JSON.stringify(data[e]).length <
-      PADDED_MAX_DATA_ACCOUNT_SIZE
-    ) {
-      json[e] = data[e];
-    } else {
-      for (let x of data[e]) {
-        if (
-          JSON.stringify(json).length +
-            JSON.stringify(e).length +
-            JSON.stringify(x).length <
-          PADDED_MAX_DATA_ACCOUNT_SIZE
-        ) {
-          if (!json[e] || json[e].length <= 0) {
-            json[e] = [x];
-          } else {
-            json[e].push(x);
-          }
-        } else {
-          chunks.push(json);
-          json = {};
-        }
-      }
-    }
-  }
-  if (Object.keys(json).length > 0) chunks.push(json);
-  return chunks;
-}
 
 
 function makeChunks(data: Buffer, size: number): any[] {
@@ -234,3 +197,8 @@ const TASK_INSTRUCTION_LAYOUTS = Object.freeze({
     ]),
   },
 });
+
+async function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  
