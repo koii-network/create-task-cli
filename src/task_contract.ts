@@ -187,6 +187,19 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       BufferLayout.u8('instruction')
   ]),
   },
+  UploadDistributionList: { //Upload Distribution complex flow, seperate script
+    index: 11,
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction')
+  ]),
+  },
+  SubmitDistributionList: { //WithDraw Stake
+    index: 12,
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      BufferLayout.ns64('round')
+  ]),
+  },
 });
 
 /**
