@@ -115,6 +115,7 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       BufferLayout.ns64('round_time'),
       BufferLayout.ns64('audit_window'),
       BufferLayout.ns64('submission_window'),
+      BufferLayout.ns64('minimum_stake_amount'),
 
       // publicKey('stake_pot_account')
     ]),
@@ -312,7 +313,8 @@ export async function createTask(
   task_executable_network: string,
   round_time: number,
   audit_window: number,
-  submission_window: number
+  submission_window: number,
+  minimum_stake_amount: number
 ): Promise<any> {
   // Checks
   if (round_time < audit_window + submission_window)
@@ -331,6 +333,7 @@ export async function createTask(
     submission_window: submission_window,
     rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
     space: space,
+    minimum_stake_amount:minimum_stake_amount
   };
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData);
   let taskStateInfoKeypair = Keypair.generate();

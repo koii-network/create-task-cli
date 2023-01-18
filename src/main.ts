@@ -110,7 +110,8 @@ async function main() {
         "ARWEAVE",
         30,
         10,
-        10
+        10,
+        5
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
       console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
