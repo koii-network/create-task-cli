@@ -56,7 +56,7 @@ const toBuffer = (arr: any) => {
     return Buffer.from(arr);
   }
 };
-import {getPayer, getRpcUrl, createKeypairFromFile} from './utils';
+import { getPayer, getRpcUrl, createKeypairFromFile } from './utils';
 
 const SYSTEM_PUBLIC_KEY = new PublicKey('11111111111111111111111111111111');
 const CLOCK_PUBLIC_KEY = new PublicKey('SysvarC1ock11111111111111111111111111111111');
@@ -116,6 +116,8 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       BufferLayout.ns64('audit_window'),
       BufferLayout.ns64('submission_window'),
       BufferLayout.ns64('minimum_stake_amount'),
+      BufferLayout.blob(64,'task_metadata'),
+      BufferLayout.blob(64,"local_vars")
 
       // publicKey('stake_pot_account')
     ]),
@@ -154,15 +156,15 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
   Whitelist: {
     index: 5,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'), 
+      BufferLayout.u8('instruction'),
       BufferLayout.ns64('isWhitelisted')
-  ]),
+    ]),
   },
   SetActive: {
     index: 6,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'), 
-    BufferLayout.ns64('isActive')]),
+      BufferLayout.u8('instruction'),
+      BufferLayout.ns64('isActive')]),
   },
   ClaimReward: {
     index: 7,
@@ -171,22 +173,22 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
   FundTask: {
     index: 8,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'), 
+      BufferLayout.u8('instruction'),
       BufferLayout.ns64('amount')
     ]),
   },
   Stake: {
     index: 9,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'), 
+      BufferLayout.u8('instruction'),
       BufferLayout.ns64('stakeAmount')
-  ]),
+    ]),
   },
   Withdraw: { //WithDraw Stake
     index: 10,
     layout: BufferLayout.struct([
       BufferLayout.u8('instruction')
-  ]),
+    ]),
   },
   UploadDistributionList: { //Upload Distribution complex flow, seperate script
     index: 11,
@@ -200,7 +202,7 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
     layout: BufferLayout.struct([
       BufferLayout.u8('instruction'),
       BufferLayout.ns64('round')
-  ]),
+    ]),
   },
 });
 
@@ -221,7 +223,7 @@ export async function establishConnection(): Promise<Connection> {
 export async function establishPayer(payerWallet: Keypair): Promise<void> {
   let fees = 0;
   if (!payerWallet) {
-    const {feeCalculator} = await connection.getRecentBlockhash();
+    const { feeCalculator } = await connection.getRecentBlockhash();
 
     // Calculate the cost to fund the greeter account
     fees += await connection.getMinimumBalanceForRentExemption(1000);
@@ -281,7 +283,7 @@ export async function checkProgram(): Promise<void> {
 function encodeData(type: any, fields: any) {
   const allocLength = type.layout.span >= 0 ? type.layout.span : getAlloc(type, fields);
   const data = Buffer.alloc(allocLength);
-  const layoutFields = Object.assign({instruction: type.index}, fields);
+  const layoutFields = Object.assign({ instruction: type.index }, fields);
   type.layout.encode(layoutFields, data);
   return data;
 }
@@ -314,7 +316,11 @@ export async function createTask(
   round_time: number,
   audit_window: number,
   submission_window: number,
-  minimum_stake_amount: number
+  minimum_stake_amount: number,
+  task_metadata: string,
+  local_vars: string,
+  koii_vars: string
+
 ): Promise<any> {
   // Checks
   if (round_time < audit_window + submission_window)
@@ -333,7 +339,13 @@ export async function createTask(
     submission_window: submission_window,
     rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
     space: space,
-    minimum_stake_amount:minimum_stake_amount
+    minimum_stake_amount: minimum_stake_amount,
+    task_metadata: new TextEncoder().encode(padStringWithSpaces(task_metadata, 64)),
+    local_vars: new TextEncoder().encode(padStringWithSpaces(local_vars, 64))
+    // koii_vars:new TextEncoder().encode(padStringWithSpaces(task_metadata,64))
+
+
+
   };
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData);
   let taskStateInfoKeypair = Keypair.generate();
@@ -348,19 +360,25 @@ export async function createTask(
       programId: programId,
     })
   );
+  let keys = [
+    { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
+    { pubkey: taskStateInfoKeypair.publicKey, isSigner: true, isWritable: true },
+    { pubkey: stake_pot_account_pubkey, isSigner: false, isWritable: true },
+    { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
+  ];
+  if (koii_vars) [
+    keys.push({
+      pubkey: new PublicKey(koii_vars), isSigner: false, isWritable: false
+    })
+  ]
   await sendAndConfirmTransaction(connection, createTaskStateTransaction, [payerWallet, taskStateInfoKeypair]);
   const instruction = new TransactionInstruction({
-    keys: [
-      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
-      {pubkey: taskStateInfoKeypair.publicKey, isSigner: true, isWritable: true},
-      {pubkey: stake_pot_account_pubkey, isSigner: false, isWritable: true},
-      {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
-    ],
+    keys,
     programId,
     data: data,
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, taskStateInfoKeypair]);
-  return {taskStateInfoKeypair, stake_pot_account_pubkey};
+  return { taskStateInfoKeypair, stake_pot_account_pubkey };
 }
 async function sleep(ms: any) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -411,9 +429,9 @@ export async function SetTaskToVoting(
   });
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoKeypair, isSigner: false, isWritable: true},
-      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
-      {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
+      { pubkey: taskStateInfoKeypair, isSigner: false, isWritable: true },
+      { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
     ],
     programId,
     data: data,
@@ -469,8 +487,8 @@ export async function Whitelist(
   });
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
-      {pubkey: programKeypair.publicKey, isSigner: true, isWritable: false},
+      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
+      { pubkey: programKeypair.publicKey, isSigner: true, isWritable: false },
     ],
     programId,
     data: data,
@@ -487,8 +505,8 @@ export async function SetActive(
   });
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
-      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: false},
+      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
+      { pubkey: payerWallet.publicKey, isSigner: true, isWritable: false },
     ],
     programId,
     data: data,
@@ -499,9 +517,9 @@ export async function Payout(payerWallet: Keypair, taskStateInfoAddress: PublicK
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Payout, {});
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
-      {pubkey: payerWallet.publicKey, isSigner: true, isWritable: true},
-      {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
+      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
+      { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
     ],
     programId,
     data: data,
@@ -519,10 +537,10 @@ export async function ClaimReward(
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.ClaimReward, {});
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
-      {pubkey: claimerKeypair.publicKey, isSigner: true, isWritable: true},
-      {pubkey: stakePotAccount, isSigner: false, isWritable: true},
-      {pubkey: beneficiaryAccount, isSigner: false, isWritable: true},
+      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
+      { pubkey: claimerKeypair.publicKey, isSigner: true, isWritable: true },
+      { pubkey: stakePotAccount, isSigner: false, isWritable: true },
+      { pubkey: beneficiaryAccount, isSigner: false, isWritable: true },
     ],
     programId,
     data: data,
@@ -554,11 +572,11 @@ export async function FundTask(
   await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payerWallet, funderKeypair]);
   const instruction = new TransactionInstruction({
     keys: [
-      {pubkey: taskStateInfoAddress, isSigner: false, isWritable: true},
-      {pubkey: funderKeypair.publicKey, isSigner: true, isWritable: true},
-      {pubkey: stakePotAccount, isSigner: false, isWritable: true},
-      {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
-      {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
+      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
+      { pubkey: funderKeypair.publicKey, isSigner: true, isWritable: true },
+      { pubkey: stakePotAccount, isSigner: false, isWritable: true },
+      { pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false },
+      { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
     ],
     programId,
     data: data,
@@ -577,7 +595,7 @@ function getStakePotAccount(): PublicKey {
       if (PublicKey.isOnCurve(pubkey.toBytes())) {
         break;
       }
-    } catch (e) {}
+    } catch (e) { }
   }
   return pubkey;
 }

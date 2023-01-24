@@ -91,6 +91,7 @@ async function main() {
           } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
         })
       ).response;
+    
       if (!response) process.exit(0);
       let lamports = await connection.getBalance(payerWallet.publicKey);
       if (lamports < totalAmount) {
@@ -111,7 +112,10 @@ async function main() {
         30,
         10,
         10,
-        5
+        5,
+        "bafybeihxw26vmga42bqgbdhl3eb6iznywi2grnzqpqizqtqekhouhdevxu",
+        "bafybeihxw26vmga42bqgbdhl3eb6iznywi2grnzqpqizqtqekhouhdevxu",
+        ""
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
       console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
@@ -222,6 +226,13 @@ async function takeInputForCreateTask() {
       // max: total_bounty_amount,
     })
   ).bounty_amount_per_round;
+  let task_metadata= (
+    await prompts({
+      type: 'text',
+      name: 'task_metadata',
+      message: `Enter TaskMetadata CID hosted on ${"IPFS"}.`,
+    })
+  ).task_metadata
   while (bounty_amount_per_round > total_bounty_amount) {
     console.error('The bounty_amount_per_round cannot be greater than total_bounty_amount');
     bounty_amount_per_round = (
