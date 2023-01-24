@@ -73,7 +73,7 @@ async function main() {
 
   switch (mode) {
     case 'create-task': {
-      const {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space} =
+      const {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space,task_metadata,task_locals,koii_vars} =
         await takeInputForCreateTask();
       // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
       let totalAmount =
@@ -113,9 +113,9 @@ async function main() {
         10,
         10,
         5,
-        "bafybeihxw26vmga42bqgbdhl3eb6iznywi2grnzqpqizqtqekhouhdevxu",
-        "bafybeihxw26vmga42bqgbdhl3eb6iznywi2grnzqpqizqtqekhouhdevxu",
-        ""
+        task_metadata,
+        task_locals,
+        koii_vars
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
       console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
@@ -230,9 +230,24 @@ async function takeInputForCreateTask() {
     await prompts({
       type: 'text',
       name: 'task_metadata',
-      message: `Enter TaskMetadata CID hosted on ${"IPFS"}.`,
+      message: `Enter TaskMetadata CID hosted on ${"IPFS"} (Leave empty for None).`,
     })
-  ).task_metadata
+  ).task_metadata;
+  let task_locals= (
+    await prompts({
+      type: 'text',
+      name: 'task_locals',
+      message: `Enter CID for environment variables hosted on ${"IPFS"} (Leave empty for None).`,
+    })
+  ).task_locals;
+  let koii_vars= (
+    await prompts({
+      type: 'text',
+      name: 'koii_vars',
+      message: `Enter PubKey for KOII global vars.(Leave empty for default) `,
+    })
+  ).koii_vars;
+
   while (bounty_amount_per_round > total_bounty_amount) {
     console.error('The bounty_amount_per_round cannot be greater than total_bounty_amount');
     bounty_amount_per_round = (
@@ -261,7 +276,7 @@ async function takeInputForCreateTask() {
       })
     ).space;
   }
-  return {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space};
+  return {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space, task_metadata,task_locals,koii_vars} ;
 }
 
 async function takeInputForSetTaskToVoting() {
