@@ -4,3 +4,4 @@ stake_pot_account.json
 taskStateInfoKeypair.json
 *.json
 .idea
+.env

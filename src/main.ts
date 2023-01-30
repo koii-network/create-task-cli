@@ -75,8 +75,9 @@ async function main() {
 
   switch (mode) {
     case 'create-task': {
-      const {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, deadline, space} =
+      const {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space,task_metadata,task_locals,koii_vars} =
         await takeInputForCreateTask();
+      // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
       let totalAmount =
         LAMPORTS_PER_SOL * total_bounty_amount +
         (await connection.getMinimumBalanceForRentExemption(100)) +
@@ -92,6 +93,7 @@ async function main() {
           } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
         })
       ).response;
+    
       if (!response) process.exit(0);
       let lamports = await connection.getBalance(payerWallet.publicKey);
       if (lamports < totalAmount) {
@@ -99,19 +101,27 @@ async function main() {
         process.exit(0);
       }
       console.log('Calling Create Task');
-      let {taskStateInfoKeypair, stake_pot_account} = await createTask(
+      // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
+      let {taskStateInfoKeypair, stake_pot_account_pubkey} = await createTask(
         payerWallet,
         task_name,
         task_audit_program,
         total_bounty_amount,
         bounty_amount_per_round,
-        deadline,
-        space
+        space,
+        "TEST TASK DESCRIPTION",
+        "ARWEAVE",
+        650,
+        240,
+        240,
+        5000000000,
+        task_metadata,
+        task_locals,
+        koii_vars
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
-      fs.writeFileSync('stake_pot_account.json', JSON.stringify(Array.from(stake_pot_account.secretKey)));
       console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
-      console.log('Stake Pot Account Pubkey:', stake_pot_account.publicKey.toBase58());
+      console.log('Stake Pot Account Pubkey:', stake_pot_account_pubkey.toBase58());
       console.log("Note: Task Id is basically the public key of taskStateInfoKeypair.json")
       break;
     }
@@ -225,6 +235,28 @@ async function takeInputForCreateTask() {
       // max: total_bounty_amount,
     })
   ).bounty_amount_per_round;
+  let task_metadata= (
+    await prompts({
+      type: 'text',
+      name: 'task_metadata',
+      message: `Enter TaskMetadata CID hosted on ${"IPFS"} (Leave empty for None).`,
+    })
+  ).task_metadata;
+  let task_locals= (
+    await prompts({
+      type: 'text',
+      name: 'task_locals',
+      message: `Enter CID for environment variables hosted on ${"IPFS"} (Leave empty for None).`,
+    })
+  ).task_locals;
+  let koii_vars= (
+    await prompts({
+      type: 'text',
+      name: 'koii_vars',
+      message: `Enter PubKey for KOII global vars.(Leave empty for default) `,
+    })
+  ).koii_vars;
+
   while (bounty_amount_per_round > total_bounty_amount) {
     console.error('The bounty_amount_per_round cannot be greater than total_bounty_amount');
     bounty_amount_per_round = (
@@ -235,24 +267,7 @@ async function takeInputForCreateTask() {
       })
     ).bounty_amount_per_round;
   }
-  let deadline = (
-    await prompts({
-      type: 'text',
-      name: 'deadline',
-      message: 'Enter the deadline for task accepting submissions in unix',
-    })
-  ).deadline;
-  deadline = Number(deadline);
-  while (isNaN(deadline) || deadline < parseInt((Date.now() / 1000).toFixed(2))) {
-    console.error('The deadline cannot be of a past date or non unix');
-    deadline = (
-      await prompts({
-        type: 'number',
-        name: 'deadline',
-        message: 'Enter the deadline for task accepting submissions in unix',
-      })
-    ).deadline;
-  }
+
   let space = (
     await prompts({
       type: 'number',
@@ -270,7 +285,7 @@ async function takeInputForCreateTask() {
       })
     ).space;
   }
-  return {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, deadline, space};
+  return {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space, task_metadata,task_locals,koii_vars} ;
 }
 
 async function takeInputForSetTaskToVoting() {
