@@ -203,7 +203,7 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       BufferLayout.u8('instruction'),
       BufferLayout.ns64('round')
     ]),
-  },
+  }
 });
 
 /**
@@ -263,7 +263,7 @@ export async function checkProgram(): Promise<void> {
   } catch (err) {
     const errMsg = (err as Error).message;
     throw new Error(
-      `Failed to read program keypair at due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
+      `Failed to read program keypair at due to error: ${errMsg}. The task executable need to be uploaded. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
     );
   }
 
@@ -598,4 +598,25 @@ function getStakePotAccount(): PublicKey {
     } catch (e) { }
   }
   return pubkey;
+}
+export async function Withdraw(
+  payerWallet: Keypair,
+  taskStateInfoAddress: PublicKey,
+  submitterKeypair: Keypair
+): Promise<void> {
+  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Withdraw, {});
+
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
+      { pubkey: submitterKeypair.publicKey, isSigner: true, isWritable: true },
+    ],
+    programId,
+    data: data,
+  });
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payerWallet, submitterKeypair]
+  );
 }

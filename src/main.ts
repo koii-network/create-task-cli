@@ -13,6 +13,7 @@ import {
   Payout,
   ClaimReward,
   FundTask,
+  Withdraw,
 } from './task_contract';
 import prompts from 'prompts';
 import {Keypair, PublicKey, LAMPORTS_PER_SOL} from '@_koi/web3.js';
@@ -58,6 +59,7 @@ async function main() {
         {title: 'Trigger payout', value: 'payout'},
         {title: 'Claim reward', value: 'claim-reward'},
         {title: 'Fund task with more KOII', value: 'fund-task'},
+        {title: 'Withdraw staked funds from task', value: 'withdraw'},
       ],
     })
   ).mode;
@@ -153,11 +155,18 @@ async function main() {
       await ClaimReward(payerWallet, taskStateInfoAddress, stakePotAccount, beneficiaryAccount, claimerKeypair);
       break;
     }
-    case 'fund-task':
+    case 'fund-task': {
       console.log('Calling FundTask');
       const {stakePotAccount, taskStateInfoAddress, amount} = await takeInputForFundTask();
       await FundTask(payerWallet, taskStateInfoAddress, stakePotAccount, amount);
       break;
+    }
+    case 'withdraw': {
+      console.log('Calling Withdraw');
+      const {taskStateInfoAddress, submitterKeypair} = await takeInputForWithdraw();
+      await Withdraw(payerWallet, taskStateInfoAddress, submitterKeypair );
+      break;
+    }
     default:
       console.error('Invalid option selected');
   }
@@ -187,7 +196,7 @@ async function takeInputForCreateTask() {
     await prompts({
       type: 'text',
       name: 'task_audit_program',
-      message: 'Enter Arweave id of the executable program',
+      message: 'Enter Koii task id of the executable program',
     })
   ).task_audit_program;
   while (task_audit_program.length > 64) {
@@ -399,6 +408,27 @@ async function takeInputForFundTask() {
     })
   ).amount;
   return {amount:amount*LAMPORTS_PER_SOL, stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+}
+async function takeInputForWithdraw() {
+  const taskStateInfoAddress = (
+    await prompts({
+      type: 'text',
+      name: 'taskStateInfoAddress',
+      message: 'Enter the task id',
+    })
+  ).taskStateInfoAddress;
+  const submitterWalletPath = (
+    await prompts({
+      type: 'text',
+      name: 'submitterWalletPath',
+      message: 'Enter the submitter wallet path address',
+    })
+  ).submitterWalletPath;
+
+
+  let wallet = fs.readFileSync(submitterWalletPath, 'utf-8');
+  let submitterKeypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(wallet)));
+  return {taskStateInfoAddress: new PublicKey(taskStateInfoAddress),submitterKeypair};
 }
 main().then(
   () => process.exit(),
