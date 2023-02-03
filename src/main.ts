@@ -15,6 +15,7 @@ import {
   FundTask,
   Withdraw,
 } from './task_contract';
+import { uploadIpfs } from './utils';
 import prompts from 'prompts';
 import {Keypair, PublicKey, LAMPORTS_PER_SOL} from '@_koi/web3.js';
 import fs from 'fs';
@@ -75,7 +76,7 @@ async function main() {
 
   switch (mode) {
     case 'create-task': {
-      const {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space,task_metadata,task_locals,koii_vars} =
+      const {task_name, cid, total_bounty_amount, bounty_amount_per_round, space,task_description,task_executable_network,round_time,audit_window,submission_window,minimum_stake_amount,task_metadata,task_locals,koii_vars} =
         await takeInputForCreateTask();
       // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
       let totalAmount =
@@ -105,16 +106,16 @@ async function main() {
       let {taskStateInfoKeypair, stake_pot_account_pubkey} = await createTask(
         payerWallet,
         task_name,
-        task_audit_program,
+        cid,
         total_bounty_amount,
         bounty_amount_per_round,
         space,
-        "TEST TASK DESCRIPTION",
-        "ARWEAVE",
-        650,
-        240,
-        240,
-        5000000000,
+        task_description,
+        task_executable_network,
+        round_time,
+        audit_window,
+        submission_window,
+        minimum_stake_amount,
         task_metadata,
         task_locals,
         koii_vars
@@ -191,15 +192,54 @@ async function takeInputForCreateTask() {
       })
     ).task_name;
   }
+  let task_description = (
+    await prompts({
+      type: 'text',
+      name: 'task_description',
+      message: 'Enter a short description of your task',
+      // max: total_bounty_amount,
+    })
+  ).task_description;
+  while (task_description.length > 100) {
+    console.error('The task_description length cannot be greater than 100 characters');
+    task_description = (
+      await prompts({
+        type: 'text',
+        name: 'task_description',
+        message: 'Enter a short description of your task',
+      })
+    ).task_description;
+  }
+
+  let task_executable_network = (
+    await prompts({
+      type: 'text',
+      name: 'task_executable_network',
+      message: 'Enter the network to be used to uplaod your executable [IPFS / ARWEAVE]',
+      // max: total_bounty_amount,
+    })
+  ).task_executable_network;
+  while (task_executable_network.length > 100) {
+    console.error('The task_description length cannot be greater than 100 characters');
+    task_executable_network = (
+      await prompts({
+        type: 'text',
+        name: 'task_executable_network',
+        message: 'Enter the network to be used to uplaod your executable [IPFS / ARWEAVE]',
+        // max: total_bounty_amount,
+      })
+    ).task_executable_network;
+  }
+
 
   let task_audit_program = (
     await prompts({
       type: 'text',
       name: 'task_audit_program',
-      message: 'Enter Koii task id of the executable program',
+      message: 'Enter the path to your executable webpack',
     })
   ).task_audit_program;
-  while (task_audit_program.length > 64) {
+  while (task_audit_program.length > 200) {
     console.error('The task audit program length cannot be greater than 64 characters');
     task_audit_program = (
       await prompts({
@@ -209,7 +249,51 @@ async function takeInputForCreateTask() {
       })
     ).task_audit_program;
   }
-
+  let cid:string = await uploadIpfs(task_audit_program);
+  //console.log("CID OUTSIDE LOOP", cid);
+  while (cid == "File not found") {
+    task_audit_program = (
+      await prompts({
+        type: 'text',
+        name: 'task_audit_program',
+        message: 'Enter the path to your executable webpack',
+      })
+    ).task_audit_program;
+  cid = await uploadIpfs(task_audit_program);
+  //console.log("CID VALUE",cid);
+  }
+  let round_time = (
+    await prompts({
+      type: 'number',
+      name: 'round_time',
+      message: 'Enter the round time in slots',
+     
+    })
+  ).round_time;
+  let audit_window = (
+    await prompts({
+      type: 'number',
+      name: 'audit_window',
+      message: 'Enter the audit window in slots',
+     
+    })
+  ).audit_window;
+  let submission_window = (
+    await prompts({
+      type: 'number',
+      name: 'submission_window',
+      message: 'Enter the submission window in slots',
+      
+    })
+  ).submission_window;
+  let minimum_stake_amount = (
+    await prompts({
+      type: 'number',
+      name: 'minimum_stake_amount',
+      message: 'Enter the minimum staking amount in lamports',
+      
+    })
+  ).minimum_stake_amount;
   let total_bounty_amount = (
     await prompts({
       type: 'number',
@@ -285,7 +369,11 @@ async function takeInputForCreateTask() {
       })
     ).space;
   }
-  return {task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space, task_metadata,task_locals,koii_vars} ;
+  
+
+  
+
+  return {task_name, cid, total_bounty_amount, bounty_amount_per_round, space,task_description,task_executable_network,round_time,audit_window,submission_window,minimum_stake_amount, task_metadata,task_locals,koii_vars} ;
 }
 
 async function takeInputForSetTaskToVoting() {

@@ -7,6 +7,9 @@ import fs from 'mz/fs';
 import path from 'path';
 import yaml from 'yaml';
 import {Keypair} from '@_koi/web3.js';
+import * as dotenv from 'dotenv';
+dotenv.config();
+import { Web3Storage, getFilesFromPath } from 'web3.storage';
 
 /**
  * @private
@@ -66,4 +69,28 @@ export async function createKeypairFromFile(
   const secretKeyString = await fs.readFile(filePath, {encoding: 'utf8'});
   const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
   return Keypair.fromSecretKey(secretKey);
+}
+
+export async function uploadIpfs(filePath: string): Promise<string> {
+  const path = `${filePath}`;
+  //console.log(filePath);
+  //console.log(process.env.SECRET_WEB3_STORAGE_KEY);
+  console.log('FILEPATH', path);
+  if (fs.existsSync(path)) {
+  const storageClient = new Web3Storage({
+    token: process.env.SECRET_WEB3_STORAGE_KEY || '',
+  });
+
+  let cid: any;
+
+  if (storageClient) {
+    const upload: any = await getFilesFromPath(path);
+    cid = await storageClient.put(upload);
+  }
+
+  return cid;
+}
+else{
+  return "File not found";
+}
 }
