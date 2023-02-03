@@ -12,5 +12,6 @@ stages:
 deploy:
   stage: deploy
   script:
+    - npm run build
     - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
     - npm publish -f --access public
