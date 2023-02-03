@@ -11,7 +11,7 @@ import {
   Transaction,
   sendAndConfirmTransaction,
 } from '@_koi/web3.js';
-import fs from 'mz/fs';
+import fs from 'fs';
 import path from 'path';
 const BufferLayout = require('@solana/buffer-layout');
 const rustString = (property = 'string') => {

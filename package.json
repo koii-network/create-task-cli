@@ -5,6 +5,7 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "main": "./build/main.js",
   "scripts": {
     "start": "ts-node src/main.ts",
     "pretty": "prettier --write '{,src/**/}*.ts'",
@@ -12,11 +13,9 @@
   },
   "dependencies": {
     "@_koi/web3.js": "^0.0.6",
-    "@metaplex-foundation/beet": "^0.1.4",
     "@solana/buffer-layout": "^4.0.0",
     "borsh": "^0.6.0",
     "dotenv": "^16.0.1",
-    "mz": "^2.7.0",
     "prompts": "^2.4.2",
     "web3.storage": "^4.4.0",
     "yaml": "^1.10.2"
@@ -42,5 +41,8 @@
   },
   "engines": {
     "node": ">=14.0.0"
+  },
+  "bin": {
+    "create-task-cli":"node --no-warnings ./build/main.js"
   }
 }
