@@ -1,5 +1,10 @@
 # CREATE TASK CLI
 
+## How to run
+You can run the create task cli by using the running the command `npx @_koii/create-task-cli`
+
+## Overview
+
 <p align="center">
   <img src="./Task_contract_flow.png" />
 </p>
@@ -12,8 +17,6 @@ This utility CLI allows to create tasks on k2 native task contract. Simplifying 
 5. **Trigger payout:** When the submissions and voting is completed. You can trigger payout. On the basis of the voting/submissions the system will distribute the reward per round to all submissions and voters on the basis of their stake.(The reward won't be distributed but stored in state which can be claimed by voters and submitters)
 6. **Claim reward:** The voters and submitters can claim their reward using this option.
 7. **Fund task with more KOII:** IF the task is running out of KOII for next rounds this option can be used to fund the task with more KOII.
-
-## Overview
 
 A KOII task created will be visible to millions of KOII nodes running. They will select to run the task on the basis of the bounty and difficuly (computation requirement of task). Nodes running in Witness mode will only audit the submissions and get a small chunk of bounty and nodes running the full fledge service node will submit the submissions after performing the task and also audit other nodes. Finally, on the basis of staked weighted voting the nodes submitting the correct result will be awarded with bounty and nodes submitting incorrect result will be slashed.
 
