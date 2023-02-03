@@ -17,7 +17,7 @@ import {
 } from './task_contract';
 import { uploadIpfs } from './utils';
 import prompts from 'prompts';
-import {Keypair, PublicKey, LAMPORTS_PER_SOL} from '@_koi/web3.js';
+import { Keypair, PublicKey, LAMPORTS_PER_SOL } from '@_koi/web3.js';
 import fs from 'fs';
 import { config } from 'dotenv';
 
@@ -53,14 +53,14 @@ async function main() {
       message: 'Select operation',
 
       choices: [
-        {title: 'Create a new task', value: 'create-task'},
-        {title: 'Set task to voting', value: 'set-task-to-voting'},
-        {title: 'Whitelist the task', value: 'whitelisting'},
-        {title: 'Mark task as active', value: 'set-active'},
-        {title: 'Trigger payout', value: 'payout'},
-        {title: 'Claim reward', value: 'claim-reward'},
-        {title: 'Fund task with more KOII', value: 'fund-task'},
-        {title: 'Withdraw staked funds from task', value: 'withdraw'},
+        { title: 'Create a new task', value: 'create-task' },
+        { title: 'Set task to voting', value: 'set-task-to-voting' },
+        { title: 'Whitelist the task', value: 'whitelisting' },
+        { title: 'Mark task as active', value: 'set-active' },
+        { title: 'Trigger payout', value: 'payout' },
+        { title: 'Claim reward', value: 'claim-reward' },
+        { title: 'Fund task with more KOII', value: 'fund-task' },
+        { title: 'Withdraw staked funds from task', value: 'withdraw' },
       ],
     })
   ).mode;
@@ -76,7 +76,7 @@ async function main() {
 
   switch (mode) {
     case 'create-task': {
-      const {task_name, cid, total_bounty_amount, bounty_amount_per_round, space,task_description,task_executable_network,round_time,audit_window,submission_window,minimum_stake_amount,task_metadata,task_locals,koii_vars} =
+      const { task_name, cid, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars } =
         await takeInputForCreateTask();
       // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
       let totalAmount =
@@ -89,12 +89,11 @@ async function main() {
         await prompts({
           type: 'confirm',
           name: 'response',
-          message: `Your account will be subtract ${
-            totalAmount / LAMPORTS_PER_SOL
-          } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
+          message: `Your account will be subtract ${totalAmount / LAMPORTS_PER_SOL
+            } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
         })
       ).response;
-    
+
       if (!response) process.exit(0);
       let lamports = await connection.getBalance(payerWallet.publicKey);
       if (lamports < totalAmount) {
@@ -103,7 +102,7 @@ async function main() {
       }
       console.log('Calling Create Task');
       // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
-      let {taskStateInfoKeypair, stake_pot_account_pubkey} = await createTask(
+      let { taskStateInfoKeypair, stake_pot_account_pubkey } = await createTask(
         payerWallet,
         task_name,
         cid,
@@ -127,45 +126,45 @@ async function main() {
       break;
     }
     case 'set-task-to-voting': {
-      const {taskStateInfoAddress, deadline} = await takeInputForSetTaskToVoting();
+      const { taskStateInfoAddress, deadline } = await takeInputForSetTaskToVoting();
       console.log('Calling SetTaskToVoting');
       await SetTaskToVoting(payerWallet, taskStateInfoAddress, deadline);
       break;
     }
     case 'whitelisting': {
-      const {programOwnerAddress, taskStateInfoAddress} = await takeInputForWhitelisting();
+      const { programOwnerAddress, taskStateInfoAddress } = await takeInputForWhitelisting();
       console.log('Calling Whitelist');
       await Whitelist(payerWallet, taskStateInfoAddress, programOwnerAddress);
       break;
     }
     case 'set-active': {
       console.log('Calling SetActive');
-      const {isActive, taskStateInfoAddress} = await takeInputForSetActive();
+      const { isActive, taskStateInfoAddress } = await takeInputForSetActive();
       await SetActive(payerWallet, taskStateInfoAddress, isActive);
       break;
     }
     case 'payout': {
       console.log('Calling Payout');
-      const {taskStateInfoAddress} = await takeInputForPayout();
+      const { taskStateInfoAddress } = await takeInputForPayout();
       await Payout(payerWallet, taskStateInfoAddress);
       break;
     }
     case 'claim-reward': {
       console.log('Calling ClaimReward');
-      const {beneficiaryAccount, stakePotAccount, taskStateInfoAddress, claimerKeypair} = await takeInputForClaimReward();
+      const { beneficiaryAccount, stakePotAccount, taskStateInfoAddress, claimerKeypair } = await takeInputForClaimReward();
       await ClaimReward(payerWallet, taskStateInfoAddress, stakePotAccount, beneficiaryAccount, claimerKeypair);
       break;
     }
     case 'fund-task': {
       console.log('Calling FundTask');
-      const {stakePotAccount, taskStateInfoAddress, amount} = await takeInputForFundTask();
+      const { stakePotAccount, taskStateInfoAddress, amount } = await takeInputForFundTask();
       await FundTask(payerWallet, taskStateInfoAddress, stakePotAccount, amount);
       break;
     }
     case 'withdraw': {
       console.log('Calling Withdraw');
-      const {taskStateInfoAddress, submitterKeypair} = await takeInputForWithdraw();
-      await Withdraw(payerWallet, taskStateInfoAddress, submitterKeypair );
+      const { taskStateInfoAddress, submitterKeypair } = await takeInputForWithdraw();
+      await Withdraw(payerWallet, taskStateInfoAddress, submitterKeypair);
       break;
     }
     default:
@@ -249,7 +248,7 @@ async function takeInputForCreateTask() {
       })
     ).task_audit_program;
   }
-  let cid:string = await uploadIpfs(task_audit_program);
+  let cid: string = await uploadIpfs(task_audit_program);
   //console.log("CID OUTSIDE LOOP", cid);
   while (cid == "File not found") {
     task_audit_program = (
@@ -259,15 +258,15 @@ async function takeInputForCreateTask() {
         message: 'Enter the path to your executable webpack',
       })
     ).task_audit_program;
-  cid = await uploadIpfs(task_audit_program);
-  //console.log("CID VALUE",cid);
+    cid = await uploadIpfs(task_audit_program);
+    //console.log("CID VALUE",cid);
   }
   let round_time = (
     await prompts({
       type: 'number',
       name: 'round_time',
       message: 'Enter the round time in slots',
-     
+
     })
   ).round_time;
   let audit_window = (
@@ -275,7 +274,7 @@ async function takeInputForCreateTask() {
       type: 'number',
       name: 'audit_window',
       message: 'Enter the audit window in slots',
-     
+
     })
   ).audit_window;
   let submission_window = (
@@ -283,7 +282,7 @@ async function takeInputForCreateTask() {
       type: 'number',
       name: 'submission_window',
       message: 'Enter the submission window in slots',
-      
+
     })
   ).submission_window;
   let minimum_stake_amount = (
@@ -291,7 +290,7 @@ async function takeInputForCreateTask() {
       type: 'number',
       name: 'minimum_stake_amount',
       message: 'Enter the minimum staking amount in lamports',
-      
+
     })
   ).minimum_stake_amount;
   let total_bounty_amount = (
@@ -319,21 +318,21 @@ async function takeInputForCreateTask() {
       // max: total_bounty_amount,
     })
   ).bounty_amount_per_round;
-  let task_metadata= (
+  let task_metadata = (
     await prompts({
       type: 'text',
       name: 'task_metadata',
       message: `Enter TaskMetadata CID hosted on ${"IPFS"} (Leave empty for None).`,
     })
   ).task_metadata;
-  let task_locals= (
+  let task_locals = (
     await prompts({
       type: 'text',
       name: 'task_locals',
       message: `Enter CID for environment variables hosted on ${"IPFS"} (Leave empty for None).`,
     })
   ).task_locals;
-  let koii_vars= (
+  let koii_vars = (
     await prompts({
       type: 'text',
       name: 'koii_vars',
@@ -369,11 +368,11 @@ async function takeInputForCreateTask() {
       })
     ).space;
   }
-  
 
-  
 
-  return {task_name, cid, total_bounty_amount, bounty_amount_per_round, space,task_description,task_executable_network,round_time,audit_window,submission_window,minimum_stake_amount, task_metadata,task_locals,koii_vars} ;
+
+
+  return { task_name, cid, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars };
 }
 
 async function takeInputForSetTaskToVoting() {
@@ -392,7 +391,7 @@ async function takeInputForSetTaskToVoting() {
       min: parseInt((Date.now() / 1000).toFixed(2)),
     })
   ).deadline;
-  return {deadline, taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return { deadline, taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
 }
 async function takeInputForWhitelisting() {
   const taskStateInfoAddress = (
@@ -409,7 +408,7 @@ async function takeInputForWhitelisting() {
       message: 'Enter the path to program owner wallet (Only available to KOII team)',
     })
   ).programOwnerAddress;
-  return {programOwnerAddress, taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return { programOwnerAddress, taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
 }
 async function takeInputForSetActive() {
   const taskStateInfoAddress = (
@@ -425,12 +424,12 @@ async function takeInputForSetActive() {
       name: 'isActive',
       message: 'Do you want to set the task to Active or Inactive?',
       choices: [
-        {title: 'Active', description: 'Set the task active', value: 'Active'},
-        {title: 'Inactive', description: 'Deactivate the task', value: 'Inactive'},
+        { title: 'Active', description: 'Set the task active', value: 'Active' },
+        { title: 'Inactive', description: 'Deactivate the task', value: 'Inactive' },
       ],
     })
   ).isActive;
-  return {isActive: isActive == 'Active', taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return { isActive: isActive == 'Active', taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
 }
 async function takeInputForPayout() {
   const taskStateInfoAddress = (
@@ -440,7 +439,7 @@ async function takeInputForPayout() {
       message: 'Enter the task id',
     })
   ).taskStateInfoAddress;
-  return {taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return { taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
 }
 async function takeInputForClaimReward() {
   const taskStateInfoAddress = (
@@ -471,7 +470,7 @@ async function takeInputForClaimReward() {
       message: 'Enter the path to Claimer wallet',
     })
   ).claimerKeypair;
-  return {claimerKeypair,beneficiaryAccount:new PublicKey(beneficiaryAccount),stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return { claimerKeypair, beneficiaryAccount: new PublicKey(beneficiaryAccount), stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
 }
 async function takeInputForFundTask() {
   const taskStateInfoAddress = (
@@ -495,7 +494,7 @@ async function takeInputForFundTask() {
       message: 'Enter the amount(in KOII) to fund',
     })
   ).amount;
-  return {amount:amount*LAMPORTS_PER_SOL, stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress)};
+  return { amount: amount * LAMPORTS_PER_SOL, stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
 }
 async function takeInputForWithdraw() {
   const taskStateInfoAddress = (
@@ -516,7 +515,7 @@ async function takeInputForWithdraw() {
 
   let wallet = fs.readFileSync(submitterWalletPath, 'utf-8');
   let submitterKeypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(wallet)));
-  return {taskStateInfoAddress: new PublicKey(taskStateInfoAddress),submitterKeypair};
+  return { taskStateInfoAddress: new PublicKey(taskStateInfoAddress), submitterKeypair };
 }
 main().then(
   () => process.exit(),

@@ -68,32 +68,10 @@ const CLOCK_PUBLIC_KEY = new PublicKey('SysvarC1ock11111111111111111111111111111
 let connection: Connection;
 
 /**
- * Keypair associated to the fees' payer
- */
-// let payerWallet: Keypair;
-
-/**
  * Hello world's program id
  */
 let programId: PublicKey;
 
-/**
- * The public key of the account we are saying hello to
- */
-let greetedPubkey: PublicKey;
-
-/**
- * Path to program files
- */
-const PROGRAM_PATH = path.resolve(__dirname, '../../dist/program');
-
-/**
- * Path to program shared object file which should be deployed on chain.
- * This file is created when running either:
- *   - `npm run build:program-c`
- *   - `npm run build:program-rust`
- */
-const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'helloworld.so');
 
 /**
  * Path to the keypair of the deployed program.
@@ -116,8 +94,8 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       BufferLayout.ns64('audit_window'),
       BufferLayout.ns64('submission_window'),
       BufferLayout.ns64('minimum_stake_amount'),
-      BufferLayout.blob(64,'task_metadata'),
-      BufferLayout.blob(64,"local_vars")
+      BufferLayout.blob(64, 'task_metadata'),
+      BufferLayout.blob(64, "local_vars")
 
       // publicKey('stake_pot_account')
     ]),
@@ -270,11 +248,7 @@ export async function checkProgram(): Promise<void> {
   // Check if the program has been deployed
   const programInfo = await connection.getAccountInfo(programId);
   if (programInfo === null) {
-    if (fs.existsSync(PROGRAM_SO_PATH)) {
-      throw new Error('Program needs to be deployed with `solana program deploy dist/program/helloworld.so`');
-    } else {
-      throw new Error('Program needs to be built and deployed');
-    }
+    throw new Error('Please use koii testnet or mainnet to deploy the program');
   } else if (!programInfo.executable) {
     throw new Error(`Program is not executable`);
   }
