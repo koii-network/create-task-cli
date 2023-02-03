@@ -1,6 +1,4 @@
-/**
- * Hello world
- */
+#!/usr/bin/env node
 
 import {
   establishConnection,
