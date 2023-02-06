@@ -9,7 +9,9 @@ import prompts from 'prompts';
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from '@_koi/web3.js';
 import fs from 'fs';
 import { config } from 'dotenv';
-
+import { tmpdir } from "os";
+import { join } from "path"
+import { Web3Storage, getFilesFromPath } from 'web3.storage';
 config();
 
 async function main() {
@@ -38,12 +40,12 @@ async function main() {
     const mode = (
         await prompts({
             type: 'select',
-            name: 'mode',
+            name: 'mode',git 
             message: 'Select operation',
 
             choices: [
                 { title: 'Generate Metadata', value: 'generate-metadata' },
-                { title: 'Generate local variables', value: 'generate-locals' },
+                { title: 'upload local vars to IPFS', value: 'generate-locals' },
 
             ],
         })
@@ -51,8 +53,10 @@ async function main() {
     console.log(mode);
     switch (mode) {
         case "generate-metadata": {
-            takeInputForMetadata()
+            takeInputForMetadata();
+            break;
         }
+        case ""
         // const connection = await establishConnection();
     }
     // Establish connection to the cluster
@@ -76,6 +80,18 @@ async function takeInputForMetadata() {
             os: "",
             network: "",
         }
+    }
+    let web3Key = process.env["web3_key"] || null
+    if (!web3Key) {
+        while (!web3Key)
+            web3Key = (
+                await prompts({
+                    type: 'text',
+                    name: 'web3Key',
+                    message: 'Enter your WEB3 Access Key',
+                    validate: value => value ? true : "Please Enter a valid WEB3 Access key"
+                })
+            ).web3Key;
     }
     metadata.name = (
         await prompts({
@@ -133,7 +149,7 @@ async function takeInputForMetadata() {
             message: 'Enter the minimum Network Bandwidth required to run this task',
         })
     ).network;
-    
+
     metadata.nodeSpec.os = (
         await prompts({
             type: 'multiselect',
@@ -148,6 +164,13 @@ async function takeInputForMetadata() {
     ).os;
 
     console.log(metadata);
+    let tmp = tmpdir();
+    let metadataPath = join(tmp, "metadata.json")
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata))
+    const storageClient = new Web3Storage({ token: web3Key });
+    let upload = await getFilesFromPath([metadataPath])
+    let result = await storageClient.put(upload);
+    console.log('\x1b[1m\x1b[32m%s\x1b[0m',`Your MetaData CID is ${result}/metadata.json`)
 
 
 }
