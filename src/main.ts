@@ -212,7 +212,7 @@ async function takeInputForCreateTask() {
     await prompts({
       type: 'text',
       name: 'task_executable_network',
-      message: 'Enter the network to be used to uplaod your executable [IPFS / ARWEAVE]',
+      message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE]',
       // max: total_bounty_amount,
     })
   ).task_executable_network;
@@ -222,7 +222,7 @@ async function takeInputForCreateTask() {
       await prompts({
         type: 'text',
         name: 'task_executable_network',
-        message: 'Enter the network to be used to uplaod your executable [IPFS / ARWEAVE]',
+        message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE]',
         // max: total_bounty_amount,
       })
     ).task_executable_network;
