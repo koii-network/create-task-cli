@@ -208,6 +208,14 @@ async function takeInputForCreateTask() {
     ).task_description;
   }
 
+  let secret_web3_storage_key = (
+    await prompts({
+      type: 'text',
+      name: 'secret_web3_storage_key',
+      message: 'Enter the web3.storage API key',
+    })
+  ).secret_web3_storage_key;
+
   let task_executable_network = (
     await prompts({
       type: 'text',
@@ -246,7 +254,7 @@ async function takeInputForCreateTask() {
       })
     ).task_audit_program;
   }
-  let cid: string = await uploadIpfs(task_audit_program);
+  let cid: string = await uploadIpfs(task_audit_program,secret_web3_storage_key);
   //console.log("CID OUTSIDE LOOP", cid);
   while (cid == "File not found") {
     task_audit_program = (
@@ -256,7 +264,7 @@ async function takeInputForCreateTask() {
         message: 'Enter the path to your executable webpack',
       })
     ).task_audit_program;
-    cid = await uploadIpfs(task_audit_program);
+    cid = await uploadIpfs(task_audit_program,secret_web3_storage_key);
     //console.log("CID VALUE",cid);
   }
   let round_time = (

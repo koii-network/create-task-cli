@@ -71,14 +71,14 @@ export async function createKeypairFromFile(
   return Keypair.fromSecretKey(secretKey);
 }
 
-export async function uploadIpfs(filePath: string): Promise<string> {
+export async function uploadIpfs(filePath: string, secret_web3_storage_key:string): Promise<string> {
   const path = `${filePath}`;
   //console.log(filePath);
-  //console.log(process.env.SECRET_WEB3_STORAGE_KEY);
+  //console.log(secret_web3_storage_key);
   console.log('FILEPATH', path);
   if (fs.existsSync(path)) {
   const storageClient = new Web3Storage({
-    token: process.env.SECRET_WEB3_STORAGE_KEY || '',
+    token: secret_web3_storage_key || '',
   });
 
   let cid: any;
