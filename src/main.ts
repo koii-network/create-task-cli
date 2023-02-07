@@ -18,7 +18,7 @@ import prompts from 'prompts';
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from '@_koi/web3.js';
 import fs from 'fs';
 import { config } from 'dotenv';
-
+import handleMetadata  from './metadata';
 config();
 
 async function main() {
@@ -51,14 +51,15 @@ async function main() {
       message: 'Select operation',
 
       choices: [
-        { title: 'Create a new task', value: 'create-task' },
-        { title: 'Set task to voting', value: 'set-task-to-voting' },
-        { title: 'Whitelist the task', value: 'whitelisting' },
-        { title: 'Mark task as active', value: 'set-active' },
-        { title: 'Trigger payout', value: 'payout' },
-        { title: 'Claim reward', value: 'claim-reward' },
-        { title: 'Fund task with more KOII', value: 'fund-task' },
-        { title: 'Withdraw staked funds from task', value: 'withdraw' },
+        {title: 'Create a new task', value: 'create-task'},
+        {title: 'Set task to voting', value: 'set-task-to-voting'},
+        {title: 'Whitelist the task', value: 'whitelisting'},
+        {title: 'Mark task as active', value: 'set-active'},
+        {title: 'Trigger payout', value: 'payout'},
+        {title: 'Claim reward', value: 'claim-reward'},
+        {title: 'Fund task with more KOII', value: 'fund-task'},
+        {title: 'Withdraw staked funds from task', value: 'withdraw'},
+        {title: 'upload assets to IPFS(metadata/local vars)' ,value:"handle-assets" }
       ],
     })
   ).mode;
@@ -165,6 +166,10 @@ async function main() {
       await Withdraw(payerWallet, taskStateInfoAddress, submitterKeypair);
       break;
     }
+    case "handle-assets" :{
+      await handleMetadata()
+      break
+    } 
     default:
       console.error('Invalid option selected');
   }

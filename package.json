@@ -1,6 +1,6 @@
 {
   "name": "@_koii/create-task-cli",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "",
   "keywords": [],
   "author": "",
@@ -16,6 +16,8 @@
     "@solana/buffer-layout": "^4.0.0",
     "borsh": "^0.6.0",
     "dotenv": "^16.0.1",
+    "mz": "^2.7.0",
+    "ora": "^6.1.2",
     "prompts": "^2.4.2",
     "web3.storage": "^4.4.0",
     "yaml": "^1.10.2"
@@ -25,7 +27,7 @@
     "@types/eslint": "^7.2.4",
     "@types/eslint-plugin-prettier": "^3.1.0",
     "@types/mz": "^2.7.2",
-    "@types/node": "~16.11.6",
+    "@types/node": "^18.11.19",
     "@types/prettier": "^2.1.5",
     "@types/prompts": "^2.0.14",
     "@types/yaml": "^1.9.7",
