@@ -1,10 +1,11 @@
 {
   "name": "@_koii/create-task-cli",
-  "version": "0.0.7",
+  "version": "0.1.7",
   "description": "",
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "main": "./build/main.js",
   "scripts": {
     "start": "ts-node src/main.ts",
     "pretty": "prettier --write '{,src/**/}*.ts'",
@@ -12,7 +13,6 @@
   },
   "dependencies": {
     "@_koi/web3.js": "^0.0.6",
-    "@metaplex-foundation/beet": "^0.1.4",
     "@solana/buffer-layout": "^4.0.0",
     "borsh": "^0.6.0",
     "dotenv": "^16.0.1",
@@ -43,5 +43,8 @@
   },
   "engines": {
     "node": ">=14.0.0"
+  },
+  "bin": {
+    "create-task-cli": "./build/main.js"
   }
 }
