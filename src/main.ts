@@ -59,6 +59,7 @@ async function main() {
         { title: 'Claim reward', value: 'claim-reward' },
         { title: 'Fund task with more KOII', value: 'fund-task' },
         { title: 'Withdraw staked funds from task', value: 'withdraw' },
+        { title: 'Update an existing task', value: "update-task" }
       ],
     })
   ).mode;
@@ -165,6 +166,78 @@ async function main() {
       await Withdraw(payerWallet, taskStateInfoAddress, submitterKeypair);
       break;
     }
+    case "update-task": {
+      let taskId = (
+        await prompts({
+          type: 'text',
+          name: 'taskId',
+          message: 'Enter id fo the task you want to edit',
+        })
+      ).taskId;
+      // const connection = new Connection('https://k2-testnet.koii.live');
+      const accountInfo = await connection.getAccountInfo(
+        new PublicKey(taskId),
+      );
+      if (accountInfo == null) {
+        console.log("No task found with this Id");
+        break;
+      }
+      let rawData = accountInfo.data + '';
+      let state = JSON.parse(rawData);
+      console.log(state);
+      if (new PublicKey(state.task_manager).toString() !== payerWallet.publicKey.toString()) {
+        console.log("You are not the owner of this task! ");
+        break;
+      }
+      const { task_name, cid, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars } =
+        await takeInputForCreateTask();
+      // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
+      let totalAmount =
+        LAMPORTS_PER_SOL * total_bounty_amount +
+        (await connection.getMinimumBalanceForRentExemption(100)) +
+        10000 +
+        (await connection.getMinimumBalanceForRentExemption(space)) +
+        10000;
+      let response = (
+        await prompts({
+          type: 'confirm',
+          name: 'response',
+          message: `Your account will be subtract ${totalAmount / LAMPORTS_PER_SOL
+            } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
+        })
+      ).response;
+
+      if (!response) process.exit(0);
+      let lamports = await connection.getBalance(payerWallet.publicKey);
+      if (lamports < totalAmount) {
+        console.error('Insufficient balance for this operation');
+        process.exit(0);
+      }
+      console.log('Calling Create Task');
+      // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
+      let { taskStateInfoKeypair, stake_pot_account_pubkey } = await createTask(
+        payerWallet,
+        task_name,
+        cid,
+        total_bounty_amount,
+        bounty_amount_per_round,
+        space,
+        task_description,
+        task_executable_network,
+        round_time,
+        audit_window,
+        submission_window,
+        minimum_stake_amount,
+        task_metadata,
+        task_locals,
+        koii_vars
+      );
+      fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
+      console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
+      console.log('Stake Pot Account Pubkey:', stake_pot_account_pubkey.toBase58());
+      console.log("Note: Task Id is basically the public key of taskStateInfoKeypair.json")
+      break;
+    }
     default:
       console.error('Invalid option selected');
   }
@@ -172,6 +245,8 @@ async function main() {
 }
 
 async function takeInputForCreateTask() {
+  let task_audit_program;
+  
   let task_name = (
     await prompts({
       type: 'text',
@@ -208,13 +283,7 @@ async function takeInputForCreateTask() {
     ).task_description;
   }
 
-  let secret_web3_storage_key = (
-    await prompts({
-      type: 'text',
-      name: 'secret_web3_storage_key',
-      message: 'Enter the web3.storage API key',
-    })
-  ).secret_web3_storage_key;
+
 
   let task_executable_network = (
     await prompts({
@@ -235,28 +304,15 @@ async function takeInputForCreateTask() {
       })
     ).task_executable_network;
   }
+  if (task_executable_network === "IPFS") {
 
-
-  let task_audit_program = (
-    await prompts({
-      type: 'text',
-      name: 'task_audit_program',
-      message: 'Enter the path to your executable webpack',
-    })
-  ).task_audit_program;
-  while (task_audit_program.length > 200) {
-    console.error('The task audit program length cannot be greater than 64 characters');
-    task_audit_program = (
+    let secret_web3_storage_key = (
       await prompts({
         type: 'text',
-        name: 'task_audit_program',
-        message: 'Enter the name of the task',
+        name: 'secret_web3_storage_key',
+        message: 'Enter the web3.storage API key',
       })
-    ).task_audit_program;
-  }
-  let cid: string = await uploadIpfs(task_audit_program,secret_web3_storage_key);
-  //console.log("CID OUTSIDE LOOP", cid);
-  while (cid == "File not found") {
+    ).secret_web3_storage_key;
     task_audit_program = (
       await prompts({
         type: 'text',
@@ -264,17 +320,42 @@ async function takeInputForCreateTask() {
         message: 'Enter the path to your executable webpack',
       })
     ).task_audit_program;
-    cid = await uploadIpfs(task_audit_program,secret_web3_storage_key);
-    //console.log("CID VALUE",cid);
+    while (task_audit_program.length > 200) {
+      console.error('The task audit program length cannot be greater than 200 characters');
+      task_audit_program = (
+        await prompts({
+          type: 'text',
+          name: 'task_audit_program',
+          message: 'Enter the name of the task',
+        })
+      ).task_audit_program;
+    }
+    let cid: string = await uploadIpfs(task_audit_program, secret_web3_storage_key);
+    //console.log("CID OUTSIDE LOOP", cid);
+    while (cid == "File not found") {
+      task_audit_program = (
+        await prompts({
+          type: 'text',
+          name: 'task_audit_program',
+          message: 'Enter the path to your executable webpack',
+        })
+      ).task_audit_program;
+      cid = await uploadIpfs(task_audit_program, secret_web3_storage_key);
+      //console.log("CID VALUE",cid);
+    }
+  } else if(task_executable_network === "Arweave") {
+    task_audit_program = (
+      await prompts({
+        type: 'text',
+        name: 'task_audit_program',
+        message: 'Enter the path to your executable webpack',
+      })
+    ).task_audit_program;
   }
-  let round_time = (
-    await prompts({
-      type: 'number',
-      name: 'round_time',
-      message: 'Enter the round time in slots',
 
-    })
-  ).round_time;
+
+
+
   let audit_window = (
     await prompts({
       type: 'number',
@@ -291,6 +372,15 @@ async function takeInputForCreateTask() {
 
     })
   ).submission_window;
+  let round_time = (
+    await prompts({
+      type: 'number',
+      name: 'round_time',
+      message: 'Enter the round time in slots',
+      validate: round_time => submission_window + audit_window < round_time ? true : " Round time cannot be less than audit_window + submission_window"
+
+    })
+  ).round_time;
   let minimum_stake_amount = (
     await prompts({
       type: 'number',
