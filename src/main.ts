@@ -75,7 +75,7 @@ async function main() {
 
   switch (mode) {
     case 'create-task': {
-      const { task_name, cid, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars } =
+      const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars } =
         await takeInputForCreateTask();
       // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
       let totalAmount =
@@ -104,7 +104,7 @@ async function main() {
       let { taskStateInfoKeypair, stake_pot_account_pubkey } = await createTask(
         payerWallet,
         task_name,
-        cid,
+        task_audit_program_id,
         total_bounty_amount,
         bounty_amount_per_round,
         space,
@@ -213,14 +213,6 @@ async function takeInputForCreateTask() {
     ).task_description;
   }
 
-  let secret_web3_storage_key = (
-    await prompts({
-      type: 'text',
-      name: 'secret_web3_storage_key',
-      message: 'Enter the web3.storage API key',
-    })
-  ).secret_web3_storage_key;
-
   let task_executable_network = (
     await prompts({
       type: 'text',
@@ -230,7 +222,7 @@ async function takeInputForCreateTask() {
     })
   ).task_executable_network;
   while (task_executable_network.length > 100) {
-    console.error('The task_description length cannot be greater than 100 characters');
+    console.error('The task_executable_network length cannot be greater than 100 characters');
     task_executable_network = (
       await prompts({
         type: 'text',
@@ -240,28 +232,27 @@ async function takeInputForCreateTask() {
       })
     ).task_executable_network;
   }
-
-
-  let task_audit_program = (
-    await prompts({
-      type: 'text',
-      name: 'task_audit_program',
-      message: 'Enter the path to your executable webpack',
-    })
-  ).task_audit_program;
-  while (task_audit_program.length > 200) {
-    console.error('The task audit program length cannot be greater than 64 characters');
-    task_audit_program = (
+  while (task_executable_network!="IPFS" && task_executable_network!="ARWEAVE") {
+    console.error('The task_executable_network can only be IPFS or ARWEAVE');
+    task_executable_network = (
       await prompts({
         type: 'text',
-        name: 'task_audit_program',
-        message: 'Enter the name of the task',
+        name: 'task_executable_network',
+        message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE]',
       })
-    ).task_audit_program;
+    ).task_executable_network;
   }
-  let cid: string = await uploadIpfs(task_audit_program,secret_web3_storage_key);
-  //console.log("CID OUTSIDE LOOP", cid);
-  while (cid == "File not found") {
+  let secret_web3_storage_key;
+  let task_audit_program;
+  let task_audit_program_id;
+  if (task_executable_network=="IPFS"){
+    secret_web3_storage_key = (
+      await prompts({
+        type: 'text',
+        name: 'secret_web3_storage_key',
+        message: 'Enter the web3.storage API key',
+      })
+    ).secret_web3_storage_key;
     task_audit_program = (
       await prompts({
         type: 'text',
@@ -269,8 +260,47 @@ async function takeInputForCreateTask() {
         message: 'Enter the path to your executable webpack',
       })
     ).task_audit_program;
-    cid = await uploadIpfs(task_audit_program,secret_web3_storage_key);
-    //console.log("CID VALUE",cid);
+    while (task_audit_program.length > 200) {
+      console.error('The task audit program length cannot be greater than 64 characters');
+      task_audit_program = (
+        await prompts({
+          type: 'text',
+          name: 'task_audit_program',
+          message: 'Enter the name of the task',
+        })
+      ).task_audit_program;
+    }
+    task_audit_program_id = await uploadIpfs(task_audit_program,secret_web3_storage_key);
+    //console.log("CID OUTSIDE LOOP", cid);
+    while (task_audit_program_id == "File not found") {
+      task_audit_program = (
+        await prompts({
+          type: 'text',
+          name: 'task_audit_program',
+          message: 'Enter the path to your executable webpack',
+        })
+      ).task_audit_program;
+      task_audit_program_id = await uploadIpfs(task_audit_program,secret_web3_storage_key);
+      //console.log("CID VALUE",task_audit_program_id);
+    }
+  }else{
+    task_audit_program_id = (
+      await prompts({
+        type: 'text',
+        name: 'task_audit_program_id',
+        message: 'Enter Arweave id of the deployed koii task executable program',
+      })
+    ).task_audit_program_id;
+    while (task_audit_program_id.length > 64) {
+      console.error('The task audit program length cannot be greater than 64 characters');
+      task_audit_program_id = (
+        await prompts({
+          type: 'text',
+          name: 'task_audit_program_id',
+          message: 'Enter the name of the task',
+        })
+      ).task_audit_program_id;
+    }
   }
   let round_time = (
     await prompts({
@@ -383,7 +413,7 @@ async function takeInputForCreateTask() {
 
 
 
-  return { task_name, cid, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars };
+  return { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars };
 }
 
 async function takeInputForSetTaskToVoting() {
