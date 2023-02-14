@@ -313,7 +313,7 @@ export async function createTask(
     submission_window: submission_window,
     rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
     space: space,
-    minimum_stake_amount: minimum_stake_amount,
+    minimum_stake_amount: minimum_stake_amount * LAMPORTS_PER_SOL,
     task_metadata: new TextEncoder().encode(padStringWithSpaces(task_metadata, 64)),
     local_vars: new TextEncoder().encode(padStringWithSpaces(local_vars, 64))
     // koii_vars:new TextEncoder().encode(padStringWithSpaces(task_metadata,64))
