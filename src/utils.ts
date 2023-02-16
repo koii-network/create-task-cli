@@ -40,7 +40,7 @@ export async function getRpcUrl(): Promise<string> {
     console.warn(
       'Failed to read RPC url from CLI config file, falling back to localhost',
     );
-    return 'https://k2-testnet.koii.live';
+    return 'http://localhost:8899';
   }
 }
 

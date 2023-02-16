@@ -119,7 +119,8 @@ async function main() {
         minimum_stake_amount,
         task_metadata,
         task_locals,
-        koii_vars
+        koii_vars,
+        4
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
       console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
@@ -293,7 +294,7 @@ async function takeInputForCreateTask(state?:any) {
     await prompts({
       type: 'text',
       name: 'task_executable_network',
-      message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE]',
+      message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]',
       // max: total_bounty_amount,
     })
   ).task_executable_network;
@@ -303,13 +304,13 @@ async function takeInputForCreateTask(state?:any) {
       await prompts({
         type: 'text',
         name: 'task_executable_network',
-        message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE]',
+        message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]',
         // max: total_bounty_amount,
       })
     ).task_executable_network;
   }
-  while (task_executable_network!="IPFS" && task_executable_network!="ARWEAVE") {
-    console.error('The task_executable_network can only be IPFS or ARWEAVE');
+  while (task_executable_network!="IPFS" && task_executable_network!="ARWEAVE" && task_executable_network!="DEVELOPMENT") {
+    console.error('The task_executable_network can only be IPFS , ARWEAVE  or DEVELOPMENT');
     task_executable_network = (
       await prompts({
         type: 'text',
@@ -359,7 +360,7 @@ async function takeInputForCreateTask(state?:any) {
       task_audit_program_id = await uploadIpfs(task_audit_program,secret_web3_storage_key);
       //console.log("CID VALUE",task_audit_program_id);
     }
-  }else{
+  }else if(task_executable_network=="ARWEAVE"){
     task_audit_program_id = (
       await prompts({
         type: 'text',
@@ -373,7 +374,25 @@ async function takeInputForCreateTask(state?:any) {
         await prompts({
           type: 'text',
           name: 'task_audit_program_id',
-          message: 'Enter the name of the task',
+          message: 'Enter Arweave id of the deployed koii task executable program',
+        })
+      ).task_audit_program_id;
+    }
+  }else{
+    task_audit_program_id = (
+      await prompts({
+        type: 'text',
+        name: 'task_audit_program_id',
+        message: 'Enter the name of executable you want to run on  task-nodes',
+      })
+    ).task_audit_program_id;
+    while (task_audit_program_id.length > 64) {
+      console.error('The task audit program length cannot be greater than 64 characters');
+      task_audit_program_id = (
+        await prompts({
+          type: 'text',
+          name: 'task_audit_program_id',
+          message: 'Enter the name of executable you want to run on  task-nodes',
         })
       ).task_audit_program_id;
     }
@@ -406,7 +425,7 @@ async function takeInputForCreateTask(state?:any) {
     await prompts({
       type: 'number',
       name: 'minimum_stake_amount',
-      message: 'Enter the minimum staking amount in lamports',
+      message: 'Enter the minimum staking amount for the task (in KOII)',
 
     })
   ).minimum_stake_amount;
@@ -431,7 +450,7 @@ async function takeInputForCreateTask(state?:any) {
     await prompts({
       type: 'number',
       name: 'bounty_amount_per_round',
-      message: 'Enter the bounty amount per round',
+      message: 'Enter the bounty amount per round (In KOII)',
       // max: total_bounty_amount,
     })
   ).bounty_amount_per_round;
