@@ -116,7 +116,8 @@ async function main() {
         minimum_stake_amount,
         task_metadata,
         task_locals,
-        koii_vars
+        koii_vars,
+        4
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
       console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());

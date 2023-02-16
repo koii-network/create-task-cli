@@ -95,7 +95,8 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       BufferLayout.ns64('submission_window'),
       BufferLayout.ns64('minimum_stake_amount'),
       BufferLayout.blob(64, 'task_metadata'),
-      BufferLayout.blob(64, "local_vars")
+      BufferLayout.blob(64, "local_vars"),
+      BufferLayout.ns64('allowed_failed_distributions')
 
       // publicKey('stake_pot_account')
     ]),
@@ -293,7 +294,8 @@ export async function createTask(
   minimum_stake_amount: number,
   task_metadata: string,
   local_vars: string,
-  koii_vars: string
+  koii_vars: string,
+  allowed_failed_distributions: number
 
 ): Promise<any> {
   // Checks
@@ -315,7 +317,9 @@ export async function createTask(
     space: space,
     minimum_stake_amount: minimum_stake_amount * LAMPORTS_PER_SOL,
     task_metadata: new TextEncoder().encode(padStringWithSpaces(task_metadata, 64)),
-    local_vars: new TextEncoder().encode(padStringWithSpaces(local_vars, 64))
+    local_vars: new TextEncoder().encode(padStringWithSpaces(local_vars, 64)),
+    allowed_failed_distributions: allowed_failed_distributions
+
     // koii_vars:new TextEncoder().encode(padStringWithSpaces(task_metadata,64))
 
 
