@@ -59,7 +59,10 @@ async function main() {
         {title: 'Claim reward', value: 'claim-reward'},
         {title: 'Fund task with more KOII', value: 'fund-task'},
         {title: 'Withdraw staked funds from task', value: 'withdraw'},
-        {title: 'upload assets to IPFS(metadata/local vars)' ,value:"handle-assets" }
+        {title: 'upload assets to IPFS(metadata/local vars)' ,value:"handle-assets" },
+        {title: 'update KOII task' ,value:"update-task" }
+
+
       ],
     })
   ).mode;
@@ -194,7 +197,7 @@ async function main() {
         break;
       }
       const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars } =
-      await takeInputForCreateTask();
+      await takeInputForCreateTask(state);
     // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
     let totalAmount =
       LAMPORTS_PER_SOL * total_bounty_amount +
@@ -263,7 +266,7 @@ async function takeInputForCreateTask(state?:any) {
         type: 'text',
         name: 'task_name',
         message: 'Enter the name of the task',
-        initial:state.?
+        initial:state?.name || null
       })
     ).task_name;
   }
