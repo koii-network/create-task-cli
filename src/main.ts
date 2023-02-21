@@ -5,6 +5,7 @@ import {
   establishPayer,
   checkProgram,
   createTask,
+  updateTask,
   SetTaskToVoting,
   Whitelist,
   SetActive,
@@ -78,7 +79,7 @@ async function main() {
 
   switch (mode) {
     case 'create-task': {
-      const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars } =
+      const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars, allowed_failed_distributions } =
         await takeInputForCreateTask();
       // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
       let totalAmount =
@@ -120,7 +121,7 @@ async function main() {
         task_metadata,
         task_locals,
         koii_vars,
-        4
+        allowed_failed_distributions
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
       console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
@@ -179,10 +180,11 @@ async function main() {
         await prompts({
           type: 'text',
           name: 'taskId',
-          message: 'Enter id fo the task you want to edit',
+          message: 'Enter id of the task you want to edit',
         })
       ).taskId;
       // const connection = new Connection('https://k2-testnet.koii.live');
+      
       const accountInfo = await connection.getAccountInfo(
         new PublicKey(taskId),
       );
@@ -197,8 +199,11 @@ async function main() {
         console.log("You are not the owner of this task! ");
         break;
       }
-      const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars } =
-      await takeInputForCreateTask(state);
+      const taskAccountInfoPubKey =  new PublicKey(taskId);
+      console.log("OLD TASK STATE INFO",taskAccountInfoPubKey);
+      const statePotAccount = new PublicKey(state.stake_pot_account);
+      console.log("OLD STATE POT",statePotAccount);
+      const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, allowed_failed_distributions} = await takeInputForCreateTask(state);
     // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
     let totalAmount =
       LAMPORTS_PER_SOL * total_bounty_amount +
@@ -221,13 +226,14 @@ async function main() {
       console.error('Insufficient balance for this operation');
       process.exit(0);
     }
-    console.log('Calling Create Task');
+    console.log('Calling Update Task');
+
     // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
-    let { taskStateInfoKeypair, stake_pot_account_pubkey } = await createTask(
+
+    let { taskStateInfoKeypair, stake_pot_account_pubkey } = await updateTask(
       payerWallet,
       task_name,
       task_audit_program_id,
-      total_bounty_amount,
       bounty_amount_per_round,
       space,
       task_description,
@@ -238,7 +244,9 @@ async function main() {
       minimum_stake_amount,
       task_metadata,
       task_locals,
-      koii_vars
+      allowed_failed_distributions,
+      taskAccountInfoPubKey,
+      statePotAccount
     );
     fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
     console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
@@ -315,7 +323,7 @@ async function takeInputForCreateTask(state?:any) {
       await prompts({
         type: 'text',
         name: 'task_executable_network',
-        message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE]',
+        message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]',
       })
     ).task_executable_network;
   }
@@ -454,6 +462,24 @@ async function takeInputForCreateTask(state?:any) {
       // max: total_bounty_amount,
     })
   ).bounty_amount_per_round;
+  let allowed_failed_distributions = (
+    await prompts({
+      type: 'number',
+      name: 'allowed_failed_distributions',
+      message: 'Enter the number of distribution list submission retry in case it fails',
+    })
+  ).allowed_failed_distributions;
+  while (allowed_failed_distributions < 0) {
+    console.error('failed distributions cannot be less than 0');
+    allowed_failed_distributions = (
+      await prompts({
+        type: 'number',
+        name: 'allowed_failed_distributions',
+        message: 'Enter the number of distribution list submission retry in case it fails',
+      })
+    ).allowed_failed_distributions;
+  }
+
   let task_metadata = (
     await prompts({
       type: 'text',
@@ -508,7 +534,9 @@ async function takeInputForCreateTask(state?:any) {
 
 
 
-  return { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars };
+
+
+  return { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars, allowed_failed_distributions };
 }
 
 async function takeInputForSetTaskToVoting() {

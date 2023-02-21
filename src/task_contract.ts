@@ -101,6 +101,25 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       // publicKey('stake_pot_account')
     ]),
   },
+  UpdateTask: {
+    index: 14,
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      BufferLayout.blob(24, 'task_name'),
+      BufferLayout.blob(64, 'task_description'),
+      BufferLayout.blob(64, 'task_audit_program'),
+      BufferLayout.blob(64, 'task_executable_network'),
+      BufferLayout.ns64('bounty_amount_per_round'),
+      BufferLayout.ns64('round_time'),
+      BufferLayout.ns64('audit_window'),
+      BufferLayout.ns64('submission_window'),
+      BufferLayout.ns64('minimum_stake_amount'),
+      BufferLayout.blob(64, 'task_metadata'),
+      BufferLayout.blob(64, "local_vars"),
+      BufferLayout.ns64('allowed_failed_distributions')
+    ]),
+},
+
   SubmitTask: {
     index: 1,
     layout: BufferLayout.struct([
@@ -358,6 +377,89 @@ export async function createTask(
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, taskStateInfoKeypair]);
   return { taskStateInfoKeypair, stake_pot_account_pubkey };
 }
+
+export async function updateTask(
+  payerWallet: Keypair,
+  task_name: string,
+  task_audit_program: string,
+  bounty_amount_per_round: number,
+  space: number,
+  task_description: string,
+  task_executable_network: string,
+  round_time: number,
+  audit_window: number,
+  submission_window: number,
+  minimum_stake_amount: number,
+  task_metadata: string,
+  local_vars: string,
+  allowed_failed_distributions: number,
+  taskAccountInfoPubKey: PublicKey,
+  statePotAccountPubKey: PublicKey
+): Promise<any> {
+  // Checks
+  if (round_time < audit_window + submission_window)
+    throw new Error('Round time cannot be less than audit_window + submission_window');
+  if (task_description.length > 64) throw new Error('task_description cannot be greater than 64 characters');
+
+  let updateTaskData = {
+    task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
+    task_description: new TextEncoder().encode(padStringWithSpaces(task_description, 64)),
+    task_audit_program: new TextEncoder().encode(padStringWithSpaces(task_audit_program, 64)), //must be 64 chracters long
+    task_executable_network: new TextEncoder().encode(padStringWithSpaces(task_executable_network, 64)), //must be 64 chracters long
+    bounty_amount_per_round: bounty_amount_per_round * LAMPORTS_PER_SOL,
+    round_time: round_time,
+    audit_window: audit_window,
+    submission_window: submission_window,
+    rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
+    space: space,
+    minimum_stake_amount: minimum_stake_amount * LAMPORTS_PER_SOL,
+    task_metadata: new TextEncoder().encode(padStringWithSpaces(task_metadata, 64)),
+    local_vars: new TextEncoder().encode(padStringWithSpaces(local_vars, 64)),
+    allowed_failed_distributions: allowed_failed_distributions
+
+
+
+
+  };
+  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.UpdateTask, updateTaskData);
+  let newTaskStateInfoKeypair = Keypair.generate();
+  let newStake_pot_account_pubkey: PublicKey = getStakePotAccount();
+
+  const createTaskStateTransaction = new Transaction().add(
+    SystemProgram.createAccount({
+      fromPubkey: payerWallet.publicKey,
+      newAccountPubkey: newTaskStateInfoKeypair.publicKey,
+      lamports: updateTaskData.rentExemptionAmount,
+      space: updateTaskData.space,
+      programId: programId,
+    })
+  );
+  let keys = [
+    { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
+    { pubkey: taskAccountInfoPubKey, isSigner: true, isWritable: true },
+    { pubkey: statePotAccountPubKey, isSigner: false, isWritable: true },
+    { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
+    { pubkey: newTaskStateInfoKeypair.publicKey, isSigner: true, isWritable: true },
+    { pubkey: newStake_pot_account_pubkey, isSigner: false, isWritable: true },
+  ];
+  // if (koii_vars) [
+  //   keys.push({
+  //     pubkey: new PublicKey(koii_vars), isSigner: false, isWritable: false
+  //   })
+  // ]
+  await sendAndConfirmTransaction(connection, createTaskStateTransaction, [payerWallet, newTaskStateInfoKeypair]);
+  const instruction = new TransactionInstruction({
+    keys,
+    programId,
+    data: data,
+  });
+  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, newTaskStateInfoKeypair]);
+  return { newTaskStateInfoKeypair, newStake_pot_account_pubkey };
+}
+
+
+
+
 async function sleep(ms: any) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
