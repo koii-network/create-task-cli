@@ -22,23 +22,22 @@ A KOII task created will be visible to millions of KOII nodes running. They will
 
 ## Steps to create a new task
 
-1. First of all you will need to create a executable (javascript file containing core logic). This executable will be responsible for performing the respective task, submitting the result to the chain (`SubmitTask`) and an audit function responsible for verifying the submissions of other nodes and submitting vote to the chain verifying their submissions (`Vote`). [Example Here](https://github.com/koii-network/k2-node/blob/raj-test/executables/cjnebwkjvbwjkbwvjkvbkbvhvbb.js)
-
-2. Second step would be to upload this executable on the Arweave and in return you will get the tx id which will be point to that js file. You will need this transaction id when creating the task. 
-<strong>NOTE:</strong> When running the task-node in development mode, the task-node will try to find the file in executables folder with the same name (tx id) you put when creating the contract. So, you don't have to deploy your file on arweave again and again to test.
-
-3. The third step would be running the test-validator (k2 local testnet). [Refer here](https://github.com/koii-network/k2/blob/dev/README.md#running-a-test-validator)
-
-4. Fourth step would be creating the actual contract instance on the task-contract using the cli as referred on the top (`Create a new task`). Once the task is created you will need to mark the task as active (`Mark task as active`) and whitelist the task (`Whitelist the task`) as referred above. In actual production environment the whitelisting will be done by the KOII team. But currently you will need access to one secret key to whitelist the task (Can be asked by any KOII team member).
- 
-5. Once you have the task created, you should be able to see your task once you run the task-node. Then you can specify the id of your task in the environment variable or manually select the task in the prompt.
-
-6. Your task should submit the results to the chain.
-
-7. Once submission period is over you can change the task to voting mode (`Set task to voting`) as referred above.
-
-8. Once the task is set to voting the executable which was continuously checking the status of the task will start submitting votes for the other submissions.
-
-9. Once the voting period is over the task owner will trigger the payout. (`Trigger payout`) which will update the balance of the submitter and voters on the basis of the correctness of their submissions and votes.
-
-10. The submitters and voters can call (`Claim reward`) to get the rewarded KOII to their respective wallet addresses.
+1. Enter the name of the task: Any Name .. Seriously your choice! E.g: Blazing-Fast-Execution
+2. Enter short description of your task: A brief explanation of the task you're creating. Note: The character should not longer than 64 characters.
+3. Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]:  Choose IPFS or ARWEAVE for storage of your executable file, or DEVELOPMENT if you haven’t developed your task yet.
+Note — The next prompt depends on your answer to the prompt above.
+4. [For IPFS] Enter the web3.storage API key: If you choose to store your task executable on IPFS, you’ll be required to add your web3.storage API key, visit here to create a web3.storage account. After creating an account, create an API Token for your project, paste the API token on this prompt. e.g: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....
+5. [For Arweave] Enter Arweave id of the deployed Koii task executable program: If you choose your task executable on Arweave, you have to upload your executable on Arweave and provide the ID to the uploaded file.
+6. [For DEVELOPMENT] Enter the name of executable you want to run on task-nodes: Enter a desired name for your task executable, this will be the same name of the executable file that will exist in the task node's executables folder.
+7. [For IPFS and ARWEAVE] Enter the path to your executable webpack: Add the absolute path to your executable file. E.g: /Users/<YOUR_HOME>/Documents/testing-task/dist/main.js
+8. Enter the round time in slots: The preferred number of slots per round for the task. E.g: 1000
+9. Enter the audit window in slots: The number of slots to be allocated to the audit window. E.g: 500
+10. Enter the submission window in slots: The number of slots to be allocated to the submission window. E.g: 300
+Note — The number of slots in the audit window and submission must be lower than the number of slots per round.
+11. Enter the minimum staking amount in lamports: Add the minimum amount node operators should be able to stake on the task. E.g: 50
+12. Enter the total bounty you want to allocate for the task (In KOII): Any amount not more than what you have in your wallet though. E.g: 1000 (We suggest the amount could be run at least 4 epochs)
+13. Enter the bounty amount per round: Total amount would be divided equally for each number until the bounty fund is exhausted. E.g: 10
+14. Enter TaskMetadata CID hosted on IPFS (Leave empty for None): If you've hosted the metadata for your task on IPFS, add the CID here; otherwise, leave blank. Use your web3.storage account, click the Upload Files button, and then upload a JSON file containing the metadata for your task. Add the CID for the uploaded file to this prompt. Check out a metadata example.
+15. Enter CID for environment variables hosted on IPFS (Leave empty for None): If your task requires environment variables to be run by node runners, upload a JSON file that contains those variables to IPFS using web3.storage. Add the uploaded file's CID to this prompt.
+16. Enter the space, you want to allocate for task account (in MBs): Each task would need some storage for persistence, in general in MBs. E.g: 10
+After the final confirmation of y, your task would be created along with  a taskStateInfoKeypair.json which is used to control the task state info.
