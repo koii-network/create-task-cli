@@ -45,7 +45,7 @@ import {
   
         choices: [
           {title: 'Create a new task', value: 'create-task'},
-          {title: 'Set task to voting', value: 'set-task-to-voting'},
+          {title: 'Exit testing', value: 'exit-test'},
         ],
       })
     ).mode;
@@ -111,10 +111,8 @@ import {
         console.log("Note: Task Id is basically the public key of taskStateInfoKeypair.json")
         break;
       }
-      case 'set-task-to-voting': {
-        const { taskStateInfoAddress, deadline } = await takeInputForSetTaskToVoting();
-        console.log('Calling SetTaskToVoting');
-        await SetTaskToVoting(payerWallet, taskStateInfoAddress, deadline);
+      case 'exit-test': {
+        console.log('Ending testing');
         break;
       }
       default:
@@ -379,25 +377,6 @@ import {
   
   
     return { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars };
-  }
-  
-  async function takeInputForSetTaskToVoting() {
-    const taskStateInfoAddress = (
-      await prompts({
-        type: 'text',
-        name: 'taskStateInfoAddress',
-        message: 'Enter the task id',
-      })
-    ).taskStateInfoAddress;
-    const deadline = (
-      await prompts({
-        type: 'number',
-        name: 'deadline',
-        message: 'Enter the deadline for task accepting votes in unix',
-        min: parseInt((Date.now() / 1000).toFixed(2)),
-      })
-    ).deadline;
-    return { deadline, taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
   }
 
   main().then(
