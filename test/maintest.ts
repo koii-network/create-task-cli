@@ -6,19 +6,12 @@ import {
     checkProgram,
     createTask,
     SetTaskToVoting,
-    Whitelist,
-    SetActive,
-    Payout,
-    ClaimReward,
-    FundTask,
-    Withdraw,
   } from './task_contract_test';
   import { uploadIpfs } from './utils_test';
   import prompts from 'prompts';
   import { Keypair, PublicKey, LAMPORTS_PER_SOL } from '@_koi/web3.js';
   import fs from 'fs';
   import { config } from 'dotenv';
-  import handleMetadata  from './metadata';
   config();
   
   async function main() {
@@ -53,13 +46,6 @@ import {
         choices: [
           {title: 'Create a new task', value: 'create-task'},
           {title: 'Set task to voting', value: 'set-task-to-voting'},
-          {title: 'Whitelist the task', value: 'whitelisting'},
-          {title: 'Mark task as active', value: 'set-active'},
-          {title: 'Trigger payout', value: 'payout'},
-          {title: 'Claim reward', value: 'claim-reward'},
-          {title: 'Fund task with more KOII', value: 'fund-task'},
-          {title: 'Withdraw staked funds from task', value: 'withdraw'},
-          {title: 'upload assets to IPFS(metadata/local vars)' ,value:"handle-assets" }
         ],
       })
     ).mode;
@@ -131,46 +117,6 @@ import {
         await SetTaskToVoting(payerWallet, taskStateInfoAddress, deadline);
         break;
       }
-      case 'whitelisting': {
-        const { programOwnerAddress, taskStateInfoAddress } = await takeInputForWhitelisting();
-        console.log('Calling Whitelist');
-        await Whitelist(payerWallet, taskStateInfoAddress, programOwnerAddress);
-        break;
-      }
-      case 'set-active': {
-        console.log('Calling SetActive');
-        const { isActive, taskStateInfoAddress } = await takeInputForSetActive();
-        await SetActive(payerWallet, taskStateInfoAddress, isActive);
-        break;
-      }
-      case 'payout': {
-        console.log('Calling Payout');
-        const { taskStateInfoAddress } = await takeInputForPayout();
-        await Payout(payerWallet, taskStateInfoAddress);
-        break;
-      }
-      case 'claim-reward': {
-        console.log('Calling ClaimReward');
-        const { beneficiaryAccount, stakePotAccount, taskStateInfoAddress, claimerKeypair } = await takeInputForClaimReward();
-        await ClaimReward(payerWallet, taskStateInfoAddress, stakePotAccount, beneficiaryAccount, claimerKeypair);
-        break;
-      }
-      case 'fund-task': {
-        console.log('Calling FundTask');
-        const { stakePotAccount, taskStateInfoAddress, amount } = await takeInputForFundTask();
-        await FundTask(payerWallet, taskStateInfoAddress, stakePotAccount, amount);
-        break;
-      }
-      case 'withdraw': {
-        console.log('Calling Withdraw');
-        const { taskStateInfoAddress, submitterKeypair } = await takeInputForWithdraw();
-        await Withdraw(payerWallet, taskStateInfoAddress, submitterKeypair);
-        break;
-      }
-      case "handle-assets" :{
-        await handleMetadata()
-        break
-      } 
       default:
         console.error('Invalid option selected');
     }
@@ -453,130 +399,7 @@ import {
     ).deadline;
     return { deadline, taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
   }
-  async function takeInputForWhitelisting() {
-    const taskStateInfoAddress = (
-      await prompts({
-        type: 'text',
-        name: 'taskStateInfoAddress',
-        message: 'Enter the task id',
-      })
-    ).taskStateInfoAddress;
-    const programOwnerAddress = (
-      await prompts({
-        type: 'text',
-        name: 'programOwnerAddress',
-        message: 'Enter the path to program owner wallet (Only available to KOII team)',
-      })
-    ).programOwnerAddress;
-    return { programOwnerAddress, taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
-  }
-  async function takeInputForSetActive() {
-    const taskStateInfoAddress = (
-      await prompts({
-        type: 'text',
-        name: 'taskStateInfoAddress',
-        message: 'Enter the task id',
-      })
-    ).taskStateInfoAddress;
-    const isActive = (
-      await prompts({
-        type: 'select',
-        name: 'isActive',
-        message: 'Do you want to set the task to Active or Inactive?',
-        choices: [
-          { title: 'Active', description: 'Set the task active', value: 'Active' },
-          { title: 'Inactive', description: 'Deactivate the task', value: 'Inactive' },
-        ],
-      })
-    ).isActive;
-    return { isActive: isActive == 'Active', taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
-  }
-  async function takeInputForPayout() {
-    const taskStateInfoAddress = (
-      await prompts({
-        type: 'text',
-        name: 'taskStateInfoAddress',
-        message: 'Enter the task id',
-      })
-    ).taskStateInfoAddress;
-    return { taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
-  }
-  async function takeInputForClaimReward() {
-    const taskStateInfoAddress = (
-      await prompts({
-        type: 'text',
-        name: 'taskStateInfoAddress',
-        message: 'Enter the task id',
-      })
-    ).taskStateInfoAddress;
-    const stakePotAccount = (
-      await prompts({
-        type: 'text',
-        name: 'stakePotAccount',
-        message: 'Enter the stakePotAccount address',
-      })
-    ).stakePotAccount;
-    const beneficiaryAccount = (
-      await prompts({
-        type: 'text',
-        name: 'beneficiaryAccount',
-        message: 'Enter the beneficiaryAccount address (Address that the funds will be transferred to)',
-      })
-    ).beneficiaryAccount;
-    const claimerKeypair = (
-      await prompts({
-        type: 'text',
-        name: 'claimerKeypair',
-        message: 'Enter the path to Claimer wallet',
-      })
-    ).claimerKeypair;
-    return { claimerKeypair, beneficiaryAccount: new PublicKey(beneficiaryAccount), stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
-  }
-  async function takeInputForFundTask() {
-    const taskStateInfoAddress = (
-      await prompts({
-        type: 'text',
-        name: 'taskStateInfoAddress',
-        message: 'Enter the task id',
-      })
-    ).taskStateInfoAddress;
-    const stakePotAccount = (
-      await prompts({
-        type: 'text',
-        name: 'stakePotAccount',
-        message: 'Enter the stakePotAccount address',
-      })
-    ).stakePotAccount;
-    const amount = (
-      await prompts({
-        type: 'text',
-        name: 'amount',
-        message: 'Enter the amount(in KOII) to fund',
-      })
-    ).amount;
-    return { amount: amount * LAMPORTS_PER_SOL, stakePotAccount: new PublicKey(stakePotAccount), taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
-  }
-  async function takeInputForWithdraw() {
-    const taskStateInfoAddress = (
-      await prompts({
-        type: 'text',
-        name: 'taskStateInfoAddress',
-        message: 'Enter the task id',
-      })
-    ).taskStateInfoAddress;
-    const submitterWalletPath = (
-      await prompts({
-        type: 'text',
-        name: 'submitterWalletPath',
-        message: 'Enter the submitter wallet path address',
-      })
-    ).submitterWalletPath;
-  
-  
-    let wallet = fs.readFileSync(submitterWalletPath, 'utf-8');
-    let submitterKeypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(wallet)));
-    return { taskStateInfoAddress: new PublicKey(taskStateInfoAddress), submitterKeypair };
-  }
+
   main().then(
     () => process.exit(),
     (err) => {

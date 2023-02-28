@@ -1,6 +1,3 @@
-/**
- * Hello world
- */
 
 import {
     establishConnection,
