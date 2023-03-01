@@ -8,6 +8,7 @@
   "main": "./build/main.js",
   "scripts": {
     "start": "ts-node src/main.ts",
+    "test": "ts-node test/maintest.ts",
     "pretty": "prettier --write '{,src/**/}*.ts'",
     "build": "tsc"
   },
