@@ -60,7 +60,7 @@ async function main() {
         {title: 'Claim reward', value: 'claim-reward'},
         {title: 'Fund task with more KOII', value: 'fund-task'},
         {title: 'Withdraw staked funds from task', value: 'withdraw'},
-        {title: 'upload assets to IPFS(metadata/local vars)' ,value:"handle-assets" },
+        {title: 'upload metadata' ,value:"handle-assets" },
         {title: 'update KOII task' ,value:"update-task" }
 
 

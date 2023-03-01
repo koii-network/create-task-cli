@@ -436,7 +436,7 @@ export async function updateTask(
   );
   let keys = [
     { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
-    { pubkey: taskAccountInfoPubKey, isSigner: true, isWritable: true },
+    { pubkey: taskAccountInfoPubKey, isSigner: false, isWritable: true },
     { pubkey: statePotAccountPubKey, isSigner: false, isWritable: true },
     { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
     { pubkey: newTaskStateInfoKeypair.publicKey, isSigner: true, isWritable: true },
