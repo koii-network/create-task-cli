@@ -61,8 +61,29 @@ import {
   
     switch (mode) {
       case 'create-task': {
+        let TaskMetadataPath: string = process.env.taskMetadata || '';
+        if(!process.env.taskMetadata) {
+          console.error('No task metadata found');
+          TaskMetadataPath = (
+            await prompts({
+              type: 'text',
+              name: 'taskMetadata',
+              message: 'Enter the path to your task metadata',
+            })
+          ).taskMetadata;
+          console.log(TaskMetadataPath);
+          if (!fs.existsSync(TaskMetadataPath)) throw Error('Invalid task metadata Path');
+        }
+        try {
+          let taskMetadata = fs.readFileSync(TaskMetadataPath, 'utf-8');
+          console.log(taskMetadata);
+        } catch (e) {
+          console.error("Task Metadata Doesn't Exist");
+          process.exit();
+        }
+        
         const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars } =
-          await takeInputForCreateTask();
+        await takeInputForCreateTask();
         // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
         let totalAmount =
           LAMPORTS_PER_SOL * total_bounty_amount +
