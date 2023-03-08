@@ -239,7 +239,7 @@ async function takeInputForCreateTask() {
       await prompts({
         type: 'text',
         name: 'task_executable_network',
-        message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE]',
+        message: 'Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]',
       })
     ).task_executable_network;
   }
@@ -350,7 +350,7 @@ async function takeInputForCreateTask() {
       type: 'number',
       name: 'minimum_stake_amount',
       message: 'Enter the minimum staking amount for the task (in KOII)',
-
+      float:true
     })
   ).minimum_stake_amount;
   let total_bounty_amount = (
