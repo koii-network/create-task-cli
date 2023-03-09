@@ -434,7 +434,7 @@ async function takeInputForCreateTask(state?:any) {
       type: 'number',
       name: 'minimum_stake_amount',
       message: 'Enter the minimum staking amount for the task (in KOII)',
-
+      float:true
     })
   ).minimum_stake_amount;
   let total_bounty_amount = (
