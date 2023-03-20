@@ -1,0 +1,19 @@
+# Name and desciption sof your task
+taskName: "test-task"
+description: "This task is to test out the namespace functions"
+# network value can be DEVELOPMENT , ARWEAVE or IPFS
+network: "DEVELOPMENT"
+# Provide your web.storage key in case of IPFS otherwise leave blank
+web3StorageSecretKey: ""
+
+# Path to your executable webpack if the selected network is IPFS otherwise leave blank
+taskAuditProgram: ""
+
+# Provide your transaction ID in case of ARWEAVE and in case of DEVELOPMENT give your executable name as main otherwise leave blank
+taskAuditProgramId: ""
+
+# Total round time of your task : it must be given in slots and each slot is rougly equal to 4ms
+roundTime: "600"
+
+auditWindow: "200"
+submissionWindow: "200"
