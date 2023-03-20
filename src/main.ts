@@ -5,6 +5,7 @@ import {
   establishPayer,
   checkProgram,
   createTask,
+  updateTask,
   SetTaskToVoting,
   Whitelist,
   SetActive,
@@ -59,7 +60,10 @@ async function main() {
         {title: 'Claim reward', value: 'claim-reward'},
         {title: 'Fund task with more KOII', value: 'fund-task'},
         {title: 'Withdraw staked funds from task', value: 'withdraw'},
-        {title: 'upload assets to IPFS(metadata/local vars)' ,value:"handle-assets" }
+        {title: 'upload metadata' ,value:"handle-assets" },
+        {title: 'update KOII task' ,value:"update-task" }
+
+
       ],
     })
   ).mode;
@@ -75,7 +79,7 @@ async function main() {
 
   switch (mode) {
     case 'create-task': {
-      const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars } =
+      const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars, allowed_failed_distributions } =
         await takeInputForCreateTask();
       // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
       let totalAmount =
@@ -117,7 +121,7 @@ async function main() {
         task_metadata,
         task_locals,
         koii_vars,
-        4
+        allowed_failed_distributions
       );
       fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
       console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
@@ -171,13 +175,92 @@ async function main() {
       await handleMetadata()
       break
     } 
+    case "update-task": {
+      let taskId = (
+        await prompts({
+          type: 'text',
+          name: 'taskId',
+          message: 'Enter id of the task you want to edit',
+        })
+      ).taskId;
+      // const connection = new Connection('https://k2-testnet.koii.live');
+      
+      const accountInfo = await connection.getAccountInfo(
+        new PublicKey(taskId),
+      );
+      if (accountInfo == null) {
+        console.log("No task found with this Id");
+        break;
+      }
+      let rawData = accountInfo.data + '';
+      let state = JSON.parse(rawData);
+      console.log(state);
+      if (new PublicKey(state.task_manager).toString() !== payerWallet.publicKey.toString()) {
+        console.log("You are not the owner of this task! ");
+        break;
+      }
+      const taskAccountInfoPubKey =  new PublicKey(taskId);
+      console.log("OLD TASK STATE INFO",taskAccountInfoPubKey);
+      const statePotAccount = new PublicKey(state.stake_pot_account);
+      console.log("OLD STATE POT",statePotAccount);
+      const { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, allowed_failed_distributions} = await takeInputForCreateTask(state);
+    // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
+    let totalAmount =
+      LAMPORTS_PER_SOL * total_bounty_amount +
+      (await connection.getMinimumBalanceForRentExemption(100)) +
+      10000 +
+      (await connection.getMinimumBalanceForRentExemption(space)) +
+      10000;
+    let response = (
+      await prompts({
+        type: 'confirm',
+        name: 'response',
+        message: `Your account will be subtract ${totalAmount / LAMPORTS_PER_SOL
+          } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
+      })
+    ).response;
+
+    if (!response) process.exit(0);
+    let lamports = await connection.getBalance(payerWallet.publicKey);
+    if (lamports < totalAmount) {
+      console.error('Insufficient balance for this operation');
+      process.exit(0);
+    }
+    console.log('Calling Update Task');
+
+    // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
+
+    let { taskStateInfoKeypair, stake_pot_account_pubkey } = await updateTask(
+      payerWallet,
+      task_name,
+      task_audit_program_id,
+      bounty_amount_per_round,
+      space,
+      task_description,
+      task_executable_network,
+      round_time,
+      audit_window,
+      submission_window,
+      minimum_stake_amount,
+      task_metadata,
+      task_locals,
+      allowed_failed_distributions,
+      taskAccountInfoPubKey,
+      statePotAccount
+    );
+    fs.writeFileSync('taskStateInfoKeypair.json', JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)));
+    console.log('Task Id:', taskStateInfoKeypair.publicKey.toBase58());
+    console.log('Stake Pot Account Pubkey:', stake_pot_account_pubkey.toBase58());
+    console.log("Note: Task Id is basically the public key of taskStateInfoKeypair.json")
+      break;
+    }
     default:
       console.error('Invalid option selected');
   }
   console.log('Success');
 }
 
-async function takeInputForCreateTask() {
+async function takeInputForCreateTask(state?:any) {
   let task_name = (
     await prompts({
       type: 'text',
@@ -192,6 +275,7 @@ async function takeInputForCreateTask() {
         type: 'text',
         name: 'task_name',
         message: 'Enter the name of the task',
+        initial:state?.name || null
       })
     ).task_name;
   }
@@ -378,6 +462,24 @@ async function takeInputForCreateTask() {
       // max: total_bounty_amount,
     })
   ).bounty_amount_per_round;
+  let allowed_failed_distributions = (
+    await prompts({
+      type: 'number',
+      name: 'allowed_failed_distributions',
+      message: 'Enter the number of distribution list submission retry in case it fails',
+    })
+  ).allowed_failed_distributions;
+  while (allowed_failed_distributions < 0) {
+    console.error('failed distributions cannot be less than 0');
+    allowed_failed_distributions = (
+      await prompts({
+        type: 'number',
+        name: 'allowed_failed_distributions',
+        message: 'Enter the number of distribution list submission retry in case it fails',
+      })
+    ).allowed_failed_distributions;
+  }
+
   let task_metadata = (
     await prompts({
       type: 'text',
@@ -432,7 +534,9 @@ async function takeInputForCreateTask() {
 
 
 
-  return { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars };
+
+
+  return { task_name, task_audit_program_id, total_bounty_amount, bounty_amount_per_round, space, task_description, task_executable_network, round_time, audit_window, submission_window, minimum_stake_amount, task_metadata, task_locals, koii_vars, allowed_failed_distributions };
 }
 
 async function takeInputForSetTaskToVoting() {
