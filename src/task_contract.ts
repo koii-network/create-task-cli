@@ -499,61 +499,8 @@ async function sleep(ms: any) {
 //   return submitterKeypair.publicKey;
 // }
 
-export async function SetTaskToVoting(
-  payerWallet: Keypair,
-  taskStateInfoKeypair: PublicKey,
-  deadline: number
-): Promise<void> {
-  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetTaskToVoting, {
-    deadline: deadline,
-  });
-  const instruction = new TransactionInstruction({
-    keys: [
-      { pubkey: taskStateInfoKeypair, isSigner: false, isWritable: true },
-      { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
-      { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
-    ],
-    programId,
-    data: data,
-  });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
-}
-// export async function Vote(
-//   payerWallet: Keypair,
-//   taskStateInfoKeypair: Keypair,
-//   submitterPubkey: PublicKey
-// ): Promise<void> {
-//   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Vote, {
-//     is_valid: 1,
-//     stake_amount: 100000,
-//   });
-//   let voterKeypair = Keypair.generate();
-//   console.log('Making new account', voterKeypair.publicKey.toBase58());
 
-//   const createSubmitterAccTransaction = new Transaction().add(
-//     SystemProgram.createAccount({
-//       fromPubkey: payerWallet.publicKey,
-//       newAccountPubkey: voterKeypair.publicKey,
-//       lamports: 100000 + (await connection.getMinimumBalanceForRentExemption(100)) + 1000, //adding 1000 extra lamports for padding
-//       space: 100,
-//       programId: programId,
-//     })
-//   );
-//   await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payerWallet, voterKeypair]);
-//   const instruction = new TransactionInstruction({
-//     keys: [
-//       {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
-//       {pubkey: voterKeypair.publicKey, isSigner: true, isWritable: true},
-//       {pubkey: submitterPubkey, isSigner: false, isWritable: false}, //Candidate public key who submitted the task and you are approving whose task is correct
-//       {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
-//       {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
-//       {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
-//     ],
-//     programId,
-//     data: data,
-//   });
-//   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, voterKeypair]);
-// }
+
 export async function Whitelist(
   payerWallet: Keypair,
   taskStateInfoAddress: PublicKey,
@@ -593,19 +540,7 @@ export async function SetActive(
   });
   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
 }
-export async function Payout(payerWallet: Keypair, taskStateInfoAddress: PublicKey): Promise<void> {
-  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Payout, {});
-  const instruction = new TransactionInstruction({
-    keys: [
-      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
-      { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
-      { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
-    ],
-    programId,
-    data: data,
-  });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
-}
+
 export async function ClaimReward(
   payerWallet: Keypair,
   taskStateInfoAddress: PublicKey,

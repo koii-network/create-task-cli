@@ -6,10 +6,8 @@ import {
   checkProgram,
   createTask,
   updateTask,
-  SetTaskToVoting,
   Whitelist,
   SetActive,
-  Payout,
   ClaimReward,
   FundTask,
   Withdraw,
@@ -170,11 +168,65 @@ async function main() {
         }
 
         case "create-task-yml": {
-          console.log("IN YML");
           const readYamlFile = require("read-yaml-file");
-          await readYamlFile("config-task.yml").then((data: any) => {
-            console.log("IN CONFIG");
-            console.log(data.task);
+          await readYamlFile("config-task.yml").then(async (data: any) => {
+            console.log(data.task_name);
+            // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
+            let totalAmount =
+              LAMPORTS_PER_SOL * data.total_bounty_amount +
+              (await connection.getMinimumBalanceForRentExemption(100)) +
+              10000 +
+              (await connection.getMinimumBalanceForRentExemption(data.space)) +
+              10000;
+            let response = (
+              await prompts({
+                type: "confirm",
+                name: "response",
+                message: `Your account will be subtract ${
+                  totalAmount / LAMPORTS_PER_SOL
+                } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
+              })
+            ).response;
+
+            if (!response) process.exit(0);
+            let lamports = await connection.getBalance(payerWallet.publicKey);
+            if (lamports < totalAmount) {
+              console.error("Insufficient balance for this operation");
+              process.exit(0);
+            }
+            console.log("Calling Create Task");
+            // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
+            let { taskStateInfoKeypair, stake_pot_account_pubkey } =
+              await createTask(
+                payerWallet,
+                data.task_name,
+                data.task_audit_program_id,
+                Number(data.total_bounty_amount),
+                Number(data.bounty_amount_per_round),
+                Number(data.space),
+                data.task_description,
+                data.task_executable_network,
+                Number(data.round_time),
+                Number(data.audit_window),
+                Number(data.submission_window),
+                Number(data.minimum_stake_amount),
+                data.task_metadata,
+                data.task_locals,
+                data.koii_vars,
+                Number(data.allowed_failed_distributions)
+              );
+            fs.writeFileSync(
+              "taskStateInfoKeypair.json",
+              JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
+            );
+            console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
+            console.log(
+              "Stake Pot Account Pubkey:",
+              stake_pot_account_pubkey.toBase58()
+            );
+            console.log(
+              "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
+            );
           });
           break;
         }
@@ -246,7 +298,6 @@ async function main() {
           message: "Enter id of the task you want to edit",
         })
       ).taskId;
-      // const connection = new Connection('https://k2-testnet.koii.live');
 
       const accountInfo = await connection.getAccountInfo(
         new PublicKey(taskId)
@@ -374,7 +425,6 @@ async function takeInputForCreateTask(state?: any) {
       type: "text",
       name: "task_description",
       message: "Enter a short description of your task",
-      // max: total_bounty_amount,
     })
   ).task_description;
   while (task_description.length > 100) {
@@ -396,7 +446,6 @@ async function takeInputForCreateTask(state?: any) {
       name: "task_executable_network",
       message:
         "Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]",
-      // max: total_bounty_amount,
     })
   ).task_executable_network;
   while (task_executable_network.length > 100) {
@@ -409,7 +458,6 @@ async function takeInputForCreateTask(state?: any) {
         name: "task_executable_network",
         message:
           "Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]",
-        // max: total_bounty_amount,
       })
     ).task_executable_network;
   }
@@ -726,16 +774,7 @@ async function takeInputForSetActive() {
     taskStateInfoAddress: new PublicKey(taskStateInfoAddress),
   };
 }
-async function takeInputForPayout() {
-  const taskStateInfoAddress = (
-    await prompts({
-      type: "text",
-      name: "taskStateInfoAddress",
-      message: "Enter the task id",
-    })
-  ).taskStateInfoAddress;
-  return { taskStateInfoAddress: new PublicKey(taskStateInfoAddress) };
-}
+
 async function takeInputForClaimReward() {
   const taskStateInfoAddress = (
     await prompts({
