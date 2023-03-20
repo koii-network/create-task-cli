@@ -108,6 +108,7 @@ async function main() {
             task_metadata,
             task_locals,
             koii_vars,
+            allowed_failed_distributions,
           } = await takeInputForCreateTask();
           // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
           let totalAmount =
@@ -151,7 +152,7 @@ async function main() {
               task_metadata,
               task_locals,
               koii_vars,
-              4
+              allowed_failed_distributions
             );
           fs.writeFileSync(
             "taskStateInfoKeypair.json",
