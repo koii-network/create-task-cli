@@ -194,7 +194,14 @@ async function main() {
                 token: data.secret_web3_storage_key as string,
               });
               let upload = await getFilesFromPath([metadataPath]);
-              metaDataCid = await storageClient.put(upload);
+              try {
+                metaDataCid = await storageClient.put(upload);
+              } catch (err) {
+                console.error(
+                  "IPFS upload failed, please check your web3.storage key"
+                );
+                process.exit();
+              }
               console.log(
                 "\x1b[1m\x1b[32m%s\x1b[0m",
                 `Your MetaData CID is ${metaDataCid}/metadata.json`
@@ -518,6 +525,18 @@ async function takeInputForCreateTask(state?: any) {
         message: "Enter the web3.storage API key",
       })
     ).secret_web3_storage_key;
+    while (secret_web3_storage_key < 200) {
+      console.error(
+        "secret_web3_storage_key cannot be less than 200 characters"
+      );
+      secret_web3_storage_key = (
+        await prompts({
+          type: "text",
+          name: "secret_web3_storage_key",
+          message: "Enter the web3.storage API key",
+        })
+      ).secret_web3_storage_key;
+    }
     task_audit_program = (
       await prompts({
         type: "text",
@@ -527,7 +546,7 @@ async function takeInputForCreateTask(state?: any) {
     ).task_audit_program;
     while (task_audit_program.length > 200) {
       console.error(
-        "The task audit program length cannot be greater than 64 characters"
+        "The task audit program length cannot be greater than 200 characters"
       );
       task_audit_program = (
         await prompts({
