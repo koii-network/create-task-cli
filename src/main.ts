@@ -173,15 +173,60 @@ async function main() {
         case "create-task-yml": {
           const readYamlFile = require("read-yaml-file");
           let metaDataCid: string;
+          let task_audit_program_id: string;
           await readYamlFile("config-task.yml").then(async (data: any) => {
             console.log("CHECK", data.secret_web3_storage_key);
 
+            interface TaskMetadata {
+              author: string;
+              description: string;
+              repositoryUrl: string;
+              createdAt: number;
+              imageUrl: string;
+              requirementsTags: RequirementTag[];
+            }
+
+            interface RequirementTag {
+              type: RequirementType;
+              value?: string | string[]; // defined if given requirement needs a specific value
+              description?: string;
+            }
+
+            enum RequirementType {
+              GLOBAL_VARIABLE = "GLOBAL_VARIABLE",
+              TASK_VARIABLE = "TASK_VARIABLE",
+              CPU = "CPU",
+              RAM = "RAM",
+              STORAGE = "STORAGE",
+              NETWORK = "NETWORK",
+              ARCHITECTURE = "ARCHITECTURE",
+              OS = "OS",
+            }
+
+            if (data.task_executable_network == "IPFS") {
+              task_audit_program_id = await uploadIpfs(
+                data.task_audit_program,
+                data.secret_web3_storage_key
+              );
+              console.log("TASK CID", task_audit_program_id);
+            } else if (
+              data.task_executable_network == "ARWEAVE" ||
+              "DEVELOPMENT"
+            ) {
+              task_audit_program_id = data.task_audit_program_id;
+            } else {
+              console.error(
+                "Please specify the task_executable_network in YML"
+              );
+              process.exit();
+            }
+
             if (data.task_metadata_upload) {
-              const metaData = {
+              const metaData: TaskMetadata = {
                 author: data.author,
                 description: data.description,
                 repositoryUrl: data.repositoryUrl,
-                createdAt: Number(data.createdAt),
+                createdAt: data.createdAt,
                 imageUrl: data.imageUrl,
                 requirementsTags: data.requirementsTags,
               };
@@ -236,7 +281,7 @@ async function main() {
               await createTask(
                 payerWallet,
                 data.task_name,
-                data.task_audit_program_id,
+                task_audit_program_id,
                 Number(data.total_bounty_amount),
                 Number(data.bounty_amount_per_round),
                 Number(data.space),
@@ -247,8 +292,8 @@ async function main() {
                 Number(data.submission_window),
                 Number(data.minimum_stake_amount),
                 metaDataCid,
-                data.task_locals,
-                data.koii_vars,
+                "",
+                "",
                 Number(data.allowed_failed_distributions)
               );
             fs.writeFileSync(

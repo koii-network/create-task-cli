@@ -2,15 +2,15 @@
 task_name: "test-task"
 task_description: "This task is to test out the namespace function"
 # network value can be DEVELOPMENT , ARWEAVE or IPFS
-task_executable_network: "DEVELOPMENT"
+task_executable_network: "IPFS"
 # Provide your web3.storage key in case of uploading executable/metadata to IPFS otherwise leave blank
-secret_web3_storage_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDg0NmM5YjRmNTMwYzc3OUQ5NzFkOTQzMGI4OTkyRkU5NWIwNTE0MkIiLCJpc3MiOiJ3ZWIzLXN0b3JhZ2UiLCJpYXQiOjE2NjE5ODEwNTg0NjYsIm5hbWUiOiJrb2lpIn0.m0J9abCa_N6M5jJ5quEJkZkbxBP18U-omSQRcXP9a8"
+secret_web3_storage_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDg0NmM5YjRmNTMwYzc3OUQ5NzFkOTQzMGI4OTkyRkU5NWIwNTE0MkIiLCJpc3MiOiJ3ZWIzLXN0b3JhZ2UiLCJpYXQiOjE2NjE5ODEwNTg0NjYsIm5hbWUiOiJrb2lpIn0.m0J9abCa_N6M5jJ5quEJkZkbxBP18U-omSQRcXP9a80"
 
 # Path to your executable webpack if the selected network is IPFS otherwise leave blank
-task_audit_program: ""
+task_audit_program: "/Users/raj/koii_work/new-task-structure/sid-testing/k2-task-examples/google-doodle/dist/main.js"
 
 # Provide your transaction ID in case of ARWEAVE and in case of DEVELOPMENT give your executable name as main otherwise leave blank
-task_audit_program_id: "main"
+task_audit_program_id: ""
 
 # Total round time of your task : it must be given in slots and each slot is rougly equal to 4ms
 round_time: "600"
@@ -29,8 +29,6 @@ allowed_failed_distributions: "4"
 
 # CID of metadata
 task_metadata_upload: true
-task_locals: ""
-koii_vars: ""
 
 # Please make sure that task_metadata is set to yes to upload the below metadata on IPFS else set that to no
 # Note that the value field in RequirementTag is optional, so it is up to you to include it or not based on your use case.
