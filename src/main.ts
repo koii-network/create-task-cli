@@ -18,6 +18,9 @@ import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
 import fs from "fs";
 import { config } from "dotenv";
 import handleMetadata from "./metadata";
+import { join } from "path";
+import { tmpdir } from "os";
+import { Web3Storage, getFilesFromPath } from "web3.storage";
 config();
 
 async function main() {
@@ -169,8 +172,34 @@ async function main() {
 
         case "create-task-yml": {
           const readYamlFile = require("read-yaml-file");
+          let metaDataCid: string;
           await readYamlFile("config-task.yml").then(async (data: any) => {
-            console.log(data.task_name);
+            console.log("CHECK", data.secret_web3_storage_key);
+
+            if (data.task_metadata_upload) {
+              const metaData = {
+                author: data.author,
+                description: data.description,
+                repositoryUrl: data.repositoryUrl,
+                createdAt: Number(data.createdAt),
+                imageUrl: data.imageUrl,
+                requirementsTags: data.requirementsTags,
+              };
+
+              console.log("METADATA", metaData);
+              let tmp = tmpdir();
+              let metadataPath = join(tmp, "metadata.json");
+              fs.writeFileSync(metadataPath, JSON.stringify(metaData));
+              const storageClient = new Web3Storage({
+                token: data.secret_web3_storage_key as string,
+              });
+              let upload = await getFilesFromPath([metadataPath]);
+              metaDataCid = await storageClient.put(upload);
+              console.log(
+                "\x1b[1m\x1b[32m%s\x1b[0m",
+                `Your MetaData CID is ${metaDataCid}/metadata.json`
+              );
+            }
             // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
             let totalAmount =
               LAMPORTS_PER_SOL * data.total_bounty_amount +
@@ -210,7 +239,7 @@ async function main() {
                 Number(data.audit_window),
                 Number(data.submission_window),
                 Number(data.minimum_stake_amount),
-                data.task_metadata,
+                metaDataCid,
                 data.task_locals,
                 data.koii_vars,
                 Number(data.allowed_failed_distributions)

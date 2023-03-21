@@ -3,7 +3,7 @@ task_name: "test-task"
 task_description: "This task is to test out the namespace function"
 # network value can be DEVELOPMENT , ARWEAVE or IPFS
 task_executable_network: "DEVELOPMENT"
-# Provide your web.storage key in case of IPFS otherwise leave blank
+# Provide your web3.storage key in case of uploading executable/metadata to IPFS otherwise leave blank
 secret_web3_storage_key: ""
 
 # Path to your executable webpack if the selected network is IPFS otherwise leave blank
@@ -28,9 +28,37 @@ bounty_amount_per_round: "1"
 allowed_failed_distributions: "4"
 
 # CID of metadata
-task_metadata: ""
+task_metadata_upload: true
 task_locals: ""
 koii_vars: ""
+
+# Please make sure that task_metadata is set to yes to upload the below metadata on IPFS else set that to no
+# Note that the value field in RequirementTag is optional, so it is up to you to include it or not based on your use case.
+
+author: "raj"
+description: "This is test"
+repositoryUrl: "github.io/did"
+createdAt: 20230324
+imageUrl: "cscefve"
+requirementsTags:
+  - type: GLOBAL_VARIABLE
+    value: ["TASK_ID", "WEB3.STORAGE"]
+    description: "used globally"
+  - type: TASK_VARIABLE
+    value: ["VAR1", "VAR2"]
+    description: "used in tasks"
+  - type: CPU
+    value: "4-core"
+  - type: RAM
+    value: "5 GB"
+  - type: STORAGE
+    value: "test"
+  - type: NETWORK
+    value: "test"
+  - type: ARCHITECTURE
+    value: "ccc"
+  - type: OS
+    value: "OSX"
 
 #Space in MBs
 space: "10"
