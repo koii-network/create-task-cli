@@ -1,5 +1,5 @@
 # Name and desciption of your task
-task_name: "tt-task"
+task_name: "test-task"
 task_description: "This task is to test out the namespace function"
 # network value can be DEVELOPMENT , ARWEAVE or IPFS
 task_executable_network: "DEVELOPMENT"
