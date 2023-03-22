@@ -36,7 +36,9 @@ async function main() {
   // ).wallet;
   //console.log(walletPath);
   if (!fs.existsSync(walletPath))
-    throw Error("Please make sure that wallet is under the name id.json");
+    throw Error(
+      "Please make sure that wallet is under the name id.json and  in the current directory"
+    );
 
   try {
     let wallet = fs.readFileSync(walletPath, "utf-8");
@@ -174,6 +176,14 @@ async function main() {
           const readYamlFile = require("read-yaml-file");
           let metaDataCid: string;
           let task_audit_program_id: string;
+
+          let ymlPath: string = "./config-task.yml";
+
+          if (!fs.existsSync(ymlPath))
+            throw Error(
+              "Please make sure that your  configuration file is under the name config-task.yml and  in the current directory"
+            );
+
           await readYamlFile("config-task.yml").then(async (data: any) => {
             console.log("CHECK", data.secret_web3_storage_key);
 
@@ -220,38 +230,36 @@ async function main() {
               );
               process.exit();
             }
+            const metaData: TaskMetadata = {
+              author: data.author,
+              description: data.description,
+              repositoryUrl: data.repositoryUrl,
+              createdAt: data.createdAt,
+              imageUrl: data.imageUrl,
+              requirementsTags: data.requirementsTags,
+            };
 
-            if (data.task_metadata_upload) {
-              const metaData: TaskMetadata = {
-                author: data.author,
-                description: data.description,
-                repositoryUrl: data.repositoryUrl,
-                createdAt: data.createdAt,
-                imageUrl: data.imageUrl,
-                requirementsTags: data.requirementsTags,
-              };
-
-              console.log("METADATA", metaData);
-              let tmp = tmpdir();
-              let metadataPath = join(tmp, "metadata.json");
-              fs.writeFileSync(metadataPath, JSON.stringify(metaData));
-              const storageClient = new Web3Storage({
-                token: data.secret_web3_storage_key as string,
-              });
-              let upload = await getFilesFromPath([metadataPath]);
-              try {
-                metaDataCid = await storageClient.put(upload);
-              } catch (err) {
-                console.error(
-                  "IPFS upload failed, please check your web3.storage key"
-                );
-                process.exit();
-              }
-              console.log(
-                "\x1b[1m\x1b[32m%s\x1b[0m",
-                `Your MetaData CID is ${metaDataCid}/metadata.json`
+            console.log("METADATA", metaData);
+            let tmp = tmpdir();
+            let metadataPath = join(tmp, "metadata.json");
+            fs.writeFileSync(metadataPath, JSON.stringify(metaData));
+            const storageClient = new Web3Storage({
+              token: data.secret_web3_storage_key as string,
+            });
+            let upload = await getFilesFromPath([metadataPath]);
+            try {
+              metaDataCid = await storageClient.put(upload);
+            } catch (err) {
+              console.error(
+                "IPFS upload failed, please check your web3.storage key"
               );
+              process.exit();
             }
+            console.log(
+              "\x1b[1m\x1b[32m%s\x1b[0m",
+              `Your MetaData CID is ${metaDataCid}/metadata.json`
+            );
+
             // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
             let totalAmount =
               LAMPORTS_PER_SOL * data.total_bounty_amount +
@@ -282,15 +290,15 @@ async function main() {
                 payerWallet,
                 data.task_name,
                 task_audit_program_id,
-                Number(data.total_bounty_amount),
-                Number(data.bounty_amount_per_round),
-                Number(data.space),
+                data.total_bounty_amount,
+                data.bounty_amount_per_round,
+                data.space,
                 data.task_description,
                 data.task_executable_network,
-                Number(data.round_time),
-                Number(data.audit_window),
-                Number(data.submission_window),
-                Number(data.minimum_stake_amount),
+                data.round_time,
+                data.audit_window,
+                data.submission_window,
+                data.minimum_stake_amount,
                 metaDataCid,
                 "",
                 "",
