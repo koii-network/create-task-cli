@@ -10,16 +10,16 @@ import {
   TransactionInstruction,
   Transaction,
   sendAndConfirmTransaction,
-} from '@_koi/web3.js';
-import fs from 'fs';
-import path from 'path';
-const BufferLayout = require('@solana/buffer-layout');
-const rustString = (property = 'string') => {
+} from "@_koi/web3.js";
+import fs from "fs";
+import path from "path";
+const BufferLayout = require("@solana/buffer-layout");
+const rustString = (property = "string") => {
   const rsl = BufferLayout.struct(
     [
-      BufferLayout.u32('length'),
-      BufferLayout.u32('lengthPadding'),
-      BufferLayout.blob(BufferLayout.offset(BufferLayout.u32(), -8), 'chars'),
+      BufferLayout.u32("length"),
+      BufferLayout.u32("lengthPadding"),
+      BufferLayout.blob(BufferLayout.offset(BufferLayout.u32(), -8), "chars"),
     ],
     property
   );
@@ -28,23 +28,27 @@ const rustString = (property = 'string') => {
 
   rsl.decode = (buffer: any, offset: any) => {
     const data = _decode(buffer, offset);
-    return data['chars'].toString('utf8');
+    return data["chars"].toString("utf8");
   };
 
   rsl.encode = (str: any, buffer: any, offset: any) => {
     const data = {
-      chars: Buffer.from(str, 'utf8'),
+      chars: Buffer.from(str, "utf8"),
     };
     return _encode(data, buffer, offset);
   };
 
   rsl.alloc = (str: any) => {
-    return BufferLayout.u32().span + BufferLayout.u32().span + Buffer.from(str, 'utf8').length;
+    return (
+      BufferLayout.u32().span +
+      BufferLayout.u32().span +
+      Buffer.from(str, "utf8").length
+    );
   };
 
   return rsl;
 };
-const publicKey = (property = 'publicKey') => {
+const publicKey = (property = "publicKey") => {
   return BufferLayout.blob(32, property);
 };
 const toBuffer = (arr: any) => {
@@ -56,10 +60,12 @@ const toBuffer = (arr: any) => {
     return Buffer.from(arr);
   }
 };
-import { getPayer, getRpcUrl, createKeypairFromFile } from './utils';
+import { getPayer, getRpcUrl, createKeypairFromFile } from "./utils";
 
-const SYSTEM_PUBLIC_KEY = new PublicKey('11111111111111111111111111111111');
-const CLOCK_PUBLIC_KEY = new PublicKey('SysvarC1ock11111111111111111111111111111111');
+const SYSTEM_PUBLIC_KEY = new PublicKey("11111111111111111111111111111111");
+const CLOCK_PUBLIC_KEY = new PublicKey(
+  "SysvarC1ock11111111111111111111111111111111"
+);
 // let STAKE_POT_ACCOUNT: PublicKey;
 // =new PublicKey("9XABSvWLMkUV1hPb4bXbJqvsH3Ab2mptxMMMnxfJUvG9")
 /**
@@ -72,7 +78,6 @@ let connection: Connection;
  */
 let programId: PublicKey;
 
-
 /**
  * Path to the keypair of the deployed program.
  * This file is created when running `solana program deploy task_contract-keypair.json`
@@ -83,20 +88,20 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
   CreateTask: {
     index: 0,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.blob(24, 'task_name'),
-      BufferLayout.blob(64, 'task_description'),
-      BufferLayout.blob(64, 'task_audit_program'),
-      BufferLayout.blob(64, 'task_executable_network'),
-      BufferLayout.ns64('total_bounty_amount'),
-      BufferLayout.ns64('bounty_amount_per_round'),
-      BufferLayout.ns64('round_time'),
-      BufferLayout.ns64('audit_window'),
-      BufferLayout.ns64('submission_window'),
-      BufferLayout.ns64('minimum_stake_amount'),
-      BufferLayout.blob(64, 'task_metadata'),
+      BufferLayout.u8("instruction"),
+      BufferLayout.blob(24, "task_name"),
+      BufferLayout.blob(64, "task_description"),
+      BufferLayout.blob(64, "task_audit_program"),
+      BufferLayout.blob(64, "task_executable_network"),
+      BufferLayout.ns64("total_bounty_amount"),
+      BufferLayout.ns64("bounty_amount_per_round"),
+      BufferLayout.ns64("round_time"),
+      BufferLayout.ns64("audit_window"),
+      BufferLayout.ns64("submission_window"),
+      BufferLayout.ns64("minimum_stake_amount"),
+      BufferLayout.blob(64, "task_metadata"),
       BufferLayout.blob(64, "local_vars"),
-      BufferLayout.ns64('allowed_failed_distributions')
+      BufferLayout.ns64("allowed_failed_distributions"),
 
       // publicKey('stake_pot_account')
     ]),
@@ -104,104 +109,106 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
   UpdateTask: {
     index: 14,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.blob(24, 'task_name'),
-      BufferLayout.blob(64, 'task_description'),
-      BufferLayout.blob(64, 'task_audit_program'),
-      BufferLayout.blob(64, 'task_executable_network'),
-      BufferLayout.ns64('bounty_amount_per_round'),
-      BufferLayout.ns64('round_time'),
-      BufferLayout.ns64('audit_window'),
-      BufferLayout.ns64('submission_window'),
-      BufferLayout.ns64('minimum_stake_amount'),
-      BufferLayout.blob(64, 'task_metadata'),
+      BufferLayout.u8("instruction"),
+      BufferLayout.blob(24, "task_name"),
+      BufferLayout.blob(64, "task_description"),
+      BufferLayout.blob(64, "task_audit_program"),
+      BufferLayout.blob(64, "task_executable_network"),
+      BufferLayout.ns64("bounty_amount_per_round"),
+      BufferLayout.ns64("round_time"),
+      BufferLayout.ns64("audit_window"),
+      BufferLayout.ns64("submission_window"),
+      BufferLayout.ns64("minimum_stake_amount"),
+      BufferLayout.blob(64, "task_metadata"),
       BufferLayout.blob(64, "local_vars"),
-      BufferLayout.ns64('allowed_failed_distributions')
+      BufferLayout.ns64("allowed_failed_distributions"),
     ]),
-},
+  },
 
   SubmitTask: {
     index: 1,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.blob(512, 'submission'),
-      BufferLayout.ns64('round'),
+      BufferLayout.u8("instruction"),
+      BufferLayout.blob(512, "submission"),
+      BufferLayout.ns64("round"),
     ]),
   },
   AuditSubmissions: {
     index: 2,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.ns64('is_valid'),
-      BufferLayout.ns64('round'),
+      BufferLayout.u8("instruction"),
+      BufferLayout.ns64("is_valid"),
+      BufferLayout.ns64("round"),
     ]),
   },
   AuditDistribution: {
     index: 3,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.ns64('is_valid'),
-      BufferLayout.ns64('round'),
+      BufferLayout.u8("instruction"),
+      BufferLayout.ns64("is_valid"),
+      BufferLayout.ns64("round"),
     ]),
   },
   Payout: {
     index: 4,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.ns64('round')
+      BufferLayout.u8("instruction"),
+      BufferLayout.ns64("round"),
     ]),
   },
   Whitelist: {
     index: 5,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.ns64('isWhitelisted')
+      BufferLayout.u8("instruction"),
+      BufferLayout.ns64("isWhitelisted"),
     ]),
   },
   SetActive: {
     index: 6,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.ns64('isActive')]),
+      BufferLayout.u8("instruction"),
+      BufferLayout.ns64("isActive"),
+    ]),
   },
   ClaimReward: {
     index: 7,
-    layout: BufferLayout.struct([BufferLayout.u8('instruction')]),
+    layout: BufferLayout.struct([BufferLayout.u8("instruction")]),
   },
   FundTask: {
     index: 8,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.ns64('amount')
+      BufferLayout.u8("instruction"),
+      BufferLayout.ns64("amount"),
     ]),
   },
   Stake: {
     index: 9,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.ns64('stakeAmount')
+      BufferLayout.u8("instruction"),
+      BufferLayout.ns64("stakeAmount"),
     ]),
   },
-  Withdraw: { //WithDraw Stake
+  Withdraw: {
+    //WithDraw Stake
     index: 10,
-    layout: BufferLayout.struct([
-      BufferLayout.u8('instruction')
-    ]),
+    layout: BufferLayout.struct([BufferLayout.u8("instruction")]),
   },
-  UploadDistributionList: { //Upload Distribution complex flow, seperate script
+  UploadDistributionList: {
+    //Upload Distribution complex flow, seperate script
     index: 11,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
+      BufferLayout.u8("instruction"),
       BufferLayout.blob(512, "instruction_data"),
-    ])
+    ]),
   },
-  SubmitDistributionList: { //WithDraw Stake
+  SubmitDistributionList: {
+    //WithDraw Stake
     index: 12,
     layout: BufferLayout.struct([
-      BufferLayout.u8('instruction'),
-      BufferLayout.ns64('round')
+      BufferLayout.u8("instruction"),
+      BufferLayout.ns64("round"),
     ]),
-  }
+  },
 });
 
 /**
@@ -209,9 +216,9 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
  */
 export async function establishConnection(): Promise<Connection> {
   const rpcUrl = await getRpcUrl();
-  connection = new Connection(rpcUrl, 'confirmed');
+  connection = new Connection(rpcUrl, "confirmed");
   const version = await connection.getVersion();
-  console.log('Connection to cluster established:', rpcUrl, version);
+  console.log("Connection to cluster established:", rpcUrl, version);
   return connection;
 }
 
@@ -234,7 +241,9 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
 
   let lamports = await connection.getBalance(payerWallet.publicKey);
   if (lamports < fees) {
-    console.error('Your balance is not sufficient: ' + payerWallet.publicKey.toBase58);
+    console.error(
+      "Your balance is not sufficient: " + payerWallet.publicKey.toBase58
+    );
     process.exit(0);
     // If current balance is not enough to pay for fees, request an airdrop
     // const sig = await connection.requestAirdrop(payer.publicKey, 100000000000 + fees - lamports);
@@ -243,11 +252,11 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
   }
 
   console.log(
-    'Using account',
+    "Using account",
     payerWallet.publicKey.toBase58(),
-    'containing',
+    "containing",
     lamports / LAMPORTS_PER_SOL,
-    'SOL to pay for fees'
+    "SOL to pay for fees"
   );
 }
 
@@ -257,7 +266,7 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
 export async function checkProgram(): Promise<void> {
   // Read program id from keypair file
   try {
-    programId = new PublicKey('Koiitask22222222222222222222222222222222222');
+    programId = new PublicKey("Koiitask22222222222222222222222222222222222");
   } catch (err) {
     const errMsg = (err as Error).message;
     throw new Error(
@@ -268,14 +277,15 @@ export async function checkProgram(): Promise<void> {
   // Check if the program has been deployed
   const programInfo = await connection.getAccountInfo(programId);
   if (programInfo === null) {
-    throw new Error('Please use koii testnet or mainnet to deploy the program');
+    throw new Error("Please use koii testnet or mainnet to deploy the program");
   } else if (!programInfo.executable) {
     throw new Error(`Program is not executable`);
   }
   console.log(`Using program ${programId.toBase58()}`);
 }
 function encodeData(type: any, fields: any) {
-  const allocLength = type.layout.span >= 0 ? type.layout.span : getAlloc(type, fields);
+  const allocLength =
+    type.layout.span >= 0 ? type.layout.span : getAlloc(type, fields);
   const data = Buffer.alloc(allocLength);
   const layoutFields = Object.assign({ instruction: type.index }, fields);
   type.layout.encode(layoutFields, data);
@@ -286,7 +296,7 @@ function getAlloc(type: any, fields: any) {
   type.layout.fields.forEach((item: any) => {
     if (item.span >= 0) {
       alloc += item.span;
-    } else if (typeof item.alloc === 'function') {
+    } else if (typeof item.alloc === "function") {
       alloc += item.alloc(fields[item.property]);
     }
   });
@@ -294,7 +304,8 @@ function getAlloc(type: any, fields: any) {
 }
 
 function padStringWithSpaces(input: string, length: number) {
-  if (input.length > length) throw Error('Input exceeds the maxiumum length of ' + length);
+  if (input.length > length)
+    throw Error("Input exceeds the maxiumum length of " + length);
   input = input.padEnd(length);
   return input;
 }
@@ -315,34 +326,42 @@ export async function createTask(
   local_vars: string,
   koii_vars: string,
   allowed_failed_distributions: number
-
 ): Promise<any> {
   // Checks
   if (round_time < audit_window + submission_window)
-    throw new Error('Round time cannot be less than audit_window + submission_window');
-  if (task_description.length > 64) throw new Error('task_description cannot be greater than 64 characters');
+    throw new Error(
+      "Round time cannot be less than audit_window + submission_window"
+    );
+  if (task_description.length > 64)
+    throw new Error("task_description cannot be greater than 64 characters");
 
   let createTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
-    task_description: new TextEncoder().encode(padStringWithSpaces(task_description, 64)),
-    task_audit_program: new TextEncoder().encode(padStringWithSpaces(task_audit_program, 64)), //must be 64 chracters long
-    task_executable_network: new TextEncoder().encode(padStringWithSpaces(task_executable_network, 64)), //must be 64 chracters long
+    task_description: new TextEncoder().encode(
+      padStringWithSpaces(task_description, 64)
+    ),
+    task_audit_program: new TextEncoder().encode(
+      padStringWithSpaces(task_audit_program, 64)
+    ), //must be 64 chracters long
+    task_executable_network: new TextEncoder().encode(
+      padStringWithSpaces(task_executable_network, 64)
+    ), //must be 64 chracters long
     total_bounty_amount: total_bounty_amount * LAMPORTS_PER_SOL,
     bounty_amount_per_round: bounty_amount_per_round * LAMPORTS_PER_SOL,
     round_time: round_time,
     audit_window: audit_window,
     submission_window: submission_window,
-    rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
+    rentExemptionAmount:
+      (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
     space: space,
     minimum_stake_amount: minimum_stake_amount * LAMPORTS_PER_SOL,
-    task_metadata: new TextEncoder().encode(padStringWithSpaces(task_metadata, 64)),
+    task_metadata: new TextEncoder().encode(
+      padStringWithSpaces(task_metadata, 64)
+    ),
     local_vars: new TextEncoder().encode(padStringWithSpaces(local_vars, 64)),
-    allowed_failed_distributions: allowed_failed_distributions
+    allowed_failed_distributions: allowed_failed_distributions,
 
     // koii_vars:new TextEncoder().encode(padStringWithSpaces(task_metadata,64))
-
-
-
   };
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData);
   let taskStateInfoKeypair = Keypair.generate();
@@ -359,22 +378,36 @@ export async function createTask(
   );
   let keys = [
     { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
-    { pubkey: taskStateInfoKeypair.publicKey, isSigner: true, isWritable: true },
+    {
+      pubkey: taskStateInfoKeypair.publicKey,
+      isSigner: true,
+      isWritable: true,
+    },
     { pubkey: stake_pot_account_pubkey, isSigner: false, isWritable: true },
     { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
   ];
-  if (koii_vars) [
-    keys.push({
-      pubkey: new PublicKey(koii_vars), isSigner: false, isWritable: false
-    })
-  ]
-  await sendAndConfirmTransaction(connection, createTaskStateTransaction, [payerWallet, taskStateInfoKeypair]);
+  if (koii_vars)
+    [
+      keys.push({
+        pubkey: new PublicKey(koii_vars),
+        isSigner: false,
+        isWritable: false,
+      }),
+    ];
+  await sendAndConfirmTransaction(connection, createTaskStateTransaction, [
+    payerWallet,
+    taskStateInfoKeypair,
+  ]);
   const instruction = new TransactionInstruction({
     keys,
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, taskStateInfoKeypair]);
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payerWallet, taskStateInfoKeypair]
+  );
   return { taskStateInfoKeypair, stake_pot_account_pubkey };
 }
 
@@ -398,28 +431,36 @@ export async function updateTask(
 ): Promise<any> {
   // Checks
   if (round_time < audit_window + submission_window)
-    throw new Error('Round time cannot be less than audit_window + submission_window');
-  if (task_description.length > 64) throw new Error('task_description cannot be greater than 64 characters');
+    throw new Error(
+      "Round time cannot be less than audit_window + submission_window"
+    );
+  if (task_description.length > 64)
+    throw new Error("task_description cannot be greater than 64 characters");
 
   let updateTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
-    task_description: new TextEncoder().encode(padStringWithSpaces(task_description, 64)),
-    task_audit_program: new TextEncoder().encode(padStringWithSpaces(task_audit_program, 64)), //must be 64 chracters long
-    task_executable_network: new TextEncoder().encode(padStringWithSpaces(task_executable_network, 64)), //must be 64 chracters long
+    task_description: new TextEncoder().encode(
+      padStringWithSpaces(task_description, 64)
+    ),
+    task_audit_program: new TextEncoder().encode(
+      padStringWithSpaces(task_audit_program, 64)
+    ), //must be 64 chracters long
+    task_executable_network: new TextEncoder().encode(
+      padStringWithSpaces(task_executable_network, 64)
+    ), //must be 64 chracters long
     bounty_amount_per_round: bounty_amount_per_round * LAMPORTS_PER_SOL,
     round_time: round_time,
     audit_window: audit_window,
     submission_window: submission_window,
-    rentExemptionAmount: (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
+    rentExemptionAmount:
+      (await connection.getMinimumBalanceForRentExemption(space)) + 1000,
     space: space,
     minimum_stake_amount: minimum_stake_amount * LAMPORTS_PER_SOL,
-    task_metadata: new TextEncoder().encode(padStringWithSpaces(task_metadata, 64)),
+    task_metadata: new TextEncoder().encode(
+      padStringWithSpaces(task_metadata, 64)
+    ),
     local_vars: new TextEncoder().encode(padStringWithSpaces(local_vars, 64)),
-    allowed_failed_distributions: allowed_failed_distributions
-
-
-
-
+    allowed_failed_distributions: allowed_failed_distributions,
   };
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.UpdateTask, updateTaskData);
   let newTaskStateInfoKeypair = Keypair.generate();
@@ -439,7 +480,11 @@ export async function updateTask(
     { pubkey: taskAccountInfoPubKey, isSigner: false, isWritable: true },
     { pubkey: statePotAccountPubKey, isSigner: false, isWritable: true },
     { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
-    { pubkey: newTaskStateInfoKeypair.publicKey, isSigner: true, isWritable: true },
+    {
+      pubkey: newTaskStateInfoKeypair.publicKey,
+      isSigner: true,
+      isWritable: true,
+    },
     { pubkey: newStake_pot_account_pubkey, isSigner: false, isWritable: true },
   ];
   // if (koii_vars) [
@@ -447,18 +492,22 @@ export async function updateTask(
   //     pubkey: new PublicKey(koii_vars), isSigner: false, isWritable: false
   //   })
   // ]
-  await sendAndConfirmTransaction(connection, createTaskStateTransaction, [payerWallet, newTaskStateInfoKeypair]);
+  await sendAndConfirmTransaction(connection, createTaskStateTransaction, [
+    payerWallet,
+    newTaskStateInfoKeypair,
+  ]);
   const instruction = new TransactionInstruction({
     keys,
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, newTaskStateInfoKeypair]);
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payerWallet, newTaskStateInfoKeypair]
+  );
   return { newTaskStateInfoKeypair, newStake_pot_account_pubkey };
 }
-
-
-
 
 async function sleep(ms: any) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -499,18 +548,17 @@ async function sleep(ms: any) {
 //   return submitterKeypair.publicKey;
 // }
 
-
-
 export async function Whitelist(
   payerWallet: Keypair,
   taskStateInfoAddress: PublicKey,
-  PROGRAM_KEYPAIR_PATH: string
+  PROGRAM_KEYPAIR_PATH: string,
+  isWhitelisted: boolean
 ): Promise<void> {
   const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
 
-  console.log('WHITELIST', programKeypair.publicKey.toBase58());
+  console.log("WHITELIST", programKeypair.publicKey.toBase58());
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Whitelist, {
-    isWhitelisted: 1,
+    isWhitelisted,
   });
   const instruction = new TransactionInstruction({
     keys: [
@@ -520,7 +568,11 @@ export async function Whitelist(
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, programKeypair]);
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payerWallet, programKeypair]
+  );
 }
 export async function SetActive(
   payerWallet: Keypair,
@@ -538,7 +590,11 @@ export async function SetActive(
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet]);
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payerWallet]
+  );
 }
 
 export async function ClaimReward(
@@ -560,7 +616,11 @@ export async function ClaimReward(
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, claimerKeypair]);
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payerWallet, claimerKeypair]
+  );
 }
 
 export async function FundTask(
@@ -573,18 +633,24 @@ export async function FundTask(
     amount,
   });
   let funderKeypair = Keypair.generate();
-  console.log('Making new account', funderKeypair.publicKey.toBase58());
+  console.log("Making new account", funderKeypair.publicKey.toBase58());
 
   const createSubmitterAccTransaction = new Transaction().add(
     SystemProgram.createAccount({
       fromPubkey: payerWallet.publicKey,
       newAccountPubkey: funderKeypair.publicKey,
-      lamports: amount + (await connection.getMinimumBalanceForRentExemption(100)) + 1000, //adding 1000 extra lamports for padding
+      lamports:
+        amount +
+        (await connection.getMinimumBalanceForRentExemption(100)) +
+        1000, //adding 1000 extra lamports for padding
       space: 100,
       programId: programId,
     })
   );
-  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payerWallet, funderKeypair]);
+  await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [
+    payerWallet,
+    funderKeypair,
+  ]);
   const instruction = new TransactionInstruction({
     keys: [
       { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
@@ -596,7 +662,11 @@ export async function FundTask(
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payerWallet, funderKeypair]);
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payerWallet, funderKeypair]
+  );
 }
 
 function getStakePotAccount(): PublicKey {
@@ -605,12 +675,15 @@ function getStakePotAccount(): PublicKey {
     try {
       let keypair = new Keypair();
       let pubkeyString = keypair.publicKey.toBase58();
-      pubkeyString = pubkeyString.replace(pubkeyString.substring(0, 15), 'stakepotaccount');
+      pubkeyString = pubkeyString.replace(
+        pubkeyString.substring(0, 15),
+        "stakepotaccount"
+      );
       pubkey = new PublicKey(pubkeyString);
       if (PublicKey.isOnCurve(pubkey.toBytes())) {
         break;
       }
-    } catch (e) { }
+    } catch (e) {}
   }
   return pubkey;
 }

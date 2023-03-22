@@ -57,7 +57,7 @@ async function main() {
       choices: [
         { title: "Create a new task", value: "create-task" },
         { title: "Whitelist the task", value: "whitelisting" },
-        { title: "Mark task as active", value: "set-active" },
+        { title: "Activate task", value: "set-active" },
         { title: "Claim reward", value: "claim-reward" },
         { title: "Fund task with more KOII", value: "fund-task" },
         { title: "Withdraw staked funds from task", value: "withdraw" },
@@ -230,6 +230,9 @@ async function main() {
               );
               process.exit();
             }
+
+            // Before passing it to TaskMetadata validate the input
+
             const metaData: TaskMetadata = {
               author: data.author,
               description: data.description,
@@ -238,6 +241,17 @@ async function main() {
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };
+
+            // for (const [key, value] of Object.entries(metaData)) {
+            //   //console.log(value.length);
+            //   if (value == undefined || value == "" || value == null) {
+            //     console.error(`Please specify ${key} in YML`);
+            //     process.exit();
+            //   }
+            //   else if(){
+
+            //   }
+            // }
 
             console.log("METADATA", metaData);
             let tmp = tmpdir();
@@ -284,7 +298,7 @@ async function main() {
               process.exit(0);
             }
             console.log("Calling Create Task");
-            // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
+            // Before passing it to createTask validate the inputs
             let { taskStateInfoKeypair, stake_pot_account_pubkey } =
               await createTask(
                 payerWallet,
@@ -326,7 +340,12 @@ async function main() {
       const { programOwnerAddress, taskStateInfoAddress } =
         await takeInputForWhitelisting();
       console.log("Calling Whitelist");
-      await Whitelist(payerWallet, taskStateInfoAddress, programOwnerAddress);
+      await Whitelist(
+        payerWallet,
+        taskStateInfoAddress,
+        programOwnerAddress,
+        true
+      );
       break;
     }
     case "set-active": {
