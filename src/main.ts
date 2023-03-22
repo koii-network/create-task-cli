@@ -57,6 +57,7 @@ async function main() {
       choices: [
         { title: "Create a new task", value: "create-task" },
         { title: "Whitelist the task", value: "whitelisting" },
+        { title: "Blacklist the task", value: "blacklisting" },
         { title: "Activate task", value: "set-active" },
         { title: "Claim reward", value: "claim-reward" },
         { title: "Fund task with more KOII", value: "fund-task" },
@@ -345,6 +346,18 @@ async function main() {
         taskStateInfoAddress,
         programOwnerAddress,
         true
+      );
+      break;
+    }
+    case "blacklisting": {
+      const { programOwnerAddress, taskStateInfoAddress } =
+        await takeInputForWhitelisting();
+      console.log("Calling blacklisting");
+      await Whitelist(
+        payerWallet,
+        taskStateInfoAddress,
+        programOwnerAddress,
+        false
       );
       break;
     }
