@@ -186,6 +186,23 @@ async function main() {
           await readYamlFile("config-task.yml").then(async (data: any) => {
             console.log("CHECK", data.secret_web3_storage_key);
 
+            interface Task {
+              task_name: string;
+              task_description: string;
+              task_executable_network: "DEVELOPMENT" | "ARWEAVE" | "IPFS";
+              secret_web3_storage_key: string;
+              task_audit_program?: string;
+              task_audit_program_id?: string;
+              round_time: number;
+              audit_window: number;
+              submission_window: number;
+              minimum_stake_amount: number;
+              total_bounty_amount: number;
+              bounty_amount_per_round: number;
+              allowed_failed_distributions: number;
+              space: number;
+            }
+
             interface TaskMetadata {
               author: string;
               description: string;
@@ -230,8 +247,6 @@ async function main() {
               process.exit();
             }
 
-            // Before passing it to TaskMetadata validate the input
-
             const metaData: TaskMetadata = {
               author: data.author,
               description: data.description,
@@ -240,6 +255,8 @@ async function main() {
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };
+
+            // Before uplaoding it to IPFS validate the input
 
             // for (const [key, value] of Object.entries(metaData)) {
             //   //console.log(value.length);
@@ -296,26 +313,46 @@ async function main() {
               console.error("Insufficient balance for this operation");
               process.exit(0);
             }
+
+            const TaskData: Task = {
+              task_name: data.task_name,
+              task_description: data.task_description,
+              task_executable_network: data.task_executable_network,
+              secret_web3_storage_key: data.secret_web3_storage_key,
+              task_audit_program: data.task_audit_program,
+              task_audit_program_id: data.task_audit_program_id,
+              round_time: data.round_time,
+              audit_window: data.audit_window,
+              submission_window: data.submission_window,
+              minimum_stake_amount: data.minimum_stake_amount,
+              total_bounty_amount: data.total_bounty_amount,
+              bounty_amount_per_round: data.bounty_amount_per_round,
+              allowed_failed_distributions: data.allowed_failed_distributions,
+              space: data.space,
+            };
+
+            // Before pasing it to createTask validate the input
+
             console.log("Calling Create Task");
             // Before passing it to createTask validate the inputs
             let { taskStateInfoKeypair, stake_pot_account_pubkey } =
               await createTask(
                 payerWallet,
-                data.task_name,
+                TaskData.task_name,
                 task_audit_program_id,
-                data.total_bounty_amount,
-                data.bounty_amount_per_round,
-                data.space,
-                data.task_description,
-                data.task_executable_network,
-                data.round_time,
-                data.audit_window,
-                data.submission_window,
-                data.minimum_stake_amount,
+                TaskData.total_bounty_amount,
+                TaskData.bounty_amount_per_round,
+                TaskData.space,
+                TaskData.task_description,
+                TaskData.task_executable_network,
+                TaskData.round_time,
+                TaskData.audit_window,
+                TaskData.submission_window,
+                TaskData.minimum_stake_amount,
                 metaDataCid,
                 "",
                 "",
-                Number(data.allowed_failed_distributions)
+                TaskData.allowed_failed_distributions
               );
             fs.writeFileSync(
               "taskStateInfoKeypair.json",
