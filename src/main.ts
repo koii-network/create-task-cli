@@ -25,20 +25,18 @@ config();
 
 async function main() {
   let payerWallet: Keypair;
-  let walletPath: string = "./id.json";
+  let walletPath: string;
 
-  // walletPath = (
-  //   await prompts({
-  //     type: 'text',
-  //     name: 'wallet',
-  //     message: 'Enter the path to your wallet',
-  //   })
-  // ).wallet;
-  //console.log(walletPath);
+  walletPath = (
+    await prompts({
+      type: "text",
+      name: "walletPath",
+      message: "Enter the path to your wallet",
+    })
+  ).walletPath;
+  console.log(walletPath);
   if (!fs.existsSync(walletPath))
-    throw Error(
-      "Please make sure that wallet is under the name id.json and  in the current directory"
-    );
+    throw Error("Please make sure that wallet is under the name id.json");
 
   try {
     let wallet = fs.readFileSync(walletPath, "utf-8");
@@ -178,13 +176,36 @@ async function main() {
 
           let ymlPath: string = "./config-task.yml";
 
+          ymlPath = (
+            await prompts({
+              type: "text",
+              name: "ymlPath",
+              message: "Enter the path to your YML file",
+            })
+          ).ymlPath;
+          console.log(ymlPath);
+
           if (!fs.existsSync(ymlPath))
             throw Error(
               "Please make sure that your  configuration file is under the name config-task.yml and  in the current directory"
             );
 
           await readYamlFile("config-task.yml").then(async (data: any) => {
-            console.log("CHECK", data.secret_web3_storage_key);
+            console.log("CHECK", data.task_executable_network);
+
+            // if (!data.secret_web3_storage_key) {
+            //   console.error(
+            //     "Please specify the web3.storage secret key in YML"
+            //   );
+            //   process.exit();
+            // }
+
+            // if (!data.task_executable_network) {
+            //   console.error(
+            //     "Please specify the task executable network in YML"
+            //   );
+            //   process.exit();
+            // }
 
             interface Task {
               task_name: string;
@@ -229,20 +250,42 @@ async function main() {
               OS = "OS",
             }
 
-            if (data.task_executable_network == "IPFS") {
+            const task_executable_network = (
+              await prompts({
+                type: "select",
+                name: "task_executable_network",
+                message: "Please select the type of network",
+                choices: [
+                  {
+                    title: "DEVELOPMENT",
+                    value: "DEVELOPMENT",
+                  },
+                  {
+                    title: "IPFS",
+                    value: "IPFS",
+                  },
+                  {
+                    title: "ARWEAVE",
+                    value: "ARWEAVE",
+                  },
+                ],
+              })
+            ).task_executable_network;
+
+            //console.log("TN", task_executable_network);
+
+            if (task_executable_network == "IPFS") {
               task_audit_program_id = await uploadIpfs(
                 data.task_audit_program,
                 data.secret_web3_storage_key
               );
               console.log("TASK CID", task_audit_program_id);
-            } else if (
-              data.task_executable_network == "ARWEAVE" ||
-              "DEVELOPMENT"
-            ) {
+            } else if (task_executable_network == "ARWEAVE" || "DEVELOPMENT") {
+              console.log("IN IF");
               task_audit_program_id = data.task_audit_program_id;
             } else {
               console.error(
-                "Please specify the task_executable_network in YML"
+                "Please specify the correct task_executable_network in YML"
               );
               process.exit();
             }
@@ -258,16 +301,13 @@ async function main() {
 
             // Before uplaoding it to IPFS validate the input
 
-            // for (const [key, value] of Object.entries(metaData)) {
-            //   //console.log(value.length);
-            //   if (value == undefined || value == "" || value == null) {
-            //     console.error(`Please specify ${key} in YML`);
-            //     process.exit();
-            //   }
-            //   else if(){
-
-            //   }
-            // }
+            for (const [key, value] of Object.entries(metaData)) {
+              //console.log(value.length);
+              if (value == undefined || value == "" || value == null) {
+                console.error(`Please specify ${key} in YML`);
+                process.exit();
+              }
+            }
 
             console.log("METADATA", metaData);
             let tmp = tmpdir();
@@ -291,6 +331,34 @@ async function main() {
             );
 
             // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
+
+            const TaskData: Task = {
+              task_name: data.task_name,
+              task_description: data.task_description,
+              task_executable_network: task_executable_network,
+              secret_web3_storage_key: data.secret_web3_storage_key,
+              task_audit_program: data.task_audit_program,
+              task_audit_program_id: data.task_audit_program_id,
+              round_time: data.round_time,
+              audit_window: data.audit_window,
+              submission_window: data.submission_window,
+              minimum_stake_amount: data.minimum_stake_amount,
+              total_bounty_amount: data.total_bounty_amount,
+              bounty_amount_per_round: data.bounty_amount_per_round,
+              allowed_failed_distributions: data.allowed_failed_distributions,
+              space: data.space,
+            };
+
+            for (const [key, value] of Object.entries(TaskData)) {
+              //console.log(value.length);
+              if (value == undefined || value == "" || value == null) {
+                console.error(`Please specify ${key} in YML`);
+                process.exit();
+              }
+            }
+
+            // Before pasing it to createTask validate the input
+
             let totalAmount =
               LAMPORTS_PER_SOL * data.total_bounty_amount +
               (await connection.getMinimumBalanceForRentExemption(100)) +
@@ -313,25 +381,6 @@ async function main() {
               console.error("Insufficient balance for this operation");
               process.exit(0);
             }
-
-            const TaskData: Task = {
-              task_name: data.task_name,
-              task_description: data.task_description,
-              task_executable_network: data.task_executable_network,
-              secret_web3_storage_key: data.secret_web3_storage_key,
-              task_audit_program: data.task_audit_program,
-              task_audit_program_id: data.task_audit_program_id,
-              round_time: data.round_time,
-              audit_window: data.audit_window,
-              submission_window: data.submission_window,
-              minimum_stake_amount: data.minimum_stake_amount,
-              total_bounty_amount: data.total_bounty_amount,
-              bounty_amount_per_round: data.bounty_amount_per_round,
-              allowed_failed_distributions: data.allowed_failed_distributions,
-              space: data.space,
-            };
-
-            // Before pasing it to createTask validate the input
 
             console.log("Calling Create Task");
             // Before passing it to createTask validate the inputs
@@ -574,42 +623,26 @@ async function takeInputForCreateTask(state?: any) {
 
   let task_executable_network = (
     await prompts({
-      type: "text",
+      type: "select",
       name: "task_executable_network",
-      message:
-        "Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]",
+      message: "Please select the type of network",
+      choices: [
+        {
+          title: "DEVELOPMENT",
+          value: "DEVELOPMENT",
+        },
+        {
+          title: "IPFS",
+          value: "IPFS",
+        },
+        {
+          title: "ARWEAVE",
+          value: "ARWEAVE",
+        },
+      ],
     })
   ).task_executable_network;
-  while (task_executable_network.length > 100) {
-    console.error(
-      "The task_executable_network length cannot be greater than 100 characters"
-    );
-    task_executable_network = (
-      await prompts({
-        type: "text",
-        name: "task_executable_network",
-        message:
-          "Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]",
-      })
-    ).task_executable_network;
-  }
-  while (
-    task_executable_network != "IPFS" &&
-    task_executable_network != "ARWEAVE" &&
-    task_executable_network != "DEVELOPMENT"
-  ) {
-    console.error(
-      "The task_executable_network can only be IPFS , ARWEAVE  or DEVELOPMENT"
-    );
-    task_executable_network = (
-      await prompts({
-        type: "text",
-        name: "task_executable_network",
-        message:
-          "Enter the network to be used to upload your executable [IPFS / ARWEAVE / DEVELOPMENT]",
-      })
-    ).task_executable_network;
-  }
+
   let secret_web3_storage_key;
   let task_audit_program;
   let task_audit_program_id;
@@ -865,27 +898,6 @@ async function takeInputForCreateTask(state?: any) {
   };
 }
 
-async function takeInputForWhitelisting() {
-  const taskStateInfoAddress = (
-    await prompts({
-      type: "text",
-      name: "taskStateInfoAddress",
-      message: "Enter the task id",
-    })
-  ).taskStateInfoAddress;
-  const programOwnerAddress = (
-    await prompts({
-      type: "text",
-      name: "programOwnerAddress",
-      message:
-        "Enter the path to program owner wallet (Only available to KOII team)",
-    })
-  ).programOwnerAddress;
-  return {
-    programOwnerAddress,
-    taskStateInfoAddress: new PublicKey(taskStateInfoAddress),
-  };
-}
 async function takeInputForSetActive() {
   const taskStateInfoAddress = (
     await prompts({

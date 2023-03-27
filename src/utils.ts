@@ -40,7 +40,7 @@ export async function getRpcUrl(): Promise<string> {
     console.warn(
       "Failed to read RPC url from CLI config file, falling back to testnet"
     );
-    return "https://k2-testnet.koii.live";
+    return "http://localhost:8899";
   }
 }
 
@@ -90,7 +90,7 @@ export async function uploadIpfs(
       const upload: any = await getFilesFromPath(path);
       cid = await storageClient.put(upload);
     }
-
+    console.log("CID of executable", cid);
     return cid;
   } else {
     return "File not found";
