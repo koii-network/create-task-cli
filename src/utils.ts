@@ -90,7 +90,7 @@ export async function uploadIpfs(
       const upload: any = await getFilesFromPath(path);
       cid = await storageClient.put(upload);
     }
-
+    console.log("CID of executable", cid);
     return cid;
   } else {
     return "File not found";
