@@ -17,7 +17,9 @@ import prompts from "prompts";
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
 import fs from "fs";
 import { config } from "dotenv";
+import path from "path";
 import handleMetadata from "./metadata";
+import validateTaskInputs from "./validate";
 import { join } from "path";
 import { tmpdir } from "os";
 import { Web3Storage, getFilesFromPath } from "web3.storage";
@@ -25,24 +27,28 @@ config();
 
 async function main() {
   let payerWallet: Keypair;
-  let walletPath: string;
+  const currentDir = path.resolve(process.cwd());
+  let walletPath: string = `${currentDir}/id.json`;
 
-  walletPath = (
-    await prompts({
-      type: "text",
-      name: "walletPath",
-      message: "Enter the path to your wallet",
-    })
-  ).walletPath;
+  // walletPath = (
+  //   await prompts({
+  //     type: "text",
+  //     name: "walletPath",
+  //     message: "Enter the path to your wallet",
+  //   })
+  // ).walletPath;
   console.log(walletPath);
   if (!fs.existsSync(walletPath))
-    throw Error("Please make sure that wallet is under the name id.json");
+    throw Error(
+      "Please make sure that the wallet path is correct and under the name id.json"
+    );
 
   try {
     let wallet = fs.readFileSync(walletPath, "utf-8");
     payerWallet = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(wallet)));
   } catch (e) {
-    console.error("Wallet Doesn't Exist");
+    console.error("Wallet is not valid");
+    //console.error(logSymbols.error, "Wallet is not valid");
     process.exit();
   }
 
@@ -174,16 +180,17 @@ async function main() {
           let metaDataCid: string;
           let task_audit_program_id: string;
 
-          let ymlPath: string = "./config-task.yml";
+          const currentDir = path.resolve(process.cwd());
+          let ymlPath: string = `${currentDir}/config-task.yml`;
 
-          ymlPath = (
-            await prompts({
-              type: "text",
-              name: "ymlPath",
-              message: "Enter the path to your YML file",
-            })
-          ).ymlPath;
-          console.log(ymlPath);
+          // ymlPath = (
+          //   await prompts({
+          //     type: "text",
+          //     name: "ymlPath",
+          //     message: "Enter the path to your YML file",
+          //   })
+          // ).ymlPath;
+          // console.log(ymlPath);
 
           if (!fs.existsSync(ymlPath))
             throw Error(
@@ -191,7 +198,7 @@ async function main() {
             );
 
           await readYamlFile("config-task.yml").then(async (data: any) => {
-            console.log("CHECK", data.task_executable_network);
+            //console.log("CHECK", data.task_executable_network);
 
             // if (!data.secret_web3_storage_key) {
             //   console.error(
@@ -250,38 +257,19 @@ async function main() {
               OS = "OS",
             }
 
-            const task_executable_network = (
-              await prompts({
-                type: "select",
-                name: "task_executable_network",
-                message: "Please select the type of network",
-                choices: [
-                  {
-                    title: "DEVELOPMENT",
-                    value: "DEVELOPMENT",
-                  },
-                  {
-                    title: "IPFS",
-                    value: "IPFS",
-                  },
-                  {
-                    title: "ARWEAVE",
-                    value: "ARWEAVE",
-                  },
-                ],
-              })
-            ).task_executable_network;
-
             //console.log("TN", task_executable_network);
 
-            if (task_executable_network == "IPFS") {
+            if (data.task_executable_network == "IPFS") {
               task_audit_program_id = await uploadIpfs(
                 data.task_audit_program,
                 data.secret_web3_storage_key
               );
               console.log("TASK CID", task_audit_program_id);
-            } else if (task_executable_network == "ARWEAVE" || "DEVELOPMENT") {
-              console.log("IN IF");
+            } else if (
+              data.task_executable_network == "ARWEAVE" ||
+              "DEVELOPMENT"
+            ) {
+              //console.log("IN DEVELOPMENT");
               task_audit_program_id = data.task_audit_program_id;
             } else {
               console.error(
@@ -301,13 +289,40 @@ async function main() {
 
             // Before uplaoding it to IPFS validate the input
 
-            for (const [key, value] of Object.entries(metaData)) {
+            // for (const [key, value] of Object.entries(metaData)) {
+            //   //console.log(value.length);
+            //   if (value == undefined || value == "" || value == null) {
+            //     console.error(`Please specify ${key} in YML`);
+            //     process.exit();
+            //   }
+            // }
+
+            const TaskData: Task = {
+              task_name: data.task_name,
+              task_description: data.task_description,
+              task_executable_network: data.task_executable_network,
+              secret_web3_storage_key: data.secret_web3_storage_key,
+              task_audit_program: data.task_audit_program,
+              task_audit_program_id: data.task_audit_program_id,
+              round_time: data.round_time,
+              audit_window: data.audit_window,
+              submission_window: data.submission_window,
+              minimum_stake_amount: data.minimum_stake_amount,
+              total_bounty_amount: data.total_bounty_amount,
+              bounty_amount_per_round: data.bounty_amount_per_round,
+              allowed_failed_distributions: data.allowed_failed_distributions,
+              space: data.space,
+            };
+
+            for (const [key, value] of Object.entries(TaskData)) {
               //console.log(value.length);
               if (value == undefined || value == "" || value == null) {
                 console.error(`Please specify ${key} in YML`);
                 process.exit();
               }
             }
+
+            await validateTaskInputs(metaData, TaskData);
 
             console.log("METADATA", metaData);
             let tmp = tmpdir();
@@ -331,31 +346,6 @@ async function main() {
             );
 
             // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
-
-            const TaskData: Task = {
-              task_name: data.task_name,
-              task_description: data.task_description,
-              task_executable_network: task_executable_network,
-              secret_web3_storage_key: data.secret_web3_storage_key,
-              task_audit_program: data.task_audit_program,
-              task_audit_program_id: data.task_audit_program_id,
-              round_time: data.round_time,
-              audit_window: data.audit_window,
-              submission_window: data.submission_window,
-              minimum_stake_amount: data.minimum_stake_amount,
-              total_bounty_amount: data.total_bounty_amount,
-              bounty_amount_per_round: data.bounty_amount_per_round,
-              allowed_failed_distributions: data.allowed_failed_distributions,
-              space: data.space,
-            };
-
-            for (const [key, value] of Object.entries(TaskData)) {
-              //console.log(value.length);
-              if (value == undefined || value == "" || value == null) {
-                console.error(`Please specify ${key} in YML`);
-                process.exit();
-              }
-            }
 
             // Before pasing it to createTask validate the input
 
@@ -461,10 +451,6 @@ async function main() {
       const { taskStateInfoAddress, submitterKeypair } =
         await takeInputForWithdraw();
       await Withdraw(payerWallet, taskStateInfoAddress, submitterKeypair);
-      break;
-    }
-    case "handle-assets": {
-      await handleMetadata();
       break;
     }
     case "handle-assets": {
