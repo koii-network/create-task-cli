@@ -1,6 +1,7 @@
 //import { Web3Storage } from "web3.storage";
 
-interface Task {
+interface UpdateTask {
+  taskId: string;
   task_name: string;
   task_description: string;
   task_executable_network: "DEVELOPMENT" | "ARWEAVE" | "IPFS";
@@ -11,7 +12,6 @@ interface Task {
   audit_window: number;
   submission_window: number;
   minimum_stake_amount: number;
-  total_bounty_amount: number;
   bounty_amount_per_round: number;
   allowed_failed_distributions: number;
   space: number;
@@ -43,7 +43,7 @@ enum RequirementType {
   OS = "OS",
 }
 
-async function main(metaData: TaskMetadata, task: Task) {
+async function main(metaData: TaskMetadata, task: UpdateTask) {
   const error: any = {};
   const {
     author,
@@ -110,7 +110,6 @@ async function main(metaData: TaskMetadata, task: Task) {
     !task.audit_window ||
     !task.submission_window ||
     !task.minimum_stake_amount ||
-    !task.total_bounty_amount ||
     !task.bounty_amount_per_round ||
     !task.allowed_failed_distributions ||
     !task.space
@@ -156,7 +155,6 @@ async function main(metaData: TaskMetadata, task: Task) {
     typeof task.audit_window !== "number" ||
     typeof task.submission_window !== "number" ||
     typeof task.minimum_stake_amount !== "number" ||
-    typeof task.total_bounty_amount !== "number" ||
     typeof task.bounty_amount_per_round !== "number" ||
     typeof task.allowed_failed_distributions !== "number" ||
     typeof task.space !== "number" ||
@@ -164,7 +162,6 @@ async function main(metaData: TaskMetadata, task: Task) {
     task.audit_window <= 0 ||
     task.submission_window <= 0 ||
     task.minimum_stake_amount <= 0 ||
-    task.total_bounty_amount <= 0 ||
     task.bounty_amount_per_round <= 0 ||
     task.allowed_failed_distributions < 0 ||
     task.space <= 0
@@ -190,23 +187,22 @@ async function main(metaData: TaskMetadata, task: Task) {
   }
 
   // check the rewards allocated
-  if (task.total_bounty_amount < 10) {
-    error["total_bounty_amount"] =
-      "Total bounty amount cannot be less than 10 KOII";
-  }
+  //   if (task.total_bounty_amount < 10) {
+  //     error["total_bounty_amount"] =
+  //       "Total bounty amount cannot be less than 10 KOII";
+  //   }
 
-  if (task.bounty_amount_per_round > task.total_bounty_amount) {
-    error["bounty_amount_per_round"] =
-      "cannot be more than total bounty amount";
-  }
+  //   if (task.bounty_amount_per_round > task.total_bounty_amount) {
+  //     error["bounty_amount_per_round"] =
+  //       "cannot be more than total bounty amount";
+  //   }
 
   if (task.space < 3) {
     error["space"] = "cannot be less than 3 mb";
   }
 
   if (!isObjectEmpty(error)) {
-    console.error("\x1b[31m", `ERROR ${JSON.stringify(error)}`);
-    console.log("\x1b[30m", "Please resolve these issues");
+    console.error("\x1b[31m", "ERROR", error);
     process.exit();
   }
 }
@@ -238,7 +234,7 @@ function isObjectEmpty(obj: object): boolean {
 function validateRequirementsTags(requirementsTags: RequirementTag[]): boolean {
   for (const tag of requirementsTags) {
     if (!tag.type || !(tag.type in RequirementType)) {
-      //console.error(`Invalid requirement tag: ${JSON.stringify(tag)}`);
+      console.error(`Invalid requirement tag: ${JSON.stringify(tag)}`);
       return false;
     }
     switch (tag.type) {
