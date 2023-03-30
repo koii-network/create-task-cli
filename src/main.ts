@@ -6,7 +6,6 @@ import {
   checkProgram,
   createTask,
   updateTask,
-  Whitelist,
   SetActive,
   ClaimReward,
   FundTask,
@@ -55,6 +54,7 @@ interface UpdateTask {
   audit_window: number;
   submission_window: number;
   minimum_stake_amount: number;
+  total_bounty_amount: number;
   bounty_amount_per_round: number;
   allowed_failed_distributions: number;
   space: number;
@@ -91,18 +91,18 @@ async function main() {
   const currentDir = path.resolve(process.cwd());
   let walletPath: string = `${currentDir}/id.json`;
 
-  // walletPath = (
-  //   await prompts({
-  //     type: "text",
-  //     name: "walletPath",
-  //     message: "Enter the path to your wallet",
-  //   })
-  // ).walletPath;
-  console.log(walletPath);
-  if (!fs.existsSync(walletPath))
+  if (!fs.existsSync(walletPath)) {
+    walletPath = (
+      await prompts({
+        type: "text",
+        name: "walletPath",
+        message: "Enter the path to your wallet",
+      })
+    ).walletPath;
     throw Error(
       "Please make sure that the wallet path is correct and under the name id.json"
     );
+  }
 
   try {
     let wallet = fs.readFileSync(walletPath, "utf-8");
@@ -174,8 +174,6 @@ async function main() {
             submission_window,
             minimum_stake_amount,
             task_metadata,
-            task_locals,
-            koii_vars,
             allowed_failed_distributions,
           } = await takeInputForCreateTask();
           // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
@@ -218,8 +216,8 @@ async function main() {
               submission_window,
               minimum_stake_amount,
               task_metadata,
-              task_locals,
-              koii_vars,
+              "",
+              "",
               allowed_failed_distributions
             );
           fs.writeFileSync(
@@ -245,19 +243,18 @@ async function main() {
           const currentDir = path.resolve(process.cwd());
           let ymlPath: string = `${currentDir}/config-task.yml`;
 
-          // ymlPath = (
-          //   await prompts({
-          //     type: "text",
-          //     name: "ymlPath",
-          //     message: "Enter the path to your YML file",
-          //   })
-          // ).ymlPath;
-          // console.log(ymlPath);
-
-          if (!fs.existsSync(ymlPath))
+          if (!fs.existsSync(ymlPath)) {
+            ymlPath = (
+              await prompts({
+                type: "text",
+                name: "ymlPath",
+                message: "Enter the path to your wallet",
+              })
+            ).ymlPath;
             throw Error(
-              "Please make sure that your  configuration file is under the name config-task.yml and  in the current directory"
+              "Please make sure that the path to your config-task.yml file is correct."
             );
+          }
 
           await readYamlFile(ymlPath).then(async (data: any) => {
             //console.log("CHECK", data.task_executable_network);
@@ -505,7 +502,6 @@ async function main() {
             submission_window,
             minimum_stake_amount,
             task_metadata,
-            task_locals,
             allowed_failed_distributions,
           } = await takeInputForCreateTask(state);
           // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
@@ -547,7 +543,7 @@ async function main() {
               submission_window,
               minimum_stake_amount,
               task_metadata,
-              task_locals,
+              "",
               allowed_failed_distributions,
               taskAccountInfoPubKey,
               statePotAccount
@@ -567,202 +563,191 @@ async function main() {
           break;
         }
 
-        // case "yml": {
-        //   const readYamlFile = require("read-yaml-file");
-        //   let metaDataCid: string;
-        //   let task_audit_program_id: string;
+        case "yml": {
+          const readYamlFile = require("read-yaml-file");
+          let metaDataCid: string;
+          let task_audit_program_id_update: string;
 
-        //   const currentDir = path.resolve(process.cwd());
-        //   let ymlPath: string = `${currentDir}/update-task.yml`;
+          const currentDir = path.resolve(process.cwd());
+          let ymlPath: string = `${currentDir}/update-task.yml`;
 
-        //   // ymlPath = (
-        //   //   await prompts({
-        //   //     type: "text",
-        //   //     name: "ymlPath",
-        //   //     message: "Enter the path to your YML file",
-        //   //   })
-        //   // ).ymlPath;
-        //   // console.log(ymlPath);
+          if (!fs.existsSync(ymlPath)) {
+            ymlPath = (
+              await prompts({
+                type: "text",
+                name: "ymlPath",
+                message: "Enter the path to your wallet",
+              })
+            ).ymlPath;
+            throw Error(
+              "Please make sure that the path to your update-task.yml file is correct."
+            );
+          }
 
-        //   if (!fs.existsSync(ymlPath))
-        //     throw Error(
-        //       "Please make sure that your  configuration file is under the name config-task.yml and  in the current directory"
-        //     );
+          await readYamlFile(ymlPath).then(async (data: any) => {
+            //console.log("CHECK", data.task_executable_network);
 
-        //   await readYamlFile(ymlPath).then(async (data: any) => {
-        //     //console.log("CHECK", data.task_executable_network);
+            //console.log("TN", task_executable_network);
 
-        //     //console.log("TN", task_executable_network);
+            if (data.task_executable_network == "IPFS") {
+              task_audit_program_id_update = await uploadIpfs(
+                data.task_audit_program,
+                data.secret_web3_storage_key
+              );
+              console.log("TASK CID", task_audit_program_id_update);
+            } else if (
+              data.task_executable_network == "ARWEAVE" ||
+              "DEVELOPMENT"
+            ) {
+              //console.log("IN DEVELOPMENT");
+              task_audit_program_id_update = data.task_audit_program_id;
+            } else {
+              console.error(
+                "Please specify the correct task_executable_network in YML"
+              );
+              process.exit();
+            }
 
-        //     if (data.task_executable_network == "IPFS") {
-        //       task_audit_program_id = await uploadIpfs(
-        //         data.task_audit_program,
-        //         data.secret_web3_storage_key
-        //       );
-        //       console.log("TASK CID", task_audit_program_id);
-        //     } else if (
-        //       data.task_executable_network == "ARWEAVE" ||
-        //       "DEVELOPMENT"
-        //     ) {
-        //       //console.log("IN DEVELOPMENT");
-        //       task_audit_program_id = data.task_audit_program_id;
-        //     } else {
-        //       console.error(
-        //         "Please specify the correct task_executable_network in YML"
-        //       );
-        //       process.exit();
-        //     }
+            const metaData: TaskMetadata = {
+              author: data.author,
+              description: data.description,
+              repositoryUrl: data.repositoryUrl,
+              createdAt: data.createdAt,
+              imageUrl: data.imageUrl,
+              requirementsTags: data.requirementsTags,
+            };
 
-        //     const metaData: TaskMetadata = {
-        //       author: data.author,
-        //       description: data.description,
-        //       repositoryUrl: data.repositoryUrl,
-        //       createdAt: data.createdAt,
-        //       imageUrl: data.imageUrl,
-        //       requirementsTags: data.requirementsTags,
-        //     };
+            const TaskData: UpdateTask = {
+              taskId: data.task_id,
+              task_name: data.task_name,
+              task_description: data.task_description,
+              task_executable_network: data.task_executable_network,
+              secret_web3_storage_key: data.secret_web3_storage_key,
+              task_audit_program: data.task_audit_program,
+              task_audit_program_id: task_audit_program_id_update,
+              round_time: data.round_time,
+              audit_window: data.audit_window,
+              submission_window: data.submission_window,
+              total_bounty_amount: data.total_bounty_amount,
+              minimum_stake_amount: data.minimum_stake_amount,
+              bounty_amount_per_round: data.bounty_amount_per_round,
+              allowed_failed_distributions: data.allowed_failed_distributions,
+              space: data.space,
+            };
 
-        //     const TaskData: UpdateTask = {
-        //       taskId: data.task_id,
-        //       task_name: data.task_name,
-        //       task_description: data.task_description,
-        //       task_executable_network: data.task_executable_network,
-        //       secret_web3_storage_key: data.secret_web3_storage_key,
-        //       task_audit_program: data.task_audit_program,
-        //       task_audit_program_id: task_audit_program_id,
-        //       round_time: data.round_time,
-        //       audit_window: data.audit_window,
-        //       submission_window: data.submission_window,
-        //       minimum_stake_amount: data.minimum_stake_amount,
-        //       bounty_amount_per_round: data.bounty_amount_per_round,
-        //       allowed_failed_distributions: data.allowed_failed_distributions,
-        //       space: data.space,
-        //     };
+            console.log("TASK DATA", TaskData);
+            console.log("Metadata", metaData);
 
-        //     console.log("TASK DATA", TaskData);
-        //     console.log("Metadata", metaData);
+            await validateUpdateTaskInputs(metaData, TaskData);
 
-        //     await validateUpdateTaskInputs(metaData, TaskData);
+            let tmp = tmpdir();
+            let metadataPath = join(tmp, "metadata.json");
+            fs.writeFileSync(metadataPath, JSON.stringify(metaData));
+            const storageClient = new Web3Storage({
+              token: data.secret_web3_storage_key as string,
+            });
+            let upload = await getFilesFromPath([metadataPath]);
+            try {
+              metaDataCid = await storageClient.put(upload);
+            } catch (err) {
+              console.error(
+                "IPFS upload failed, please check your web3.storage key"
+              );
+              process.exit();
+            }
+            console.log(
+              "\x1b[1m\x1b[32m%s\x1b[0m",
+              `Your MetaData CID is ${metaDataCid}/metadata.json`
+            );
 
-        //     let tmp = tmpdir();
-        //     let metadataPath = join(tmp, "metadata.json");
-        //     fs.writeFileSync(metadataPath, JSON.stringify(metaData));
-        //     const storageClient = new Web3Storage({
-        //       token: data.secret_web3_storage_key as string,
-        //     });
-        //     let upload = await getFilesFromPath([metadataPath]);
-        //     try {
-        //       metaDataCid = await storageClient.put(upload);
-        //     } catch (err) {
-        //       console.error(
-        //         "IPFS upload failed, please check your web3.storage key"
-        //       );
-        //       process.exit();
-        //     }
-        //     console.log(
-        //       "\x1b[1m\x1b[32m%s\x1b[0m",
-        //       `Your MetaData CID is ${metaDataCid}/metadata.json`
-        //     );
+            const accountInfo = await connection.getAccountInfo(
+              new PublicKey(TaskData.taskId)
+            );
 
-        //     const accountInfo = await connection.getAccountInfo(
-        //       new PublicKey(TaskData.taskId)
-        //     );
+            // Add this in validation
 
-        //     // Add this in validation
+            if (accountInfo == null) {
+              console.error("No task found with this Id");
+              process.exit();
+            }
+            let rawData: any = accountInfo.data + "";
+            let state = JSON.parse(rawData);
+            console.log(state);
+            if (
+              new PublicKey(state.task_manager).toString() !==
+              payerWallet.publicKey.toString()
+            ) {
+              console.error("You are not the owner of this task! ");
+              process.exit();
+            }
+            const taskAccountInfoPubKey = new PublicKey(TaskData.taskId);
+            //console.log("OLD TASK STATE INFO", taskAccountInfoPubKey);
+            const statePotAccount = new PublicKey(state.stake_pot_account);
+            //console.log("OLD STATE POT", statePotAccount);
 
-        //     if (accountInfo == null) {
-        //       console.log("No task found with this Id");
-        //       //break;
-        //     }
-        //     let rawData: any = accountInfo.data + "";
-        //     let state = JSON.parse(rawData);
-        //     console.log(state);
-        //     if (
-        //       new PublicKey(state.task_manager).toString() !==
-        //       payerWallet.publicKey.toString()
-        //     ) {
-        //       console.log("You are not the owner of this task! ");
-        //       break;
-        //     }
-        //     const taskAccountInfoPubKey = new PublicKey(taskId);
-        //     console.log("OLD TASK STATE INFO", taskAccountInfoPubKey);
-        //     const statePotAccount = new PublicKey(state.stake_pot_account);
-        //     console.log("OLD STATE POT", statePotAccount);
-        //     const {
-        //       task_name,
-        //       task_audit_program_id,
-        //       total_bounty_amount,
-        //       bounty_amount_per_round,
-        //       space,
-        //       task_description,
-        //       task_executable_network,
-        //       round_time,
-        //       audit_window,
-        //       submission_window,
-        //       minimum_stake_amount,
-        //       task_metadata,
-        //       task_locals,
-        //       allowed_failed_distributions,
-        //     } = await takeInputForCreateTask(state);
-        //     // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
-        //     let totalAmount =
-        //       LAMPORTS_PER_SOL * total_bounty_amount +
-        //       (await connection.getMinimumBalanceForRentExemption(100)) +
-        //       10000 +
-        //       (await connection.getMinimumBalanceForRentExemption(space)) +
-        //       10000;
-        //     let response = (
-        //       await prompts({
-        //         type: "confirm",
-        //         name: "response",
-        //         message: `Your account will be subtract ${
-        //           totalAmount / LAMPORTS_PER_SOL
-        //         } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
-        //       })
-        //     ).response;
+            let totalAmount =
+              LAMPORTS_PER_SOL * TaskData.total_bounty_amount +
+              (await connection.getMinimumBalanceForRentExemption(100)) +
+              10000 +
+              (await connection.getMinimumBalanceForRentExemption(
+                TaskData.space
+              )) +
+              10000;
+            let response = (
+              await prompts({
+                type: "confirm",
+                name: "response",
+                message: `Your account will be subtract ${
+                  totalAmount / LAMPORTS_PER_SOL
+                } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
+              })
+            ).response;
 
-        //     if (!response) process.exit(0);
-        //     let lamports = await connection.getBalance(payerWallet.publicKey);
-        //     if (lamports < totalAmount) {
-        //       console.error("Insufficient balance for this operation");
-        //       process.exit(0);
-        //     }
-        //     console.log("Calling Update Task");
+            if (!response) process.exit(0);
+            let lamports = await connection.getBalance(payerWallet.publicKey);
+            if (lamports < totalAmount) {
+              console.error("Insufficient balance for this operation");
+              process.exit(0);
+            }
+            console.log("Calling Update Task");
 
-        //     let { taskStateInfoKeypair, stake_pot_account_pubkey } =
-        //       await updateTask(
-        //         payerWallet,
-        //         task_name,
-        //         task_audit_program_id,
-        //         bounty_amount_per_round,
-        //         space,
-        //         task_description,
-        //         task_executable_network,
-        //         round_time,
-        //         audit_window,
-        //         submission_window,
-        //         minimum_stake_amount,
-        //         task_metadata,
-        //         task_locals,
-        //         allowed_failed_distributions,
-        //         taskAccountInfoPubKey,
-        //         statePotAccount
-        //       );
-        //     fs.writeFileSync(
-        //       "taskStateInfoKeypair.json",
-        //       JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
-        //     );
-        //     console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
-        //     console.log(
-        //       "Stake Pot Account Pubkey:",
-        //       stake_pot_account_pubkey.toBase58()
-        //     );
-        //     console.log(
-        //       "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
-        //     );
-        //   });
-        //   break;
-        // }
+            let { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
+              await updateTask(
+                payerWallet,
+                TaskData.task_name,
+                task_audit_program_id_update,
+                TaskData.bounty_amount_per_round,
+                TaskData.space,
+                TaskData.task_description,
+                TaskData.task_executable_network,
+                TaskData.round_time,
+                TaskData.audit_window,
+                TaskData.submission_window,
+                TaskData.minimum_stake_amount,
+                metaDataCid,
+                "",
+                TaskData.allowed_failed_distributions,
+                taskAccountInfoPubKey,
+                statePotAccount
+              );
+            fs.writeFileSync(
+              "taskStateInfoKeypair.json",
+              JSON.stringify(Array.from(newTaskStateInfoKeypair.secretKey))
+            );
+            console.log(
+              "Task Id:",
+              newTaskStateInfoKeypair.publicKey.toBase58()
+            );
+            console.log(
+              "Stake Pot Account Pubkey:",
+              newStake_pot_account_pubkey.toBase58()
+            );
+            console.log(
+              "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
+            );
+          });
+          break;
+        }
       }
       break;
     }
@@ -1022,21 +1007,6 @@ async function takeInputForCreateTask(state?: any) {
       message: `Enter TaskMetadata CID hosted on ${"IPFS"} (Leave empty for None).`,
     })
   ).task_metadata;
-  let task_locals = (
-    await prompts({
-      type: "text",
-      name: "task_locals",
-      message: `Enter CID for environment variables hosted on ${"IPFS"} (Leave empty for None).`,
-    })
-  ).task_locals;
-  let koii_vars = (
-    await prompts({
-      type: "text",
-      name: "koii_vars",
-      message: `Enter PubKey for KOII global vars.(Leave empty for default) `,
-    })
-  ).koii_vars;
-
   while (bounty_amount_per_round > total_bounty_amount) {
     console.error(
       "The bounty_amount_per_round cannot be greater than total_bounty_amount"
@@ -1083,8 +1053,6 @@ async function takeInputForCreateTask(state?: any) {
     submission_window,
     minimum_stake_amount,
     task_metadata,
-    task_locals,
-    koii_vars,
     allowed_failed_distributions,
   };
 }

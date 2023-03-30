@@ -1,5 +1,5 @@
 # Name and desciption of your task
-task_name: "reward-task"
+task_name: "testing1-task"
 task_description: "This task is to test out the namespace function"
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS

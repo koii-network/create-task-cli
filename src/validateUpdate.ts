@@ -11,6 +11,7 @@ interface UpdateTask {
   round_time: number;
   audit_window: number;
   submission_window: number;
+  total_bounty_amount: number;
   minimum_stake_amount: number;
   bounty_amount_per_round: number;
   allowed_failed_distributions: number;
