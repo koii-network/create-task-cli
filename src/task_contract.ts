@@ -437,7 +437,7 @@ export async function updateTask(
   allowed_failed_distributions: number,
   taskAccountInfoPubKey: PublicKey,
   statePotAccountPubKey: PublicKey
-): Promise<any> {
+): Promise<{newTaskStateInfoKeypair:Keypair, newStake_pot_account_pubkey:PublicKey}> {
   // Checks
   if (round_time < audit_window + submission_window)
     throw new Error(

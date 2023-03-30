@@ -533,7 +533,7 @@ async function main() {
           }
           console.log("Calling Update Task");
 
-          let { taskStateInfoKeypair, stake_pot_account_pubkey } =
+          let { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
             await updateTask(
               payerWallet,
               task_name,
@@ -554,12 +554,12 @@ async function main() {
             );
           fs.writeFileSync(
             "taskStateInfoKeypair.json",
-            JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
+            JSON.stringify(Array.from(newTaskStateInfoKeypair.secretKey))
           );
-          console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
+          console.log("Task Id:", newTaskStateInfoKeypair.publicKey.toBase58());
           console.log(
             "Stake Pot Account Pubkey:",
-            stake_pot_account_pubkey.toBase58()
+            newStake_pot_account_pubkey.toBase58()
           );
           console.log(
             "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
