@@ -43,7 +43,7 @@ interface Task {
 }
 
 interface UpdateTask {
-  taskId: string;
+  task_id: string;
   task_name: string;
   task_description: string;
   task_executable_network: "DEVELOPMENT" | "ARWEAVE" | "IPFS";
@@ -54,7 +54,6 @@ interface UpdateTask {
   audit_window: number;
   submission_window: number;
   minimum_stake_amount: number;
-  total_bounty_amount: number;
   bounty_amount_per_round: number;
   allowed_failed_distributions: number;
   space: number;
@@ -175,7 +174,7 @@ async function main() {
             minimum_stake_amount,
             task_metadata,
             allowed_failed_distributions,
-          } = await takeInputForCreateTask();
+          } = await takeInputForCreateTask(true);
           // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
           let totalAmount =
             LAMPORTS_PER_SOL * total_bounty_amount +
@@ -492,7 +491,6 @@ async function main() {
           const {
             task_name,
             task_audit_program_id,
-            total_bounty_amount,
             bounty_amount_per_round,
             space,
             task_description,
@@ -503,10 +501,9 @@ async function main() {
             minimum_stake_amount,
             task_metadata,
             allowed_failed_distributions,
-          } = await takeInputForCreateTask(state);
+          } = await takeInputForCreateTask(false, state);
           // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
           let totalAmount =
-            LAMPORTS_PER_SOL * total_bounty_amount +
             (await connection.getMinimumBalanceForRentExemption(100)) +
             10000 +
             (await connection.getMinimumBalanceForRentExemption(space)) +
@@ -569,7 +566,7 @@ async function main() {
           let task_audit_program_id_update: string;
 
           const currentDir = path.resolve(process.cwd());
-          let ymlPath: string = `${currentDir}/update-task.yml`;
+          let ymlPath: string = `${currentDir}/config-task.yml`;
 
           if (!fs.existsSync(ymlPath)) {
             ymlPath = (
@@ -580,7 +577,7 @@ async function main() {
               })
             ).ymlPath;
             throw Error(
-              "Please make sure that the path to your update-task.yml file is correct."
+              "Please make sure that the path to your config-task.yml file is correct."
             );
           }
 
@@ -618,7 +615,7 @@ async function main() {
             };
 
             const TaskData: UpdateTask = {
-              taskId: data.task_id,
+              task_id: data.task_id,
               task_name: data.task_name,
               task_description: data.task_description,
               task_executable_network: data.task_executable_network,
@@ -628,7 +625,6 @@ async function main() {
               round_time: data.round_time,
               audit_window: data.audit_window,
               submission_window: data.submission_window,
-              total_bounty_amount: data.total_bounty_amount,
               minimum_stake_amount: data.minimum_stake_amount,
               bounty_amount_per_round: data.bounty_amount_per_round,
               allowed_failed_distributions: data.allowed_failed_distributions,
@@ -661,7 +657,7 @@ async function main() {
             );
 
             const accountInfo = await connection.getAccountInfo(
-              new PublicKey(TaskData.taskId)
+              new PublicKey(TaskData.task_id)
             );
 
             // Add this in validation
@@ -672,7 +668,7 @@ async function main() {
             }
             let rawData: any = accountInfo.data + "";
             let state = JSON.parse(rawData);
-            console.log(state);
+            //console.log(state);
             if (
               new PublicKey(state.task_manager).toString() !==
               payerWallet.publicKey.toString()
@@ -680,13 +676,12 @@ async function main() {
               console.error("You are not the owner of this task! ");
               process.exit();
             }
-            const taskAccountInfoPubKey = new PublicKey(TaskData.taskId);
+            const taskAccountInfoPubKey = new PublicKey(TaskData.task_id);
             //console.log("OLD TASK STATE INFO", taskAccountInfoPubKey);
             const statePotAccount = new PublicKey(state.stake_pot_account);
             //console.log("OLD STATE POT", statePotAccount);
 
             let totalAmount =
-              LAMPORTS_PER_SOL * TaskData.total_bounty_amount +
               (await connection.getMinimumBalanceForRentExemption(100)) +
               10000 +
               (await connection.getMinimumBalanceForRentExemption(
@@ -699,7 +694,7 @@ async function main() {
                 name: "response",
                 message: `Your account will be subtract ${
                   totalAmount / LAMPORTS_PER_SOL
-                } KOII for creating the task, which includes the rent exemption and bounty amount fees`,
+                } KOII for updating the task, which includes the rent exemption`,
               })
             ).response;
 
@@ -758,7 +753,7 @@ async function main() {
   console.log("Success");
 }
 
-async function takeInputForCreateTask(state?: any) {
+async function takeInputForCreateTask(isBounty: boolean, state?: any) {
   let task_name = (
     await prompts({
       type: "text",
@@ -953,16 +948,9 @@ async function takeInputForCreateTask(state?: any) {
       float: true,
     })
   ).minimum_stake_amount;
-  let total_bounty_amount = (
-    await prompts({
-      type: "number",
-      name: "total_bounty_amount",
-      message:
-        "Enter the total bounty you want to allocate for the task (In KOII)",
-    })
-  ).total_bounty_amount;
-  while (total_bounty_amount < 10) {
-    console.error("The total_bounty_amount cannot be less than 10");
+  let total_bounty_amount;
+
+  if (isBounty) {
     total_bounty_amount = (
       await prompts({
         type: "number",
@@ -971,6 +959,17 @@ async function takeInputForCreateTask(state?: any) {
           "Enter the total bounty you want to allocate for the task (In KOII)",
       })
     ).total_bounty_amount;
+    while (total_bounty_amount < 10) {
+      console.error("The total_bounty_amount cannot be less than 10");
+      total_bounty_amount = (
+        await prompts({
+          type: "number",
+          name: "total_bounty_amount",
+          message:
+            "Enter the total bounty you want to allocate for the task (In KOII)",
+        })
+      ).total_bounty_amount;
+    }
   }
   let bounty_amount_per_round = (
     await prompts({
@@ -1007,17 +1006,19 @@ async function takeInputForCreateTask(state?: any) {
       message: `Enter TaskMetadata CID hosted on ${"IPFS"} (Leave empty for None).`,
     })
   ).task_metadata;
-  while (bounty_amount_per_round > total_bounty_amount) {
-    console.error(
-      "The bounty_amount_per_round cannot be greater than total_bounty_amount"
-    );
-    bounty_amount_per_round = (
-      await prompts({
-        type: "number",
-        name: "bounty_amount_per_round",
-        message: "Enter the bounty amount per round",
-      })
-    ).bounty_amount_per_round;
+  if (isBounty) {
+    while (bounty_amount_per_round > total_bounty_amount) {
+      console.error(
+        "The bounty_amount_per_round cannot be greater than total_bounty_amount"
+      );
+      bounty_amount_per_round = (
+        await prompts({
+          type: "number",
+          name: "bounty_amount_per_round",
+          message: "Enter the bounty amount per round",
+        })
+      ).bounty_amount_per_round;
+    }
   }
 
   let space = (

@@ -111,7 +111,6 @@ async function main(metaData: TaskMetadata, task: Task) {
     !task.submission_window ||
     !task.minimum_stake_amount ||
     !task.total_bounty_amount ||
-    !task.bounty_amount_per_round ||
     !task.allowed_failed_distributions ||
     !task.space
   ) {
@@ -165,10 +164,10 @@ async function main(metaData: TaskMetadata, task: Task) {
     task.submission_window <= 0 ||
     task.minimum_stake_amount <= 0 ||
     task.total_bounty_amount <= 0 ||
-    task.bounty_amount_per_round <= 0 ||
     task.allowed_failed_distributions < 0 ||
     task.space <= 0
   ) {
+    error["taskParams"] = "type error in task params";
   }
 
   // Check audit properties

@@ -1,3 +1,5 @@
+#Provide the taskId if you are updating the task
+task_id: "4Ma7S1RtQ6GC9NQWihv3VvndSAn3F381kK4S49VJysKw"
 # Name and desciption of your task
 task_name: "testing1-task"
 task_description: "This task is to test out the namespace function"
@@ -23,7 +25,11 @@ submission_window: 200
 # Amounts in KOII
 
 minimum_stake_amount: 5
+
+# total_bounty_amount cannot be grater than bounty_amount_per_round
+# total bounty is not accepted in case of update task
 total_bounty_amount: 10
+
 bounty_amount_per_round: 2
 
 #Number of times allowed to re-submit the distribution  list in case the distribution list is audited

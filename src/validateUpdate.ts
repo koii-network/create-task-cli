@@ -1,7 +1,7 @@
 //import { Web3Storage } from "web3.storage";
 
 interface UpdateTask {
-  taskId: string;
+  task_id: string;
   task_name: string;
   task_description: string;
   task_executable_network: "DEVELOPMENT" | "ARWEAVE" | "IPFS";
@@ -11,7 +11,6 @@ interface UpdateTask {
   round_time: number;
   audit_window: number;
   submission_window: number;
-  total_bounty_amount: number;
   minimum_stake_amount: number;
   bounty_amount_per_round: number;
   allowed_failed_distributions: number;
@@ -103,6 +102,7 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
   // Check if all required properties are present and have valid values
 
   if (
+    !task.task_id ||
     !task.task_name ||
     !task.task_description ||
     !task.task_executable_network ||
@@ -149,6 +149,7 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
 
   // Check if all properties have valid types and values
   if (
+    typeof task.task_id !== "string" ||
     typeof task.task_name !== "string" ||
     typeof task.task_description !== "string" ||
     typeof task.secret_web3_storage_key !== "string" ||
@@ -167,6 +168,7 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
     task.allowed_failed_distributions < 0 ||
     task.space <= 0
   ) {
+    error["taskParams"] = "type error in task params";
   }
 
   // Check audit properties
