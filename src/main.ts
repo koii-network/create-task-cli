@@ -98,9 +98,12 @@ async function main() {
         message: "Enter the path to your wallet",
       })
     ).walletPath;
-    throw Error(
-      "Please make sure that the wallet path is correct and under the name id.json"
-    );
+
+    if (!fs.existsSync(walletPath)) {
+      throw Error(
+        "Please make sure that the wallet path is correct and under the name id.json"
+      );
+    }
   }
 
   try {
@@ -250,9 +253,12 @@ async function main() {
                 message: "Enter the path to your wallet",
               })
             ).ymlPath;
-            throw Error(
-              "Please make sure that the path to your config-task.yml file is correct."
-            );
+
+            if (!fs.existsSync(ymlPath)) {
+              throw Error(
+                "Please make sure that the path to your config-task.yml file is correct."
+              );
+            }
           }
 
           await readYamlFile(ymlPath).then(async (data: any) => {
