@@ -2,10 +2,8 @@
  * Hello world
  */
 
-import { establishConnection } from "./task_contract";
 import prompts from "prompts";
-import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
-import fs, { existsSync } from "fs";
+import fs from "fs";
 import { config } from "dotenv";
 import { tmpdir } from "os";
 import { join } from "path";

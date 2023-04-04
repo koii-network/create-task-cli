@@ -334,6 +334,15 @@ export async function createTask(
     );
   if (task_description.length > 64)
     throw new Error("task_description cannot be greater than 64 characters");
+  // console.log(
+  //   "TEST",
+  //   task_name,
+  //   task_description,
+  //   task_audit_program,
+  //   task_executable_network,
+  //   task_metadata,
+  //   local_vars
+  // );
 
   let createTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
@@ -428,7 +437,7 @@ export async function updateTask(
   allowed_failed_distributions: number,
   taskAccountInfoPubKey: PublicKey,
   statePotAccountPubKey: PublicKey
-): Promise<any> {
+): Promise<{newTaskStateInfoKeypair:Keypair, newStake_pot_account_pubkey:PublicKey}> {
   // Checks
   if (round_time < audit_window + submission_window)
     throw new Error(
