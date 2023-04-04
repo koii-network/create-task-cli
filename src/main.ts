@@ -582,9 +582,11 @@ async function main() {
                 message: "Enter the path to your wallet",
               })
             ).ymlPath;
-            throw Error(
-              "Please make sure that the path to your config-task.yml file is correct."
-            );
+            if (!fs.existsSync(ymlPath)) {
+              throw Error(
+                "Please make sure that the path to your config-task.yml file is correct."
+              );
+            }
           }
 
           await readYamlFile(ymlPath).then(async (data: any) => {
