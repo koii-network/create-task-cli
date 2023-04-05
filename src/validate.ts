@@ -199,8 +199,8 @@ async function main(metaData: TaskMetadata, task: Task) {
       "cannot be more than total bounty amount";
   }
 
-  if (task.space < 3) {
-    error["space"] = "cannot be less than 3 mb";
+  if (task.space < 1) {
+    error["space"] = "cannot be less than 1 mb";
   }
 
   if (!isObjectEmpty(error)) {

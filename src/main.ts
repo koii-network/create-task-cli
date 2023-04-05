@@ -183,7 +183,9 @@ async function main() {
             LAMPORTS_PER_SOL * total_bounty_amount +
             (await connection.getMinimumBalanceForRentExemption(100)) +
             10000 +
-            (await connection.getMinimumBalanceForRentExemption(space)) +
+            (await connection.getMinimumBalanceForRentExemption(
+              space * 1000000
+            )) +
             10000;
           let response = (
             await prompts({
@@ -210,7 +212,7 @@ async function main() {
               task_audit_program_id,
               total_bounty_amount,
               bounty_amount_per_round,
-              space,
+              space * 1000000,
               task_description,
               task_executable_network,
               round_time,
@@ -344,7 +346,9 @@ async function main() {
               LAMPORTS_PER_SOL * data.total_bounty_amount +
               (await connection.getMinimumBalanceForRentExemption(100)) +
               10000 +
-              (await connection.getMinimumBalanceForRentExemption(data.space)) +
+              (await connection.getMinimumBalanceForRentExemption(
+                data.space * 1000000
+              )) +
               10000;
             let response = (
               await prompts({
@@ -372,7 +376,7 @@ async function main() {
                 task_audit_program_id,
                 TaskData.total_bounty_amount,
                 TaskData.bounty_amount_per_round,
-                TaskData.space,
+                TaskData.space * 1000000,
                 TaskData.task_description,
                 TaskData.task_executable_network,
                 TaskData.round_time,
@@ -512,7 +516,9 @@ async function main() {
           let totalAmount =
             (await connection.getMinimumBalanceForRentExemption(100)) +
             10000 +
-            (await connection.getMinimumBalanceForRentExemption(space)) +
+            (await connection.getMinimumBalanceForRentExemption(
+              space * 1000000
+            )) +
             10000;
           let response = (
             await prompts({
@@ -538,7 +544,7 @@ async function main() {
               task_name,
               task_audit_program_id,
               bounty_amount_per_round,
-              space,
+              space * 1000000,
               task_description,
               task_executable_network,
               round_time,
@@ -693,7 +699,7 @@ async function main() {
               (await connection.getMinimumBalanceForRentExemption(100)) +
               10000 +
               (await connection.getMinimumBalanceForRentExemption(
-                TaskData.space
+                TaskData.space * 1000000
               )) +
               10000;
             let response = (
@@ -720,7 +726,7 @@ async function main() {
                 TaskData.task_name,
                 task_audit_program_id_update,
                 TaskData.bounty_amount_per_round,
-                TaskData.space,
+                TaskData.space * 1000000,
                 TaskData.task_description,
                 TaskData.task_executable_network,
                 TaskData.round_time,
@@ -1037,8 +1043,8 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
         "Enter the space, you want to allocate for task account (in MBs)",
     })
   ).space;
-  while (space < 3) {
-    console.error("Space cannot be less than 3 mb");
+  while (space < 1) {
+    console.error("Space cannot be less than 1 mb");
     space = (
       await prompts({
         type: "number",

@@ -1,7 +1,7 @@
 #Provide the taskId if you are updating the task
-task_id: "4Ma7S1RtQ6GC9NQWihv3VvndSAn3F381kK4S49VJysKw"
+task_id: "7HzPuzUXqoPmXaQxx8Eqy9RVM5KyUuMQdgMd3Uv64nYy"
 # Name and desciption of your task
-task_name: "testing1-task"
+task_name: "ccc-task"
 task_description: "This task is to test out the namespace function"
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS
@@ -36,7 +36,7 @@ bounty_amount_per_round: 2
 allowed_failed_distributions: 4
 
 #Space in MBs
-space: 10
+space: 1
 
 # Note that the value field in RequirementTag is optional, so it is up to you to include it or not based on your use case.
 # To add more global variables and task variables, please refer the type,value,description format shown below
@@ -44,7 +44,7 @@ space: 10
 author: "cebwjbj"
 description: "cwc"
 repositoryUrl: "github.io/did"
-imageUrl: "cscefve"
+imageUrl: "imageUrl"
 requirementsTags:
   - type: CPU
     value: "4-core"
