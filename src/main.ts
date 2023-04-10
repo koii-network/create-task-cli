@@ -291,7 +291,7 @@ async function main() {
               author: data.author,
               description: data.description,
               repositoryUrl: data.repositoryUrl,
-              createdAt: Math.floor(Date.now() / 1000),
+              createdAt: Date.now(),
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };
