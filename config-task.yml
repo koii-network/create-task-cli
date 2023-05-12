@@ -1,8 +1,8 @@
 #Provide the taskId if you are updating the task
 task_id: ""
 # Name and desciption of your task
-task_name: "Google-doodle-V3"
-task_description: "fixed chromium"
+task_name: "Google-doodle-scraping"
+task_description: "This task demonstrates ability to scrape the doodles"
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS
 task_executable_network: "IPFS"
@@ -41,8 +41,8 @@ space: 1
 # Note that the value field in RequirementTag is optional, so it is up to you to include it or not based on your use case.
 # To add more global variables and task variables, please refer the type,value,description format shown below
 
-author: "Raj"
-description: "fixed chromium"
+author: "raj"
+description: "This task demonstrates ability to scrape the doodles"
 repositoryUrl: "https://github.com/koii-network/task-examples"
 imageUrl: "imageUrl"
 requirementsTags:
