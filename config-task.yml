@@ -1,11 +1,11 @@
 #Provide the taskId if you are updating the task
-task_id: "7HzPuzUXqoPmXaQxx8Eqy9RVM5KyUuMQdgMd3Uv64nYy"
+task_id: ""
 # Name and desciption of your task
-task_name: "ccc-task"
-task_description: "This task is to test out the namespace function"
+task_name: "Google-doodle-V3"
+task_description: "fixed chromium"
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS
-task_executable_network: "DEVELOPMENT"
+task_executable_network: "IPFS"
 
 # Provide your web3.storage key as it is needed for uploading your metadata
 secret_web3_storage_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDg0NmM5YjRmNTMwYzc3OUQ5NzFkOTQzMGI4OTkyRkU5NWIwNTE0MkIiLCJpc3MiOiJ3ZWIzLXN0b3JhZ2UiLCJpYXQiOjE2NjE5ODEwNTg0NjYsIm5hbWUiOiJrb2lpIn0.m0J9abCa_N6M5jJ5quEJkZkbxBP18U-omSQRcXP9a80"
@@ -17,23 +17,23 @@ task_audit_program: "/Users/raj/koii_work/new-task-structure/sid-testing/k2-task
 task_audit_program_id: "main"
 
 # Total round time of your task : it must be given in slots and each slot is rougly equal to 4ms
-round_time: 600
+round_time: 500
 
 audit_window: 200
 submission_window: 200
 
 # Amounts in KOII
 
-minimum_stake_amount: 5
+minimum_stake_amount: 2
 
 # total_bounty_amount cannot be grater than bounty_amount_per_round
 # total bounty is not accepted in case of update task
-total_bounty_amount: 10
+total_bounty_amount: 50
 
 bounty_amount_per_round: 2
 
 #Number of times allowed to re-submit the distribution  list in case the distribution list is audited
-allowed_failed_distributions: 4
+allowed_failed_distributions: 3
 
 #Space in MBs
 space: 1
@@ -41,9 +41,9 @@ space: 1
 # Note that the value field in RequirementTag is optional, so it is up to you to include it or not based on your use case.
 # To add more global variables and task variables, please refer the type,value,description format shown below
 
-author: "cebwjbj"
-description: "cwc"
-repositoryUrl: "github.io/did"
+author: "Raj"
+description: "fixed chromium"
+repositoryUrl: "https://github.com/koii-network/task-examples"
 imageUrl: "imageUrl"
 requirementsTags:
   - type: CPU
@@ -51,10 +51,10 @@ requirementsTags:
   - type: RAM
     value: "5 GB"
   - type: STORAGE
-    value: "test"
+    value: "5 GB"
   - type: NETWORK
-    value: "test"
+    value: "testnet"
   - type: ARCHITECTURE
-    value: "ccc"
+    value: "M1"
   - type: OS
     value: "OSX"
