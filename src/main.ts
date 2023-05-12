@@ -179,7 +179,10 @@ async function main() {
             allowed_failed_distributions,
           } = await takeInputForCreateTask(true);
           // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
-          const minimumBalanceForRentExemption = (await connection.getMinimumBalanceForRentExemption(space * 1000000)) + 10000;
+          const minimumBalanceForRentExemption =
+            (await connection.getMinimumBalanceForRentExemption(
+              space * 1000000
+            )) + 10000;
           let totalAmount =
             LAMPORTS_PER_SOL * total_bounty_amount +
             minimumBalanceForRentExemption;
@@ -187,8 +190,11 @@ async function main() {
             await prompts({
               type: "confirm",
               name: "response",
-              message: `Your account will be deducted ${totalAmount / LAMPORTS_PER_SOL
-                } KOII for creating the task, which includes the rent exemption(${minimumBalanceForRentExemption / LAMPORTS_PER_SOL} KOII) and bounty amount fees (${total_bounty_amount} KOII)`,
+              message: `Your account will be deducted ${
+                totalAmount / LAMPORTS_PER_SOL
+              } KOII for creating the task, which includes the rent exemption(${
+                minimumBalanceForRentExemption / LAMPORTS_PER_SOL
+              } KOII) and bounty amount fees (${total_bounty_amount} KOII)`,
             })
           ).response;
 
@@ -336,7 +342,10 @@ async function main() {
             // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
 
             // Before pasing it to createTask validate the input
-            const minimumBalanceForRentExemption = (await connection.getMinimumBalanceForRentExemption(data.space * 1000000)) + 10000;
+            const minimumBalanceForRentExemption =
+              (await connection.getMinimumBalanceForRentExemption(
+                data.space * 1000000
+              )) + 10000;
 
             let totalAmount =
               LAMPORTS_PER_SOL * data.total_bounty_amount +
@@ -345,8 +354,13 @@ async function main() {
               await prompts({
                 type: "confirm",
                 name: "response",
-                message: `Your account will be deducted ${totalAmount / LAMPORTS_PER_SOL
-                  } KOII for creating the task, which includes the rent exemption(${minimumBalanceForRentExemption / LAMPORTS_PER_SOL} KOII) and bounty amount fees (${data.total_bounty_amount} KOII)`,
+                message: `Your account will be deducted ${
+                  totalAmount / LAMPORTS_PER_SOL
+                } KOII for creating the task, which includes the rent exemption(${
+                  minimumBalanceForRentExemption / LAMPORTS_PER_SOL
+                } KOII) and bounty amount fees (${
+                  data.total_bounty_amount
+                } KOII)`,
               })
             ).response;
 
@@ -503,14 +517,20 @@ async function main() {
             allowed_failed_distributions,
           } = await takeInputForCreateTask(false, state);
           // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
-          const minimumBalanceForRentExemption = (await connection.getMinimumBalanceForRentExemption(space * 1000000)) + 10000;
+          const minimumBalanceForRentExemption =
+            (await connection.getMinimumBalanceForRentExemption(
+              space * 1000000
+            )) + 10000;
           let totalAmount = minimumBalanceForRentExemption;
           let response = (
             await prompts({
               type: "confirm",
               name: "response",
-              message: `Your account will be deducted ${totalAmount / LAMPORTS_PER_SOL
-                } KOII for creating the task, which includes the rent exemption (${minimumBalanceForRentExemption / LAMPORTS_PER_SOL} KOII) and bounty amount fees is taken from the last task`,
+              message: `Your account will be deducted ${
+                totalAmount / LAMPORTS_PER_SOL
+              } KOII for creating the task, which includes the rent exemption (${
+                minimumBalanceForRentExemption / LAMPORTS_PER_SOL
+              } KOII) and bounty amount fees is taken from the last task`,
             })
           ).response;
 
@@ -607,7 +627,7 @@ async function main() {
               author: data.author,
               description: data.description,
               repositoryUrl: data.repositoryUrl,
-              createdAt: Math.floor(Date.now() / 1000),
+              createdAt: Date.now(),
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };
@@ -679,14 +699,20 @@ async function main() {
             const statePotAccount = new PublicKey(state.stake_pot_account);
             //console.log("OLD STATE POT", statePotAccount);
 
-            const minimumBalanceForRentExemption = (await connection.getMinimumBalanceForRentExemption(TaskData.space * 1000000)) + 10000;
-            let totalAmount = minimumBalanceForRentExemption
+            const minimumBalanceForRentExemption =
+              (await connection.getMinimumBalanceForRentExemption(
+                TaskData.space * 1000000
+              )) + 10000;
+            let totalAmount = minimumBalanceForRentExemption;
             let response = (
               await prompts({
                 type: "confirm",
                 name: "response",
-                message: `Your account will be deducted ${totalAmount / LAMPORTS_PER_SOL
-              } KOII for creating the task, which includes the rent exemption (${minimumBalanceForRentExemption / LAMPORTS_PER_SOL} KOII) and bounty amount fees is taken from the last task`,
+                message: `Your account will be deducted ${
+                  totalAmount / LAMPORTS_PER_SOL
+                } KOII for creating the task, which includes the rent exemption (${
+                  minimumBalanceForRentExemption / LAMPORTS_PER_SOL
+                } KOII) and bounty amount fees is taken from the last task`,
               })
             ).response;
 
