@@ -707,6 +707,7 @@ export async function Withdraw(
     keys: [
       { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
       { pubkey: submitterKeypair.publicKey, isSigner: true, isWritable: true },
+      { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
     ],
     programId,
     data: data,
