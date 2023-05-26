@@ -79,6 +79,12 @@ export async function uploadIpfs(
   //console.log(filePath);
   //console.log(secret_web3_storage_key);
   console.log("FILEPATH", path);
+  if(path.substring(path.length - 7) !== "main.js"){
+    console.error(
+      "Provide a valid path to webpacked 'main.js' file"
+    );
+    process.exit();
+  }
   if (fs.existsSync(path)) {
     const storageClient = new Web3Storage({
       token: secret_web3_storage_key || "",
@@ -93,6 +99,9 @@ export async function uploadIpfs(
     console.log("CID of executable", cid);
     return cid;
   } else {
-    return "File not found";
+    console.error(
+      "File not found"
+    );
+    process.exit();
   }
 }
