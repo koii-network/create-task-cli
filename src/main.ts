@@ -257,7 +257,7 @@ async function main() {
               })
             ).ymlPath;
 
-            if (!fs.existsSync(ymlPath)) {
+            if (!fs.existsSync(ymlPath) || !ymlPath.includes(".yml")) {
               throw Error(
                 "Please make sure that the path to your config-task.yml file is correct."
               );
@@ -592,7 +592,7 @@ async function main() {
                 message: "Enter the path to your config-task.yml file",
               })
             ).ymlPath;
-            if (!fs.existsSync(ymlPath)) {
+            if (!fs.existsSync(ymlPath) || !ymlPath.includes(".yml")) {
               throw Error(
                 "Please make sure that the path to your config-task.yml file is correct."
               );
