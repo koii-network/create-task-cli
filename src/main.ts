@@ -253,7 +253,7 @@ async function main() {
               await prompts({
                 type: "text",
                 name: "ymlPath",
-                message: "Enter the path to your wallet",
+                message: "Enter the path to your config-task.yml file",
               })
             ).ymlPath;
 
@@ -589,7 +589,7 @@ async function main() {
               await prompts({
                 type: "text",
                 name: "ymlPath",
-                message: "Enter the path to your wallet",
+                message: "Enter the path to your config-task.yml file",
               })
             ).ymlPath;
             if (!fs.existsSync(ymlPath)) {
