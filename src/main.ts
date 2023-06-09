@@ -257,7 +257,7 @@ async function main() {
               })
             ).ymlPath;
 
-            if (!fs.existsSync(ymlPath) || !ymlPath.includes(".yml")) {
+            if (!fs.existsSync(ymlPath) || (!ymlPath.includes(".yml") && !ymlPath.includes(".yaml"))) {
               throw Error(
                 "Please make sure that the path to your config-task.yml file is correct."
               );
@@ -270,6 +270,27 @@ async function main() {
             //console.log("TN", task_executable_network);
 
             if (data.task_executable_network == "IPFS") {
+              if(!data.secret_web3_storage_key){
+                data.secret_web3_storage_key = (
+                  await prompts({
+                    type: "text",
+                    name: "secret_web3_storage_key",
+                    message: "Enter the web3.storage API key",
+                  })
+                ).secret_web3_storage_key;
+                while (data.secret_web3_storage_key < 200) {
+                  console.error(
+                    "secret_web3_storage_key cannot be less than 200 characters"
+                  );
+                  data.secret_web3_storage_key = (
+                    await prompts({
+                      type: "text",
+                      name: "secret_web3_storage_key",
+                      message: "Enter the web3.storage API key",
+                    })
+                  ).secret_web3_storage_key;
+                }
+              }
               task_audit_program_id = await uploadIpfs(
                 data.task_audit_program,
                 data.secret_web3_storage_key
@@ -592,7 +613,7 @@ async function main() {
                 message: "Enter the path to your config-task.yml file",
               })
             ).ymlPath;
-            if (!fs.existsSync(ymlPath) || !ymlPath.includes(".yml")) {
+            if (!fs.existsSync(ymlPath) || (!ymlPath.includes(".yml") && !ymlPath.includes(".yaml"))) {
               throw Error(
                 "Please make sure that the path to your config-task.yml file is correct."
               );
@@ -605,6 +626,27 @@ async function main() {
             //console.log("TN", task_executable_network);
 
             if (data.task_executable_network == "IPFS") {
+              if(!data.secret_web3_storage_key){
+                data.secret_web3_storage_key = (
+                  await prompts({
+                    type: "text",
+                    name: "secret_web3_storage_key",
+                    message: "Enter the web3.storage API key",
+                  })
+                ).secret_web3_storage_key;
+                while (data.secret_web3_storage_key < 200) {
+                  console.error(
+                    "secret_web3_storage_key cannot be less than 200 characters"
+                  );
+                  data.secret_web3_storage_key = (
+                    await prompts({
+                      type: "text",
+                      name: "secret_web3_storage_key",
+                      message: "Enter the web3.storage API key",
+                    })
+                  ).secret_web3_storage_key;
+                }
+              }
               task_audit_program_id_update = await uploadIpfs(
                 data.task_audit_program,
                 data.secret_web3_storage_key

@@ -99,8 +99,8 @@ export async function uploadIpfs(
     console.log("CID of executable", cid);
     return cid;
   } else {
-    console.error(
-      "File not found"
+    console.error("\x1b[31m%s\x1b[0m",
+      "task_audit_program File not found"
     );
     process.exit();
   }
