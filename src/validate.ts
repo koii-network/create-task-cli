@@ -123,7 +123,7 @@ async function main(metaData: TaskMetadata, task: Task) {
   }
 
   if (task.task_description.length > 60) {
-    error["task_descriptions"] = "cannot be more than 60 characters long";
+    error["task_description"] = "cannot be more than 60 characters long";
   }
 
   // verify web3.storage key
