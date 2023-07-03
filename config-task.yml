@@ -1,17 +1,11 @@
 #Provide the taskId if you are updating the task
 task_id: ""
-# Name and desciption of your task
-task_name: "Google-doodle-scraping"
-task_description: "This task demonstrates ability to scrape the doodles"
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS
 task_executable_network: "IPFS"
 
-# Provide your web3.storage key as it is needed for uploading your metadata
-secret_web3_storage_key: ""
-
 # Path to your executable webpack if the selected network is IPFS otherwise leave blank
-task_audit_program: "/Users/raj/koii_work/new-task-structure/sid-testing/k2-task-examples/google-doodle/dist/main.js"
+task_audit_program: "/home/ghazanfer/Desktop/KOII/K2-Task-Template/dist/main.js"
 
 # Provide your transaction ID in case of ARWEAVE and in case of DEVELOPMENT give your executable name as main otherwise leave blank
 task_audit_program_id: "main"
@@ -38,13 +32,16 @@ allowed_failed_distributions: 3
 #Space in MBs
 space: 1
 
-# Note that the value field in RequirementTag is optional, so it is up to you to include it or not based on your use case.
-# To add more global variables and task variables, please refer the type,value,description format shown below
-
+# Name and desciption of your task
+task_name: "Google-doodle-scraping"
 author: "raj"
 description: "This task demonstrates ability to scrape the doodles"
 repositoryUrl: "https://github.com/koii-network/task-examples"
 imageUrl: "imageUrl"
+
+# Note that the value field in RequirementTag is optional, so it is up to you to include it or not based on your use case.
+# To add more global variables and task variables, please refer the type,value,description format shown below
+
 requirementsTags:
   - type: CPU
     value: "4-core"

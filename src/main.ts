@@ -214,7 +214,7 @@ async function main() {
               total_bounty_amount,
               bounty_amount_per_round,
               space * 1000000,
-              task_description,
+              task_description?.substring(0.50),
               task_executable_network,
               round_time,
               audit_window,
@@ -320,7 +320,7 @@ async function main() {
 
             const TaskData: Task = {
               task_name: data.task_name,
-              task_description: data.task_description,
+              task_description:  data?.description?.substring(0,50),
               task_executable_network: data.task_executable_network,
               secret_web3_storage_key: data.secret_web3_storage_key,
               task_audit_program: data.task_audit_program,
@@ -677,7 +677,7 @@ async function main() {
             const TaskData: UpdateTask = {
               task_id: data.task_id,
               task_name: data.task_name,
-              task_description: data.task_description,
+              task_description: data?.description?.substring(0,50),
               task_executable_network: data.task_executable_network,
               secret_web3_storage_key: data.secret_web3_storage_key,
               task_audit_program: data.task_audit_program,
@@ -839,18 +839,6 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
       message: "Enter a short description of your task",
     })
   ).task_description;
-  while (task_description.length > 100) {
-    console.error(
-      "The task_description length cannot be greater than 100 characters"
-    );
-    task_description = (
-      await prompts({
-        type: "text",
-        name: "task_description",
-        message: "Enter a short description of your task",
-      })
-    ).task_description;
-  }
 
   let task_executable_network = (
     await prompts({
