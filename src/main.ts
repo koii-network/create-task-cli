@@ -98,10 +98,11 @@ async function main() {
         message: "Enter the path to your wallet",
       })
     ).walletPath;
+    walletPath=walletPath.trim()
 
     if (!fs.existsSync(walletPath)) {
       throw Error(
-        "Please make sure that the wallet path is correct and under the name id.json"
+        "Please make sure that the wallet path is correct"
       );
     }
   }
