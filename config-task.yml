@@ -50,11 +50,10 @@ requirementsTags:
   - type: OS
     value: "OSX"
 
-# OPTIONAL variables below 
+# OPTIONAL variables below
 
 # OPTIONAL Only provide the taskId if you are updating the task otherwise leave blank
 task_id: ""
 
 # OPTIONAL only Provide your transaction ID in case of ARWEAVE and in case of DEVELOPMENT give your executable name as main otherwise leave blank
 task_audit_program_id: ""
-

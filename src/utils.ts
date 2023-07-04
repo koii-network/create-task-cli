@@ -14,7 +14,7 @@ import { Web3Storage, getFilesFromPath } from "web3.storage";
 /**
  * @private
  */
-async function getConfig(): Promise<any> {
+export async function getConfig(): Promise<any> {
   // Path to KOII CLI config file
   const CONFIG_FILE_PATH = path.resolve(
     os.homedir(),

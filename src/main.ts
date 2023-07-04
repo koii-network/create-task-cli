@@ -12,6 +12,7 @@ import {
   Withdraw,
 } from "./task_contract";
 import { uploadIpfs } from "./utils";
+import { getConfig } from "./utils";
 import prompts from "prompts";
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
 import fs from "fs";
@@ -27,7 +28,6 @@ config();
 
 interface Task {
   task_name: string;
-  task_description: string;
   task_executable_network: "DEVELOPMENT" | "ARWEAVE" | "IPFS";
   secret_web3_storage_key: string;
   task_audit_program?: string;
@@ -45,7 +45,6 @@ interface Task {
 interface UpdateTask {
   task_id: string;
   task_name: string;
-  task_description: string;
   task_executable_network: "DEVELOPMENT" | "ARWEAVE" | "IPFS";
   secret_web3_storage_key: string;
   task_audit_program?: string;
@@ -88,7 +87,10 @@ enum RequirementType {
 async function main() {
   let payerWallet: Keypair;
   const currentDir = path.resolve(process.cwd());
-  let walletPath: string = `${currentDir}/id.json`;
+  //let walletPath: string = `${currentDir}/id.json`;
+  let walletPath: string = (await getConfig()).keypair_path;
+
+  console.log("Wallet path: ", walletPath);
 
   if (!fs.existsSync(walletPath)) {
     walletPath = (
@@ -98,12 +100,10 @@ async function main() {
         message: "Enter the path to your wallet",
       })
     ).walletPath;
-    walletPath=walletPath.trim()
+    walletPath = walletPath.trim();
 
     if (!fs.existsSync(walletPath)) {
-      throw Error(
-        "Please make sure that the wallet path is correct"
-      );
+      throw Error("Please make sure that the wallet path is correct");
     }
   }
 
@@ -215,7 +215,7 @@ async function main() {
               total_bounty_amount,
               bounty_amount_per_round,
               space * 1000000,
-              task_description?.substring(0.50),
+              task_description?.substring(0, 50),
               task_executable_network,
               round_time,
               audit_window,
@@ -258,7 +258,10 @@ async function main() {
               })
             ).ymlPath;
 
-            if (!fs.existsSync(ymlPath) || (!ymlPath.includes(".yml") && !ymlPath.includes(".yaml"))) {
+            if (
+              !fs.existsSync(ymlPath) ||
+              (!ymlPath.includes(".yml") && !ymlPath.includes(".yaml"))
+            ) {
               throw Error(
                 "Please make sure that the path to your config-task.yml file is correct."
               );
@@ -271,18 +274,14 @@ async function main() {
             //console.log("TN", task_executable_network);
 
             if (data.task_executable_network == "IPFS") {
-              if(!data.secret_web3_storage_key){
-                data.secret_web3_storage_key = (
-                  await prompts({
-                    type: "text",
-                    name: "secret_web3_storage_key",
-                    message: "Enter the web3.storage API key",
-                  })
-                ).secret_web3_storage_key;
-                while (data.secret_web3_storage_key < 200) {
-                  console.error(
-                    "secret_web3_storage_key cannot be less than 200 characters"
-                  );
+              if (!data.secret_web3_storage_key) {
+                console.log(
+                  "WEB3.STORAGE KEY FROM ENV",
+                  process.env.secret_web3_storage_key
+                );
+                data.secret_web3_storage_key =
+                  process.env.secret_web3_storage_key;
+                if (!data.secret_web3_storage_key) {
                   data.secret_web3_storage_key = (
                     await prompts({
                       type: "text",
@@ -290,6 +289,18 @@ async function main() {
                       message: "Enter the web3.storage API key",
                     })
                   ).secret_web3_storage_key;
+                  while (data.secret_web3_storage_key < 200) {
+                    console.error(
+                      "secret_web3_storage_key cannot be less than 200 characters"
+                    );
+                    data.secret_web3_storage_key = (
+                      await prompts({
+                        type: "text",
+                        name: "secret_web3_storage_key",
+                        message: "Enter the web3.storage API key",
+                      })
+                    ).secret_web3_storage_key;
+                  }
                 }
               }
               task_audit_program_id = await uploadIpfs(
@@ -311,8 +322,8 @@ async function main() {
             }
 
             const metaData: TaskMetadata = {
-              author: data.author,
-              description: data.description,
+              author: data.author.trim(),
+              description: data.description.trim(),
               repositoryUrl: data.repositoryUrl,
               createdAt: Date.now(),
               imageUrl: data.imageUrl,
@@ -320,8 +331,7 @@ async function main() {
             };
 
             const TaskData: Task = {
-              task_name: data.task_name,
-              task_description:  data?.description?.substring(0,50),
+              task_name: data.task_name.trim(),
               task_executable_network: data.task_executable_network,
               secret_web3_storage_key: data.secret_web3_storage_key,
               task_audit_program: data.task_audit_program,
@@ -403,7 +413,7 @@ async function main() {
                 TaskData.total_bounty_amount,
                 TaskData.bounty_amount_per_round,
                 TaskData.space * 1000000,
-                TaskData.task_description,
+                data?.description?.substring(0, 50),
                 TaskData.task_executable_network,
                 TaskData.round_time,
                 TaskData.audit_window,
@@ -614,7 +624,10 @@ async function main() {
                 message: "Enter the path to your config-task.yml file",
               })
             ).ymlPath;
-            if (!fs.existsSync(ymlPath) || (!ymlPath.includes(".yml") && !ymlPath.includes(".yaml"))) {
+            if (
+              !fs.existsSync(ymlPath) ||
+              (!ymlPath.includes(".yml") && !ymlPath.includes(".yaml"))
+            ) {
               throw Error(
                 "Please make sure that the path to your config-task.yml file is correct."
               );
@@ -627,7 +640,7 @@ async function main() {
             //console.log("TN", task_executable_network);
 
             if (data.task_executable_network == "IPFS") {
-              if(!data.secret_web3_storage_key){
+              if (!data.secret_web3_storage_key) {
                 data.secret_web3_storage_key = (
                   await prompts({
                     type: "text",
@@ -667,8 +680,8 @@ async function main() {
             }
 
             const metaData: TaskMetadata = {
-              author: data.author,
-              description: data.description,
+              author: data.author.trim(),
+              description: data.description.trim(),
               repositoryUrl: data.repositoryUrl,
               createdAt: Date.now(),
               imageUrl: data.imageUrl,
@@ -677,8 +690,7 @@ async function main() {
 
             const TaskData: UpdateTask = {
               task_id: data.task_id,
-              task_name: data.task_name,
-              task_description: data?.description?.substring(0,50),
+              task_name: data.task_name.trim(),
               task_executable_network: data.task_executable_network,
               secret_web3_storage_key: data.secret_web3_storage_key,
               task_audit_program: data.task_audit_program,
@@ -774,7 +786,7 @@ async function main() {
                 task_audit_program_id_update,
                 TaskData.bounty_amount_per_round,
                 TaskData.space * 1000000,
-                TaskData.task_description,
+                data?.description?.substring(0, 50),
                 TaskData.task_executable_network,
                 TaskData.round_time,
                 TaskData.audit_window,
@@ -821,7 +833,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
       name: "task_name",
       message: "Enter the name of the task",
     })
-  ).task_name;
+  ).task_name.trim();
   while (task_name.length > 24) {
     console.error("The task name cannot be greater than 24 characters");
     task_name = (
@@ -831,7 +843,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
         message: "Enter the name of the task",
         initial: state?.name || null,
       })
-    ).task_name;
+    ).task_name.trim();
   }
   let task_description = (
     await prompts({
@@ -839,7 +851,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
       name: "task_description",
       message: "Enter a short description of your task",
     })
-  ).task_description;
+  ).task_description.trim();
 
   let task_executable_network = (
     await prompts({

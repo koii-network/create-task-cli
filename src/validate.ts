@@ -2,7 +2,6 @@
 
 interface Task {
   task_name: string;
-  task_description: string;
   task_executable_network: "DEVELOPMENT" | "ARWEAVE" | "IPFS";
   secret_web3_storage_key: string;
   task_audit_program?: string;
@@ -103,7 +102,6 @@ async function main(metaData: TaskMetadata, task: Task) {
 
   if (
     !task.task_name ||
-    !task.task_description ||
     !task.task_executable_network ||
     !task.secret_web3_storage_key ||
     !task.round_time ||
@@ -120,10 +118,6 @@ async function main(metaData: TaskMetadata, task: Task) {
   // task_name cannot be greater than 24  characters
   if (task.task_name.length > 24) {
     error["task_name"] = "cannot be more than 24 characters long";
-  }
-
-  if (task.task_description.length > 60) {
-    error["task_description"] = "cannot be more than 60 characters long";
   }
 
   // verify web3.storage key
@@ -149,7 +143,6 @@ async function main(metaData: TaskMetadata, task: Task) {
   // Check if all properties have valid types and values
   if (
     typeof task.task_name !== "string" ||
-    typeof task.task_description !== "string" ||
     typeof task.secret_web3_storage_key !== "string" ||
     typeof task.round_time !== "number" ||
     typeof task.audit_window !== "number" ||
