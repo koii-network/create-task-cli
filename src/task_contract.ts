@@ -304,11 +304,18 @@ function getAlloc(type: any, fields: any) {
 }
 
 function padStringWithSpaces(input: string, length: number) {
-  if (input.length > length)
-    throw Error("Input exceeds the maxiumum length of " + length);
-  input = input.padEnd(length);
-  return input;
+  const encoder = new TextEncoder();
+  const encoded = encoder.encode(input);
+  const padding = length - encoded.length;
+  const spaces = new Uint8Array(padding).fill(32); // 32 is the ASCII code for space
+
+  const paddedArray = new Uint8Array(encoded.length + padding);
+  paddedArray.set(encoded);
+  paddedArray.set(spaces, encoded.length);
+
+  return new TextDecoder().decode(paddedArray);
 }
+
 export async function createTask(
   payerWallet: Keypair,
   task_name: string,
