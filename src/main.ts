@@ -215,7 +215,7 @@ async function main() {
               total_bounty_amount,
               bounty_amount_per_round,
               space * 1000000,
-              task_description?.substring(0.5),
+              task_description?.substring(0, 50),
               task_executable_network,
               round_time,
               audit_window,
