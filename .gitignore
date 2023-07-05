@@ -2,6 +2,7 @@ node_modules
 build
 stake_pot_account.json
 taskStateInfoKeypair.json
-*.json
+*account.json
+id.json
 .idea
 .env
