@@ -1,19 +1,18 @@
 # Name and metadata of your task
-task_name: "test"
+task_name: "Your-task-name"
 author: "koii"
 description: "This will be description of your task"
 repositoryUrl: "https://github.com/koii-network/task-examples"
 imageUrl: "imageUrl"
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS, Recommended IPFS as the cli automatically takes care of uploading the executable with the help of web3.js key
-task_executable_network: "DEVELOPMENT"
+task_executable_network: "IPFS"
 
 # Provide your web3.storage key as it is needed for uploading your metadata
-secret_web3_storage_key: ''
+secret_web3_storage_key: ""
 
 # Provide your transaction ID in case of ARWEAVE and in case of DEVELOPMENT give your executable name as main otherwise leave blank
-task_audit_program_id: 'main'
-
+task_audit_program_id: "main"
 
 # Path to your executable webpack if the selected network is IPFS otherwise leave blank
 task_audit_program: ""
@@ -61,5 +60,3 @@ requirementsTags:
 
 # OPTIONAL Only provide the taskId if you are updating the task otherwise leave blank
 task_id: ""
-
-
