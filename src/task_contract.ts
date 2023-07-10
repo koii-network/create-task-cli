@@ -13,6 +13,7 @@ import {
 } from "@_koi/web3.js";
 import fs from "fs";
 import path from "path";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const BufferLayout = require("@solana/buffer-layout");
 const rustString = (property = "string") => {
   const rsl = BufferLayout.struct(
@@ -239,7 +240,7 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
     payerWallet = await getPayer();
   }
 
-  let lamports = await connection.getBalance(payerWallet.publicKey);
+  const lamports = await connection.getBalance(payerWallet.publicKey);
   if (lamports < fees) {
     console.error(
       "Your balance is not sufficient: " + payerWallet.publicKey.toBase58
@@ -351,7 +352,7 @@ export async function createTask(
   //   local_vars
   // );
 
-  let createTaskData = {
+  const createTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
     task_description: new TextEncoder().encode(
       padStringWithSpaces(task_description, 64)
@@ -380,8 +381,8 @@ export async function createTask(
     // koii_vars:new TextEncoder().encode(padStringWithSpaces(task_metadata,64))
   };
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.CreateTask, createTaskData);
-  let taskStateInfoKeypair = Keypair.generate();
-  let stake_pot_account_pubkey: PublicKey = getStakePotAccount();
+  const taskStateInfoKeypair = Keypair.generate();
+  const stake_pot_account_pubkey: PublicKey = getStakePotAccount();
 
   const createTaskStateTransaction = new Transaction().add(
     SystemProgram.createAccount({
@@ -392,7 +393,7 @@ export async function createTask(
       programId: programId,
     })
   );
-  let keys = [
+  const keys = [
     { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
     {
       pubkey: taskStateInfoKeypair.publicKey,
@@ -444,7 +445,10 @@ export async function updateTask(
   allowed_failed_distributions: number,
   taskAccountInfoPubKey: PublicKey,
   statePotAccountPubKey: PublicKey
-): Promise<{newTaskStateInfoKeypair:Keypair, newStake_pot_account_pubkey:PublicKey}> {
+): Promise<{
+  newTaskStateInfoKeypair: Keypair;
+  newStake_pot_account_pubkey: PublicKey;
+}> {
   // Checks
   if (round_time < audit_window + submission_window)
     throw new Error(
@@ -453,7 +457,7 @@ export async function updateTask(
   if (task_description.length > 64)
     throw new Error("task_description cannot be greater than 64 characters");
 
-  let updateTaskData = {
+  const updateTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
     task_description: new TextEncoder().encode(
       padStringWithSpaces(task_description, 64)
@@ -479,8 +483,8 @@ export async function updateTask(
     allowed_failed_distributions: allowed_failed_distributions,
   };
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.UpdateTask, updateTaskData);
-  let newTaskStateInfoKeypair = Keypair.generate();
-  let newStake_pot_account_pubkey: PublicKey = getStakePotAccount();
+  const newTaskStateInfoKeypair = Keypair.generate();
+  const newStake_pot_account_pubkey: PublicKey = getStakePotAccount();
 
   const createTaskStateTransaction = new Transaction().add(
     SystemProgram.createAccount({
@@ -491,7 +495,7 @@ export async function updateTask(
       programId: programId,
     })
   );
-  let keys = [
+  const keys = [
     { pubkey: payerWallet.publicKey, isSigner: true, isWritable: true },
     { pubkey: taskAccountInfoPubKey, isSigner: false, isWritable: true },
     { pubkey: statePotAccountPubKey, isSigner: false, isWritable: true },
@@ -648,7 +652,7 @@ export async function FundTask(
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
     amount,
   });
-  let funderKeypair = Keypair.generate();
+  const funderKeypair = Keypair.generate();
   console.log("Making new account", funderKeypair.publicKey.toBase58());
 
   const createSubmitterAccTransaction = new Transaction().add(
@@ -687,9 +691,10 @@ export async function FundTask(
 
 function getStakePotAccount(): PublicKey {
   let pubkey;
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      let keypair = new Keypair();
+      const keypair = new Keypair();
       let pubkeyString = keypair.publicKey.toBase58();
       pubkeyString = pubkeyString.replace(
         pubkeyString.substring(0, 15),
@@ -699,6 +704,7 @@ function getStakePotAccount(): PublicKey {
       if (PublicKey.isOnCurve(pubkey.toBytes())) {
         break;
       }
+      // eslint-disable-next-line no-empty
     } catch (e) {}
   }
   return pubkey;

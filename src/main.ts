@@ -23,7 +23,8 @@ import validateTaskInputs from "./validate";
 import validateUpdateTaskInputs from "./validateUpdate";
 import { join } from "path";
 import { tmpdir } from "os";
-import { Web3Storage, getFilesFromPath } from "web3.storage";
+import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
+import readYamlFile from "read-yaml-file";
 config();
 
 interface Task {
@@ -108,7 +109,7 @@ async function main() {
   }
 
   try {
-    let wallet = fs.readFileSync(walletPath, "utf-8");
+    const wallet = fs.readFileSync(walletPath, "utf-8");
     payerWallet = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(wallet)));
   } catch (e) {
     console.error("Wallet is not valid");
@@ -184,10 +185,10 @@ async function main() {
             (await connection.getMinimumBalanceForRentExemption(
               space * 1000000
             )) + 10000;
-          let totalAmount =
+          const totalAmount =
             LAMPORTS_PER_SOL * total_bounty_amount +
             minimumBalanceForRentExemption;
-          let response = (
+          const response = (
             await prompts({
               type: "confirm",
               name: "response",
@@ -200,14 +201,14 @@ async function main() {
           ).response;
 
           if (!response) process.exit(0);
-          let lamports = await connection.getBalance(payerWallet.publicKey);
+          const lamports = await connection.getBalance(payerWallet.publicKey);
           if (lamports < totalAmount) {
             console.error("Insufficient balance for this operation");
             process.exit(0);
           }
           console.log("Calling Create Task");
           // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
-          let { taskStateInfoKeypair, stake_pot_account_pubkey } =
+          const { taskStateInfoKeypair, stake_pot_account_pubkey } =
             await createTask(
               payerWallet,
               task_name,
@@ -242,12 +243,12 @@ async function main() {
         }
 
         case "create-task-yml": {
-          const readYamlFile = require("read-yaml-file");
+          // const readYamlFile = require("read-yaml-file");
           let metaDataCid: string;
           let task_audit_program_id: string;
 
           const currentDir = path.resolve(process.cwd());
-          let ymlPath: string = `${currentDir}/config-task.yml`;
+          let ymlPath = `${currentDir}/config-task.yml`;
 
           if (!fs.existsSync(ymlPath)) {
             ymlPath = (
@@ -310,7 +311,7 @@ async function main() {
               console.log("TASK CID", task_audit_program_id);
             } else if (
               data.task_executable_network == "ARWEAVE" ||
-              "DEVELOPMENT"
+              data.task_executable_network == "DEVELOPMENT"
             ) {
               //console.log("IN DEVELOPMENT");
               task_audit_program_id = data.task_audit_program_id;
@@ -380,13 +381,15 @@ async function main() {
 
             await validateTaskInputs(metaData, TaskData);
 
-            let tmp = tmpdir();
-            let metadataPath = join(tmp, "metadata.json");
+            const tmp = tmpdir();
+            const metadataPath = join(tmp, "metadata.json");
             fs.writeFileSync(metadataPath, JSON.stringify(metaData));
             const storageClient = new Web3Storage({
               token: data.secret_web3_storage_key as string,
             });
-            let upload = await getFilesFromPath([metadataPath]);
+
+            const upload: any = await getFilesFromPath([metadataPath]);
+
             try {
               metaDataCid = await storageClient.put(upload);
             } catch (err) {
@@ -408,10 +411,10 @@ async function main() {
                 data.space * 1000000
               )) + 10000;
 
-            let totalAmount =
+            const totalAmount =
               LAMPORTS_PER_SOL * data.total_bounty_amount +
               minimumBalanceForRentExemption;
-            let response = (
+            const response = (
               await prompts({
                 type: "confirm",
                 name: "response",
@@ -426,7 +429,7 @@ async function main() {
             ).response;
 
             if (!response) process.exit(0);
-            let lamports = await connection.getBalance(payerWallet.publicKey);
+            const lamports = await connection.getBalance(payerWallet.publicKey);
             if (lamports < totalAmount) {
               console.error("Insufficient balance for this operation");
               process.exit(0);
@@ -434,7 +437,7 @@ async function main() {
 
             console.log("Calling Create Task");
             // Before passing it to createTask validate the inputs
-            let { taskStateInfoKeypair, stake_pot_account_pubkey } =
+            const { taskStateInfoKeypair, stake_pot_account_pubkey } =
               await createTask(
                 payerWallet,
                 TaskData.task_name,
@@ -534,7 +537,7 @@ async function main() {
 
       switch (taskMode) {
         case "cli": {
-          let taskId = (
+          const taskId = (
             await prompts({
               type: "text",
               name: "taskId",
@@ -549,8 +552,8 @@ async function main() {
             console.log("No task found with this Id");
             break;
           }
-          let rawData = accountInfo.data + "";
-          let state = JSON.parse(rawData);
+          const rawData = accountInfo.data + "";
+          const state = JSON.parse(rawData);
           console.log(state);
           if (
             new PublicKey(state.task_manager).toString() !==
@@ -582,8 +585,8 @@ async function main() {
             (await connection.getMinimumBalanceForRentExemption(
               space * 1000000
             )) + 10000;
-          let totalAmount = minimumBalanceForRentExemption;
-          let response = (
+          const totalAmount = minimumBalanceForRentExemption;
+          const response = (
             await prompts({
               type: "confirm",
               name: "response",
@@ -596,14 +599,14 @@ async function main() {
           ).response;
 
           if (!response) process.exit(0);
-          let lamports = await connection.getBalance(payerWallet.publicKey);
+          const lamports = await connection.getBalance(payerWallet.publicKey);
           if (lamports < totalAmount) {
             console.error("Insufficient balance for this operation");
             process.exit(0);
           }
           console.log("Calling Update Task");
 
-          let { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
+          const { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
             await updateTask(
               payerWallet,
               task_name,
@@ -638,12 +641,11 @@ async function main() {
         }
 
         case "yml": {
-          const readYamlFile = require("read-yaml-file");
           let metaDataCid: string;
           let task_audit_program_id_update: string;
 
           const currentDir = path.resolve(process.cwd());
-          let ymlPath: string = `${currentDir}/config-task.yml`;
+          let ymlPath = `${currentDir}/config-task.yml`;
 
           if (!fs.existsSync(ymlPath)) {
             ymlPath = (
@@ -697,10 +699,39 @@ async function main() {
               console.log("TASK CID", task_audit_program_id_update);
             } else if (
               data.task_executable_network == "ARWEAVE" ||
-              "DEVELOPMENT"
+              data.task_executable_network == "DEVELOPMENT"
             ) {
               //console.log("IN DEVELOPMENT");
               task_audit_program_id_update = data.task_audit_program_id;
+              if (!data.secret_web3_storage_key) {
+                console.log(
+                  "WEB3.STORAGE KEY FROM ENV",
+                  process.env.secret_web3_storage_key
+                );
+                data.secret_web3_storage_key =
+                  process.env.secret_web3_storage_key;
+                if (!data.secret_web3_storage_key) {
+                  data.secret_web3_storage_key = (
+                    await prompts({
+                      type: "text",
+                      name: "secret_web3_storage_key",
+                      message: "Enter the web3.storage API key",
+                    })
+                  ).secret_web3_storage_key;
+                  while (data.secret_web3_storage_key < 200) {
+                    console.error(
+                      "secret_web3_storage_key cannot be less than 200 characters"
+                    );
+                    data.secret_web3_storage_key = (
+                      await prompts({
+                        type: "text",
+                        name: "secret_web3_storage_key",
+                        message: "Enter the web3.storage API key",
+                      })
+                    ).secret_web3_storage_key;
+                  }
+                }
+              }
             } else {
               console.error(
                 "Please specify the correct task_executable_network in YML"
@@ -738,13 +769,13 @@ async function main() {
 
             await validateUpdateTaskInputs(metaData, TaskData);
 
-            let tmp = tmpdir();
-            let metadataPath = join(tmp, "metadata.json");
+            const tmp = tmpdir();
+            const metadataPath = join(tmp, "metadata.json");
             fs.writeFileSync(metadataPath, JSON.stringify(metaData));
             const storageClient = new Web3Storage({
               token: data.secret_web3_storage_key as string,
             });
-            let upload = await getFilesFromPath([metadataPath]);
+            const upload: any = await getFilesFromPath([metadataPath]);
             try {
               metaDataCid = await storageClient.put(upload);
             } catch (err) {
@@ -768,8 +799,8 @@ async function main() {
               console.error("No task found with this Id");
               process.exit();
             }
-            let rawData: any = accountInfo.data + "";
-            let state = JSON.parse(rawData);
+            const rawData: any = accountInfo.data + "";
+            const state = JSON.parse(rawData);
             //console.log(state);
             if (
               new PublicKey(state.task_manager).toString() !==
@@ -787,8 +818,8 @@ async function main() {
               (await connection.getMinimumBalanceForRentExemption(
                 TaskData.space * 1000000
               )) + 10000;
-            let totalAmount = minimumBalanceForRentExemption;
-            let response = (
+            const totalAmount = minimumBalanceForRentExemption;
+            const response = (
               await prompts({
                 type: "confirm",
                 name: "response",
@@ -801,14 +832,14 @@ async function main() {
             ).response;
 
             if (!response) process.exit(0);
-            let lamports = await connection.getBalance(payerWallet.publicKey);
+            const lamports = await connection.getBalance(payerWallet.publicKey);
             if (lamports < totalAmount) {
               console.error("Insufficient balance for this operation");
               process.exit(0);
             }
             console.log("Calling Update Task");
 
-            let { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
+            const { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
               await updateTask(
                 payerWallet,
                 TaskData.task_name,
@@ -874,7 +905,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
       })
     ).task_name.trim();
   }
-  let task_description = (
+  const task_description = (
     await prompts({
       type: "text",
       name: "task_description",
@@ -882,7 +913,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
     })
   ).task_description.trim();
 
-  let task_executable_network = (
+  const task_executable_network = (
     await prompts({
       type: "select",
       name: "task_executable_network",
@@ -1009,28 +1040,28 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
       ).task_audit_program_id;
     }
   }
-  let round_time = (
+  const round_time = (
     await prompts({
       type: "number",
       name: "round_time",
       message: "Enter the round time in slots",
     })
   ).round_time;
-  let audit_window = (
+  const audit_window = (
     await prompts({
       type: "number",
       name: "audit_window",
       message: "Enter the audit window in slots",
     })
   ).audit_window;
-  let submission_window = (
+  const submission_window = (
     await prompts({
       type: "number",
       name: "submission_window",
       message: "Enter the submission window in slots",
     })
   ).submission_window;
-  let minimum_stake_amount = (
+  const minimum_stake_amount = (
     await prompts({
       type: "number",
       name: "minimum_stake_amount",
@@ -1089,7 +1120,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
     ).allowed_failed_distributions;
   }
 
-  let task_metadata = (
+  const task_metadata = (
     await prompts({
       type: "text",
       name: "task_metadata",
@@ -1262,8 +1293,8 @@ async function takeInputForWithdraw() {
     })
   ).submitterWalletPath;
 
-  let wallet = fs.readFileSync(submitterWalletPath, "utf-8");
-  let submitterKeypair = Keypair.fromSecretKey(
+  const wallet = fs.readFileSync(submitterWalletPath, "utf-8");
+  const submitterKeypair = Keypair.fromSecretKey(
     Uint8Array.from(JSON.parse(wallet))
   );
   return {
