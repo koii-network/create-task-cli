@@ -203,8 +203,10 @@ async function main(metaData: TaskMetadata, task: Task) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 function isObjectEmpty(obj: object): boolean {
   for (const key in obj) {
+    // eslint-disable-next-line no-prototype-builtins
     if (obj.hasOwnProperty(key)) {
       return false;
     }
