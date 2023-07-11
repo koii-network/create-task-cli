@@ -170,7 +170,7 @@ async function takeInputForMetadata() {
   let metadataPath = join(tmp, "metadata.json");
   fs.writeFileSync(metadataPath, JSON.stringify(metadata));
   const storageClient = new Web3Storage({ token: web3Key as string });
-  let upload = await getFilesFromPath([metadataPath]);
+  let upload:any = await getFilesFromPath([metadataPath]);
   let result = await storageClient.put(upload);
   console.log(
     "\x1b[1m\x1b[32m%s\x1b[0m",

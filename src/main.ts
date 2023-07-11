@@ -261,7 +261,7 @@ async function main() {
             const storageClient = new Web3Storage({
               token: data.secret_web3_storage_key as string,
             });
-            let upload = await getFilesFromPath([metadataPath]);
+            let upload:any = await getFilesFromPath([metadataPath]);
             try {
               metaDataCid = await storageClient.put(upload);
             } catch (err) {
