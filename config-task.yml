@@ -3,7 +3,6 @@ task_name: "Your-task-name"
 author: "koii"
 description: "This will be description of your task"
 repositoryUrl: "https://github.com/koii-network/task-examples"
-imageUrl: "imageUrl"
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS, Recommended IPFS as the cli automatically takes care of uploading the executable with the help of web3.js key
 task_executable_network: "DEVELOPMENT"
@@ -40,6 +39,9 @@ space: 1
 # To add more global variables and task variables, please refer the type,value,description format shown below
 
 requirementsTags:
+  - type: GLOBAL_VARIABLE
+    value: "WEB3.STORAGE_KEY"
+    description: "This key is required to upload the data to IPFS"
   - type: CPU
     value: "4-core"
   - type: RAM
@@ -57,3 +59,4 @@ requirementsTags:
 
 # OPTIONAL Only provide the taskId if you are updating the task otherwise leave blank
 task_id: ""
+imageUrl: ""

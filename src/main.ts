@@ -64,8 +64,8 @@ interface TaskMetadata {
   description: string;
   repositoryUrl: string;
   createdAt: number;
-  imageUrl: string;
-  requirementsTags: RequirementTag[];
+  imageUrl?: string | undefined;
+  requirementsTags?: RequirementTag[];
 }
 
 interface RequirementTag {
