@@ -86,14 +86,18 @@ export async function uploadIpfs(
     process.exit();
   }
   if (fs.existsSync(path)) {
+    console.log("FIle is present");
     const storageClient = new Web3Storage({
       token: secret_web3_storage_key || "",
     });
+    
 
     let cid: any;
 
     if (storageClient) {
       const upload: any = await getFilesFromPath(path);
+      console.log({upload});
+      console.log(storageClient.put);
       cid = await storageClient.put(upload);
     }
     console.log("CID of executable", cid);
