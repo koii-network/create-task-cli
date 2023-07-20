@@ -10,6 +10,6 @@ keypair_path: /home/dev/.config/koii/id.json
 address_labels:
   "11111111111111111111111111111111": System Program
 commitment: confirmed
-`
+`;
 
-console.log(yaml.parse(fs.readFileSync("kkkk")))
+console.log(yaml.parse(str));
