@@ -42,7 +42,7 @@ let web3Key: string | null;
 // }
 
 async function takeInputForRequirementTypes() {
-  let value = (
+  const value = (
     await prompts({
       type: "text",
       name: "value",
@@ -50,7 +50,7 @@ async function takeInputForRequirementTypes() {
     })
   ).value;
 
-  let description = (
+  const description = (
     await prompts({
       type: "text",
       name: "description",
@@ -79,7 +79,7 @@ async function main() {
 }
 
 async function takeInputForMetadata() {
-  let metadata: any = {
+  const metadata: any = {
     author: "",
     description: "",
     repositoryUrl: "",
@@ -164,12 +164,12 @@ async function takeInputForMetadata() {
   }
 
   console.log(metadata);
-  let tmp = tmpdir();
-  let metadataPath = join(tmp, "metadata.json");
+  const tmp = tmpdir();
+  const metadataPath = join(tmp, "metadata.json");
   fs.writeFileSync(metadataPath, JSON.stringify(metadata));
   const storageClient = new Web3Storage({ token: web3Key as string });
-  let upload = await getFilesFromPath([metadataPath]);
-  let result = await storageClient.put(upload);
+  const upload: any = await getFilesFromPath([metadataPath]);
+  const result = await storageClient.put(upload);
   console.log(
     "\x1b[1m\x1b[32m%s\x1b[0m",
     `Your MetaData CID is ${result}/metadata.json`
