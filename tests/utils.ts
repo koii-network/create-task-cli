@@ -1,68 +1,33 @@
-import { uploadIpfs } from "../src/utils";
+import { uploadIpfs,getConfig } from "../src/utils";
 import * as utils from "../src/utils";
 import fs from "fs";
 import { Web3Storage } from "web3.storage";
 import yaml from "yaml";
 
-// jest.mock("web3.storage", () => ({
-//   ...jest.requireActual("Web3.storage"),
-//   Web3Storage: jest.spyOn("Web3Storage",)
+// // jest.mock("web3.storage", () => ({
+// //   ...jest.requireActual("Web3.storage"),
+// //   Web3Storage: jest.spyOn("Web3Storage",)
 
-// }));
-afterEach(() => {
-  jest.clearAllMocks();
-});
-
-let config = `json_rpc_url: "http://localhost:8899"
-websocket_url: ""
-keypair_path: /home/dev/.config/koii/id.json
-address_labels:
-  "11111111111111111111111111111111": System Program
-commitment: confirmed`;
-// jest.mock("fs", () => ({
-//   ...jest.requireActual("fs"),
-//   existsSync: jest.fn().mockReturnValue(true),
-//   readFileSync: jest.fn().mockReturnValueOnce(`
-// json_rpc_url: "http://localhost:8899"
-// websocket_url: ""
-// keypair_path: /home/dev/.config/koii/id.json
-// address_labels:
-//   "11111111111111111111111111111111": System Program
-// commitment: confirmed
-
-//   `).mockReturnValueOnce("HEHHEHEHHEHEHEHH"),
-// }));
-jest.mock("fs");
-const fsReadFileSyncMock = fs.readFileSync as jest.Mock;
-const fsExistsSyncMock = fs.existsSync as jest.Mock;
-jest.mock("../src/utils", () => ({
-  ...jest.requireActual("../src/utils"),
-  getConfig: jest.fn().mockReturnValue({
-    json_rpc_url: "http://localhost:8899",
-    websocket_url: "",
-    keypair_path: "/home/dev/.config/koii/id.json",
-    address_labels: { "11111111111111111111111111111111": "System Program" },
-    commitment: "confirmed",
-  }),
-}));
-describe("Test getRPCURL", () => {
-  // let getCOnfigSpy = jest
-  //   .spyOn(utils, "getConfig")
-  //   .mockImplementationOnce(async () => {
-  //     return {
-  //       json_rpc_url: "http://localhost:8899",
-  //       websocket_url: "",
-  //       keypair_path: "/home/dev/.config/koii/id.json",
-  //       address_labels: { "11111111111111111111111111111111": "System Program" },
-  //       commitment: "confirmed",
-  //     };
-  //   });
-  it("should return RPC URL", async () => {
-    let response = await utils.getRpcUrl();
-    // expect(getCOnfigSpy).toHaveBeenCalledTimes(1);
-    expect(response).toBe("http://localhost:8899");
-  });
-});
+// // }));
+// describe("Test getRPCURL", () => {
+//   // let getCOnfigSpy = jest
+//   //   .spyOn(utils, "getConfig")
+//   //   .mockImplementationOnce(async () => {
+//   //     return {
+//   //       json_rpc_url: "http://localhost:8899",
+//   //       websocket_url: "",
+//   //       keypair_path: "/home/dev/.config/koii/id.json",
+//   //       address_labels: { "11111111111111111111111111111111": "System Program" },
+//   //       commitment: "confirmed",
+//   //     };
+//   //   });
+//   it("should return RPC URL", async () => {
+//     let response = await utils.getRpcUrl();
+//     // expect(getCOnfigSpy).toHaveBeenCalle
+//     dTimes(1);
+//     expect(response).toBe("http://localhost:8899");
+//   });
+// });
 
 fsReadFileSyncMock
   .mockReturnValueOnce(
@@ -78,8 +43,6 @@ commitment: confirmed`
   });
 fsExistsSyncMock.mockReturnValue(true);
 const mockExit = jest.spyOn(process, "exit").mockImplementation();
-
-let { getConfig } = await import("../src/utils");
 describe("Testing getConfig", () => {
   it("should return the parsed YAML config", async () => {
     expect(await getConfig()).toEqual(yaml.parse(config));

@@ -11,7 +11,7 @@
     "pretty": "prettier --write '{,src/**/}*.ts'",
     "build": "tsc",
     "lint": "eslint . --quiet --ext .ts,.tsx",
-    "test": "jest"
+    "test": "jest --coverage"
   },
   "dependencies": {
     "@_koi/web3.js": "^0.0.6",

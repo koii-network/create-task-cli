@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
@@ -7,14 +6,15 @@ import os from "os";
 import fs from "fs";
 import path from "path";
 import yaml from "yaml";
-import { Keypair } from "@_koi/web3.js";
 import * as dotenv from "dotenv";
+import { IConfig } from "../interfaces/config";
 dotenv.config();
 
 /**
  * @private
  */
-export async function getConfig(): Promise<any> {
+// eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-explicit-any
+export async function getConfig(): Promise<IConfig> {
     // Path to KOII CLI config file
     const CONFIG_FILE_PATH = path.resolve(
       os.homedir(),
