@@ -126,7 +126,7 @@ async function main() {
       choices: [
         { title: "Create a new task", value: "create-task" },
         { title: "update existing task", value: "update-task" },
-        { title: "Activate task", value: "set-active" },
+        { title: "Activate/Deactivate task", value: "set-active" },
         { title: "Claim reward", value: "claim-reward" },
         { title: "Fund task with more KOII", value: "fund-task" },
         { title: "Withdraw staked funds from task", value: "withdraw" },
