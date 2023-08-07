@@ -23,7 +23,13 @@ export async function getConfig(): Promise<any> {
     "cli",
     "config.yml"
   );
-  const configYml = fs.readFileSync(CONFIG_FILE_PATH, { encoding: "utf8" });
+  let configYml; 
+  try {
+    configYml = fs.readFileSync(CONFIG_FILE_PATH, { encoding: "utf8" });
+  }catch (e) {
+    console.log("KOII CLI is either not installed or configured properly. Please refer to docs here at: https://docs.koii.network/develop/command-line-tool/koii-cli/install-cli")
+    process.exit(1)
+  }
   return yaml.parse(configYml);
 }
 
