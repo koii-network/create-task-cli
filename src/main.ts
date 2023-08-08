@@ -499,8 +499,22 @@ async function main() {
     }
     case "fund-task": {
       console.log("Calling FundTask");
-      const { stakePotAccount, taskStateInfoAddress, amount } =
-        await takeInputForFundTask();
+      const { taskStateInfoAddress, amount } = await takeInputForFundTask();
+
+      const accountInfo = await connection.getAccountInfo(
+        new PublicKey(taskStateInfoAddress)
+      );
+
+      // Add this in validation
+
+      if (accountInfo == null) {
+        console.error("No task found with this Id");
+        process.exit();
+      }
+      const rawData: any = accountInfo.data + "";
+      const state = JSON.parse(rawData);
+      const stakePotAccount = new PublicKey(state.stake_pot_account);
+
       await FundTask(
         payerWallet,
         taskStateInfoAddress,
@@ -1257,13 +1271,6 @@ async function takeInputForFundTask() {
       message: "Enter the task id",
     })
   ).taskStateInfoAddress;
-  const stakePotAccount = (
-    await prompts({
-      type: "text",
-      name: "stakePotAccount",
-      message: "Enter the stakePotAccount address",
-    })
-  ).stakePotAccount;
   const amount = (
     await prompts({
       type: "text",
@@ -1273,7 +1280,6 @@ async function takeInputForFundTask() {
   ).amount;
   return {
     amount: amount * LAMPORTS_PER_SOL,
-    stakePotAccount: new PublicKey(stakePotAccount),
     taskStateInfoAddress: new PublicKey(taskStateInfoAddress),
   };
 }
