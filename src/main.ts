@@ -20,7 +20,6 @@ import { config } from "dotenv";
 import path from "path";
 import handleMetadata from "./metadata";
 import validateTaskInputs from "./validate";
-import validateUpdateTaskInputs from "./validateUpdate";
 import { join } from "path";
 import { tmpdir } from "os";
 import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
@@ -781,8 +780,7 @@ async function main() {
             console.log("TASK DATA", TaskData);
             console.log("Metadata", metaData);
 
-            await validateUpdateTaskInputs(metaData, TaskData);
-
+            validateTaskInputs(metaData, TaskData,true);
             const tmp = tmpdir();
             const metadataPath = join(tmp, "metadata.json");
             fs.writeFileSync(metadataPath, JSON.stringify(metaData));

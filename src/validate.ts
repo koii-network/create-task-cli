@@ -16,7 +16,21 @@ interface Task {
   allowed_failed_distributions: number;
   space: number;
 }
-
+interface UpdateTask {
+  task_id: string;
+  task_name: string;
+  task_executable_network: "DEVELOPMENT" | "ARWEAVE" | "IPFS";
+  secret_web3_storage_key: string;
+  task_audit_program?: string;
+  task_audit_program_id?: string;
+  round_time: number;
+  audit_window: number;
+  submission_window: number;
+  minimum_stake_amount: number;
+  bounty_amount_per_round: number;
+  allowed_failed_distributions: number;
+  space: number;
+}
 interface TaskMetadata {
   author: string;
   description: string;
@@ -56,20 +70,23 @@ const taskMetadataSchema = Joi.object({
   description: Joi.string().required(),
   repositoryUrl: Joi.string().uri().required(),
   createdAt: Joi.number().required(),
-  imageUrl: Joi.string().allow('').optional().uri(),
+  imageUrl: Joi.string().allow("").optional().uri(),
   requirementsTags: Joi.array().items(requirementTagSchema).optional(),
 });
 const taskSchema = Joi.object({
+  update: Joi.boolean().optional(),
   task_name: Joi.string().required(),
   task_executable_network: Joi.string()
     .valid("DEVELOPMENT", "ARWEAVE", "IPFS")
     .required(),
   secret_web3_storage_key: Joi.string().required(),
-  task_audit_program: Joi.string().allow('').min(1).when("task_executable_network", {
-    is: "IPFS",
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
+  task_audit_program: Joi.string(),
+  task_id: Joi.string().min(32)
+    .when("update", {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.forbidden(),
+    }),
   task_audit_program_id: Joi.string()
     .when("task_executable_network", {
       is: Joi.valid("DEVELOPMENT", "ARWEAVE"),
@@ -82,12 +99,14 @@ const taskSchema = Joi.object({
   submission_window: Joi.number().required(),
   minimum_stake_amount: Joi.number().required(),
   total_bounty_amount: Joi.number()
-    .required()
+    .when("update", {
+      is: true,
+      then: Joi.forbidden(),
+      otherwise: Joi.required(),
+    })
     .min(10)
     .message("Total bounty amount cannot be less than 10 KOII"),
-  bounty_amount_per_round: Joi.number()
-    .required()
-    .max(Joi.ref("total_bounty_amount")),
+  bounty_amount_per_round: Joi.number().required(),
   allowed_failed_distributions: Joi.number().required(),
   space: Joi.number()
     .required()
@@ -95,15 +114,24 @@ const taskSchema = Joi.object({
     .message("Space cannot be less than 1 mb"),
 });
 
-function main(metaData: TaskMetadata, task: Task) {
+function main(metaData: TaskMetadata, task: Task | UpdateTask, update = false) {
   let isValid = true;
 
-  const validatedTask = taskSchema.validate(task, { abortEarly: false });
+  const validatedTask = taskSchema.validate(
+    { ...task, update },
+    { abortEarly: false }
+  );
   if (validatedTask.error) {
     isValid = false;
     console.log(
       validatedTask.error.details.map((detail) => detail.message).join(", ")
     );
+  }
+  if(!update){
+    if(task.bounty_amount_per_round>(task as Task).total_bounty_amount){
+      isValid = false;
+      console.log("Bounty amount per round cannot be greater than total bounty amount")
+    }
   }
   const validatedTaskMetadata = taskMetadataSchema.validate(metaData, {
     abortEarly: false,
