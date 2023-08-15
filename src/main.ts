@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 import {
   establishConnection,
   establishPayer,
@@ -85,7 +84,7 @@ enum RequirementType {
   OS = "OS",
 }
 
-async function main() {
+export async function main() {
   let payerWallet: Keypair;
   const currentDir = path.resolve(process.cwd());
   //let walletPath: string = `${currentDir}/id.json`;
@@ -271,7 +270,7 @@ async function main() {
 
           await readYamlFile(ymlPath).then(async (data: any) => {
             //console.log("CHECK", data.task_executable_network);
-
+            console.log(data);
             //console.log("TN", task_executable_network);
 
             if (data.task_executable_network == "IPFS") {

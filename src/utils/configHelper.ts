@@ -14,7 +14,7 @@ dotenv.config();
  * @private
  */
 // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-explicit-any
-export async function getConfig(): Promise<IConfig> {
+export function getConfig() :IConfig {
     // Path to KOII CLI config file
     const CONFIG_FILE_PATH = path.resolve(
       os.homedir(),

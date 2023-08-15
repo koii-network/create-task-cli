@@ -9,7 +9,8 @@
     "declaration": true,
     "moduleResolution": "node",
     "module": "CommonJS",
-    "outDir": "build"
+    "outDir": "build",
+    "esModuleInterop": true
   },
   "include": ["src/*/*", "src/utils/*", "src/**/*.spec.ts"],
   "exclude": ["node_modules", "build"]

@@ -1,41 +1,28 @@
-const os = require("os");
-const fs = require("fs");
-const path = require("path");
-const yaml = require("yaml");
-const { Keypair,PublicKey } = require("@_koi/web3.js");
+const Joi = require("joi");
 
-// eslint-disable-next-line @typescript-eslint/require-await
-// function createKeypairFromFile(filePath) {
-//   const secretKeyString = fs.readFileSync(filePath, { encoding: "utf8" });
-//   return secretKeyString;
-//   const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
-//   return Keypair.fromSecretKey(secretKey);
-// }
+const schema = Joi.object({
+  username: Joi.string().alphanum().min(3).max(30).required(),
 
-// // console.log(createKeypairFromFile("./taskStateInfoKeypair.json"))
-// // console.log(new Keypair());
-// new PublicKey(
-//   new Uint8Array([
-//     191, 110, 111, 190, 137, 214, 181, 174, 125, 174, 147, 153, 51, 29, 25, 221,
-//     47, 40, 129, 233, 193, 68, 7, 222, 23, 91, 189, 133, 139, 86, 1, 31,
-//   ])
-// ).toString();
+  password: Joi.string().pattern(new RegExp("^[a-zA-Z0-9]{3,30}$")),
 
-// console.log(
-//   new PublicKey(
-//     new Uint8Array([
-//       191, 110, 111, 190, 137, 214, 181, 174, 125, 174, 147, 153, 51, 29, 25,
-//       221, 47, 40, 129, 233, 193, 68, 7, 222, 23, 91, 189, 133, 139, 86, 1, 31,
-//     ])
-//   ).toString()
-// );
- function createKeypairFromFile(filePath){
-  const secretKeyString = fs.readFileSync(filePath, { encoding: "utf8" });
-  console.log(secretKeyString);
-  const secretKey = Uint8Array.from(
-    JSON.parse(secretKeyString)
-  );
-  return Keypair.fromSecretKey(secretKey);
-}
+  repeat_password: Joi.ref("password"),
 
-console.log(createKeypairFromFile("taskStateInfoKeypair.json"))
+  access_token: [Joi.string(), Joi.number()],
+  hh:Joi.string().required(),
+
+  birth_year: Joi.number().integer().min(1900).max(2013),
+
+  email: Joi.string().email({
+    minDomainSegments: 2,
+    tlds: { allow: ["com", "net"] },
+  }),
+})
+  .with("username", "birth_year")
+  .xor("password", "access_token")
+  .with("password", "repeat_password");
+
+a  = schema.validate({ username: "abc" },{abortEarly:false});
+// -> { value: { username: 'abc', birth_year: 1994 } }
+
+// let  a = schema.validate({});
+console.log(a.error.annotate())

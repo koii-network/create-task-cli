@@ -7,11 +7,11 @@ import { getConfig } from "./configHelper";
 /**
  * Load and parse the Koii CLI config file to determine which RPC url to use
  */
-export async function getRpcUrl(): Promise<string> {
+export  function getRpcUrl(): string {
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 
-    const config = await getConfig() as IConfig;
+    const config = getConfig() ;
     console.log("CONFIG", config);
     if (!config.json_rpc_url) throw new Error("Missing RPC URL");
     return config.json_rpc_url;

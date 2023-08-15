@@ -20,11 +20,11 @@ jest.mock("../configHelper", () => ({
 
 describe("Testing getRPCURL", () => {
   it("should return RPC URL from config", async () => {
-    const RPCURL = await getRpcUrl();
+    const RPCURL = getRpcUrl();
     expect(RPCURL).toBe("http://localhost:8899");
   });
   it("should throw error if config is found but without error",async ()=>{
-    const RPCURL = await getRpcUrl();
+    const RPCURL = getRpcUrl();
     expect(RPCURL).toBe("https://k2-testnet.kobii.live");
   });
 });
