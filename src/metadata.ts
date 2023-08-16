@@ -1,7 +1,3 @@
-/**
- * Hello world
- */
-
 import prompts from "prompts";
 import fs from "fs";
 import { config } from "dotenv";
