@@ -1,4 +1,5 @@
 import Joi from "joi";
+import chalk from "chalk";
 //import { Web3Storage } from "web3.storage";
 
 interface Task {
@@ -16,6 +17,7 @@ interface Task {
   allowed_failed_distributions: number;
   space: number;
 }
+const errors = []
 
 interface TaskMetadata {
   author: string;
@@ -56,7 +58,7 @@ const taskMetadataSchema = Joi.object({
   description: Joi.string().required(),
   repositoryUrl: Joi.string().uri().required(),
   createdAt: Joi.number().required(),
-  imageUrl: Joi.string().uri().optional(),
+  imageUrl: Joi.string().uri().optional().allow(null,""),
   requirementsTags: Joi.array().items(requirementTagSchema).optional(),
 });
 const taskSchema = Joi.object({
@@ -102,7 +104,9 @@ function main(metaData: TaskMetadata, task: Task) {
   if (validatedTask.error) {
     isValid = false;
     console.log(
-      validatedTask.error.details.map((detail) => detail.message).join(", ")
+      validatedTask.error.details
+        .map((detail) => chalk.bold.red(detail.message))
+        .join("\n")
     );
   }
   const validatedTaskMetadata = taskMetadataSchema.validate(metaData, {
@@ -110,10 +114,11 @@ function main(metaData: TaskMetadata, task: Task) {
   });
   if (validatedTaskMetadata.error) {
     isValid = false;
+    
     console.log(
       validatedTaskMetadata.error.details
-        .map((detail) => detail.message)
-        .join("\n ")
+        .map((detail) => chalk.bold.red(detail.message))
+        .join("\n")
     );
   }
 
