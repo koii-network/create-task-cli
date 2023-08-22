@@ -5,6 +5,7 @@ import { config } from "dotenv";
 import { tmpdir } from "os";
 import { join } from "path";
 import { Web3Storage, getFilesFromPath } from "web3.storage";
+import { IMetadata } from "./interfaces/metadata";
 config();
 let web3Key: string | null;
 
@@ -76,7 +77,7 @@ async function main() {
 }
 
 export async function takeInputForMetadata() {
-  const metadata= {
+  const metadata:IMetadata= {
     author: "",
     description: "",
     repositoryUrl: "",
@@ -165,8 +166,9 @@ export async function takeInputForMetadata() {
   const metadataPath = join(tmp, "metadata.json");
   fs.writeFileSync(metadataPath, JSON.stringify(metadata));
   const storageClient = new Web3Storage({ token: web3Key as string });
-  const upload: any = await getFilesFromPath([metadataPath]);
-  const result = await storageClient.put(upload);
+  const upload = await getFilesFromPath([metadataPath]);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  const result = await storageClient.put(upload as any) ;
   console.log(
     "\x1b[1m\x1b[32m%s\x1b[0m",
     `Your MetaData CID is ${result}/metadata.json`
