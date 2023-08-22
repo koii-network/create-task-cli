@@ -9,7 +9,7 @@
   "scripts": {
     "start": "NODE_NO_WARNINGS=1 ts-node src/main.ts",
     "pretty": "prettier --write '{,src/**/}*.ts'",
-    "build": "tsc",
+    "build": " yarn lint  && tsc",
     "lint": "eslint . --quiet --ext .ts,.tsx",
     "test": "jest --coverage"
   },

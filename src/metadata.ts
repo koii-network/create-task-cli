@@ -1,7 +1,4 @@
-/**
- * Hello world
- */
-
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import prompts from "prompts";
 import fs from "fs";
 import { config } from "dotenv";
@@ -41,7 +38,7 @@ let web3Key: string | null;
 
 // }
 
-async function takeInputForRequirementTypes() {
+export async function takeInputForRequirementTypes() {
   const value = (
     await prompts({
       type: "text",
@@ -78,8 +75,8 @@ async function main() {
   await takeInputForMetadata();
 }
 
-async function takeInputForMetadata() {
-  const metadata: any = {
+export async function takeInputForMetadata() {
+  const metadata= {
     author: "",
     description: "",
     repositoryUrl: "",
