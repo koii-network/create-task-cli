@@ -81,12 +81,11 @@ const taskSchema = Joi.object({
     .required(),
   secret_web3_storage_key: Joi.string().required(),
   task_audit_program: Joi.string(),
-  task_id: Joi.string().min(32)
-    .when("update", {
-      is: true,
-      then: Joi.required(),
-      otherwise: Joi.forbidden(),
-    }),
+  task_id: Joi.string().min(32).when("update", {
+    is: true,
+    then: Joi.required(),
+    otherwise: Joi.forbidden(),
+  }),
   task_audit_program_id: Joi.string()
     .when("task_executable_network", {
       is: Joi.valid("DEVELOPMENT", "ARWEAVE"),
@@ -114,7 +113,12 @@ const taskSchema = Joi.object({
     .message("Space cannot be less than 1 mb"),
 });
 
-function main(metaData: TaskMetadata, task: Task | UpdateTask, update = false) {
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+async function main(
+  metaData: TaskMetadata,
+  task: Task | UpdateTask,
+  update = false
+) {
   let isValid = true;
 
   const validatedTask = taskSchema.validate(
@@ -127,10 +131,12 @@ function main(metaData: TaskMetadata, task: Task | UpdateTask, update = false) {
       validatedTask.error.details.map((detail) => detail.message).join(", ")
     );
   }
-  if(!update){
-    if(task.bounty_amount_per_round>(task as Task).total_bounty_amount){
+  if (!update) {
+    if (task.bounty_amount_per_round > (task as Task).total_bounty_amount) {
       isValid = false;
-      console.log("Bounty amount per round cannot be greater than total bounty amount")
+      console.log(
+        "Bounty amount per round cannot be greater than total bounty amount"
+      );
     }
   }
   const validatedTaskMetadata = taskMetadataSchema.validate(metaData, {
