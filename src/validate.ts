@@ -1,4 +1,5 @@
 import Joi from "joi";
+import chalk from "chalk";
 //import { Web3Storage } from "web3.storage";
 
 interface Task {
@@ -16,6 +17,7 @@ interface Task {
   allowed_failed_distributions: number;
   space: number;
 }
+<<<<<<< HEAD
 interface UpdateTask {
   task_id: string;
   task_name: string;
@@ -31,6 +33,10 @@ interface UpdateTask {
   allowed_failed_distributions: number;
   space: number;
 }
+=======
+const errors = []
+
+>>>>>>> 4476163... added color to validation and image  URL bug fix
 interface TaskMetadata {
   author: string;
   description: string;
@@ -70,7 +76,7 @@ const taskMetadataSchema = Joi.object({
   description: Joi.string().required(),
   repositoryUrl: Joi.string().uri().required(),
   createdAt: Joi.number().required(),
-  imageUrl: Joi.string().allow("").optional().uri(),
+  imageUrl: Joi.string().uri().optional().allow(null,""),
   requirementsTags: Joi.array().items(requirementTagSchema).optional(),
 });
 const taskSchema = Joi.object({
@@ -124,7 +130,9 @@ function main(metaData: TaskMetadata, task: Task | UpdateTask, update = false) {
   if (validatedTask.error) {
     isValid = false;
     console.log(
-      validatedTask.error.details.map((detail) => detail.message).join(", ")
+      validatedTask.error.details
+        .map((detail) => chalk.bold.red(detail.message))
+        .join("\n")
     );
   }
   if(!update){
@@ -138,10 +146,11 @@ function main(metaData: TaskMetadata, task: Task | UpdateTask, update = false) {
   });
   if (validatedTaskMetadata.error) {
     isValid = false;
+    
     console.log(
       validatedTaskMetadata.error.details
-        .map((detail) => detail.message)
-        .join("\n ")
+        .map((detail) => chalk.bold.red(detail.message))
+        .join("\n")
     );
   }
 

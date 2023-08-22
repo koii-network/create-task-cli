@@ -16,6 +16,7 @@
     "@_koi/web3.js": "^0.0.6",
     "@solana/buffer-layout": "^4.0.0",
     "borsh": "^0.6.0",
+    "colors": "^1.4.0",
     "dotenv": "^16.0.1",
     "joi": "^17.9.2",
     "mz": "^2.7.0",
