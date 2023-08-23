@@ -22,7 +22,7 @@ import handleMetadata from "./metadata";
 import validateTaskInputs from "./validate";
 import validateUpdateTaskInputs from "./validateUpdate";
 import { join } from "path";
-import { tmpdir } from "os";
+import { tmpdir, homedir} from "os";
 import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
 import readYamlFile from "read-yaml-file";
 config();
@@ -87,11 +87,19 @@ enum RequirementType {
 
 async function main() {
   let payerWallet: Keypair;
-  const currentDir = path.resolve(process.cwd());
-  //let walletPath: string = `${currentDir}/id.json`;
-  let walletPath: string = (await getConfig()).keypair_path;
-
-  console.log("Wallet path: ", walletPath);
+  let walletPath;
+  let config;
+  try {
+    config = await getConfig();
+    walletPath = config.keypair_path;
+  } catch (error) {
+    walletPath = path.resolve(
+      homedir(),
+      ".config",
+      "koii",
+      "id.json"
+    );
+  }
 
   if (!fs.existsSync(walletPath)) {
     walletPath = (
@@ -107,6 +115,7 @@ async function main() {
       throw Error("Please make sure that the wallet path is correct");
     }
   }
+  console.log("Wallet path: ", walletPath);
 
   try {
     const wallet = fs.readFileSync(walletPath, "utf-8");
