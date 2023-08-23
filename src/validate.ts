@@ -21,6 +21,7 @@ interface TaskMetadata {
   description: string;
   repositoryUrl: string;
   createdAt: number;
+  migrationDescription?: string;
   imageUrl?: string | undefined;
   requirementsTags?: RequirementTag[];
 }
@@ -49,7 +50,6 @@ async function main(metaData: TaskMetadata, task: Task) {
     description,
     repositoryUrl,
     createdAt,
-    imageUrl,
     requirementsTags,
   } = metaData;
 

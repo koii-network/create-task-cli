@@ -22,7 +22,7 @@ import handleMetadata from "./metadata";
 import validateTaskInputs from "./validate";
 import validateUpdateTaskInputs from "./validateUpdate";
 import { join } from "path";
-import { tmpdir, homedir} from "os";
+import { tmpdir, homedir } from "os";
 import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
 import readYamlFile from "read-yaml-file";
 config();
@@ -64,6 +64,7 @@ interface TaskMetadata {
   description: string;
   repositoryUrl: string;
   createdAt: number;
+  migrationDescription?: string;
   imageUrl?: string | undefined;
   requirementsTags?: RequirementTag[];
 }
@@ -93,12 +94,7 @@ async function main() {
     config = await getConfig();
     walletPath = config.keypair_path;
   } catch (error) {
-    walletPath = path.resolve(
-      homedir(),
-      ".config",
-      "koii",
-      "id.json"
-    );
+    walletPath = path.resolve(homedir(), ".config", "koii", "id.json");
   }
 
   if (!fs.existsSync(walletPath)) {
@@ -323,7 +319,7 @@ async function main() {
               data.task_executable_network == "DEVELOPMENT"
             ) {
               //console.log("IN DEVELOPMENT");
-              task_audit_program_id = data.task_audit_program_id;
+              task_audit_program_id = data.task_audit_program;
               if (!data.secret_web3_storage_key) {
                 console.log(
                   "WEB3.STORAGE KEY FROM ENV",
@@ -695,17 +691,13 @@ async function main() {
 
             if (data.task_executable_network == "IPFS") {
               if (!data.secret_web3_storage_key) {
-                data.secret_web3_storage_key = (
-                  await prompts({
-                    type: "text",
-                    name: "secret_web3_storage_key",
-                    message: "Enter the web3.storage API key",
-                  })
-                ).secret_web3_storage_key;
-                while (data.secret_web3_storage_key < 200) {
-                  console.error(
-                    "secret_web3_storage_key cannot be less than 200 characters"
-                  );
+                console.log(
+                  "WEB3.STORAGE KEY FROM ENV",
+                  process.env.secret_web3_storage_key
+                );
+                data.secret_web3_storage_key =
+                  process.env.secret_web3_storage_key;
+                if (!data.secret_web3_storage_key) {
                   data.secret_web3_storage_key = (
                     await prompts({
                       type: "text",
@@ -713,6 +705,18 @@ async function main() {
                       message: "Enter the web3.storage API key",
                     })
                   ).secret_web3_storage_key;
+                  while (data.secret_web3_storage_key < 200) {
+                    console.error(
+                      "secret_web3_storage_key cannot be less than 200 characters"
+                    );
+                    data.secret_web3_storage_key = (
+                      await prompts({
+                        type: "text",
+                        name: "secret_web3_storage_key",
+                        message: "Enter the web3.storage API key",
+                      })
+                    ).secret_web3_storage_key;
+                  }
                 }
               }
               task_audit_program_id_update = await uploadIpfs(
@@ -725,7 +729,7 @@ async function main() {
               data.task_executable_network == "DEVELOPMENT"
             ) {
               //console.log("IN DEVELOPMENT");
-              task_audit_program_id_update = data.task_audit_program_id;
+              task_audit_program_id_update = data.task_audit_program;
               if (!data.secret_web3_storage_key) {
                 console.log(
                   "WEB3.STORAGE KEY FROM ENV",
@@ -767,6 +771,7 @@ async function main() {
               description: data.description.trim(),
               repositoryUrl: data.repositoryUrl,
               createdAt: Date.now(),
+              migrationDescription: data.migrationDescription,
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };

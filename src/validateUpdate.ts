@@ -21,6 +21,7 @@ interface TaskMetadata {
   description: string;
   repositoryUrl: string;
   createdAt: number;
+  migrationDescription?: string;
   imageUrl?: string | undefined;
   requirementsTags?: RequirementTag[];
 }
@@ -49,7 +50,7 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
     description,
     repositoryUrl,
     createdAt,
-    imageUrl,
+    migrationDescription,
     requirementsTags,
   } = metaData;
 
@@ -63,6 +64,14 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
     error["description"] = "Missing";
   }
 
+  // Check that description is a non-empty string
+  if (
+    typeof migrationDescription !== "string" ||
+    migrationDescription.trim().length === 0
+  ) {
+    error["migrationDescription"] = "Missing";
+  }
+
   // Check that repositoryUrl is a non-empty string
   if (typeof repositoryUrl !== "string" || repositoryUrl.trim().length === 0) {
     error["repositoryUrl"] = "Missing";
@@ -72,7 +81,7 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
   if (typeof createdAt !== "number" || description.trim().length === 0) {
     error["createdAt"] = "Missing";
   }
-  
+
   // Check that requirementsTags is an array of non-empty strings
 
   if (requirementsTags !== undefined) {
