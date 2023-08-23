@@ -21,8 +21,9 @@ interface TaskMetadata {
   description: string;
   repositoryUrl: string;
   createdAt: number;
-  imageUrl: string;
-  requirementsTags: RequirementTag[];
+  migrationDescription?: string;
+  imageUrl?: string | undefined;
+  requirementsTags?: RequirementTag[];
 }
 
 interface RequirementTag {
@@ -49,7 +50,7 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
     description,
     repositoryUrl,
     createdAt,
-    imageUrl,
+    migrationDescription,
     requirementsTags,
   } = metaData;
 
@@ -63,6 +64,14 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
     error["description"] = "Missing";
   }
 
+  // Check that description is a non-empty string
+  if (
+    typeof migrationDescription !== "string" ||
+    migrationDescription.trim().length === 0
+  ) {
+    error["migrationDescription"] = "Missing";
+  }
+
   // Check that repositoryUrl is a non-empty string
   if (typeof repositoryUrl !== "string" || repositoryUrl.trim().length === 0) {
     error["repositoryUrl"] = "Missing";
@@ -72,19 +81,15 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
   if (typeof createdAt !== "number" || description.trim().length === 0) {
     error["createdAt"] = "Missing";
   }
-  // Check that imageUrl, if present, is a non-empty string
-  if (
-    imageUrl !== undefined &&
-    (typeof imageUrl !== "string" || imageUrl.trim().length === 0)
-  ) {
-    error["imageUrl"] = "undefined or missing";
-  }
 
   // Check that requirementsTags is an array of non-empty strings
-  const result: boolean = validateRequirementsTags(requirementsTags);
-  if (!result) {
-    error["requirementsTags"] =
-      "tags do not have valid types or the values specified are not acceptable";
+
+  if (requirementsTags !== undefined) {
+    const result: boolean = validateRequirementsTags(requirementsTags);
+    if (!result) {
+      error["requirementsTags"] =
+        "tags do not have valid types or the values specified are not acceptable";
+    }
   }
 
   // Validating task parameters
@@ -203,8 +208,10 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 function isObjectEmpty(obj: object): boolean {
   for (const key in obj) {
+    // eslint-disable-next-line no-prototype-builtins
     if (obj.hasOwnProperty(key)) {
       return false;
     }

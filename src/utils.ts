@@ -23,7 +23,9 @@ export async function getConfig(): Promise<any> {
     "cli",
     "config.yml"
   );
+
   const configYml = fs.readFileSync(CONFIG_FILE_PATH, { encoding: "utf8" });
+
   return yaml.parse(configYml);
 }
 
@@ -79,10 +81,8 @@ export async function uploadIpfs(
   //console.log(filePath);
   //console.log(secret_web3_storage_key);
   console.log("FILEPATH", path);
-  if(path.substring(path.length - 7) !== "main.js"){
-    console.error(
-      "Provide a valid path to webpacked 'main.js' file"
-    );
+  if (path.substring(path.length - 7) !== "main.js") {
+    console.error("Provide a valid path to webpacked 'main.js' file");
     process.exit();
   }
   if (fs.existsSync(path)) {
@@ -99,9 +99,7 @@ export async function uploadIpfs(
     console.log("CID of executable", cid);
     return cid;
   } else {
-    console.error("\x1b[31m%s\x1b[0m",
-      "task_audit_program File not found"
-    );
+    console.error("\x1b[31m%s\x1b[0m", "task_audit_program File not found");
     process.exit();
   }
 }
