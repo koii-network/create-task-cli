@@ -17,7 +17,6 @@ interface Task {
   allowed_failed_distributions: number;
   space: number;
 }
-<<<<<<< HEAD
 interface UpdateTask {
   task_id: string;
   task_name: string;
@@ -33,10 +32,8 @@ interface UpdateTask {
   allowed_failed_distributions: number;
   space: number;
 }
-=======
 const errors = []
 
->>>>>>> 4476163... added color to validation and image  URL bug fix
 interface TaskMetadata {
   author: string;
   description: string;
