@@ -59,7 +59,7 @@ export async function takeInputForRequirementTypes() {
   return { value, description };
 }
 
-async function main() {
+export async function main() {
   web3Key = process.env["web3_key"] || null;
   if (!web3Key) {
     while (!web3Key)
@@ -73,11 +73,12 @@ async function main() {
         })
       ).web3Key;
   }
-  await takeInputForMetadata();
+  const metadata = await takeInputForMetadata();
+  await uploadMetadataToIPFS(metadata);
 }
 
-export async function takeInputForMetadata() {
-  const metadata:IMetadata= {
+export async function takeInputForMetadata(): Promise<IMetadata> {
+  const metadata: IMetadata = {
     author: "",
     description: "",
     repositoryUrl: "",
@@ -162,17 +163,23 @@ export async function takeInputForMetadata() {
   }
 
   console.log(metadata);
+  return metadata;
+}
+
+export async function uploadMetadataToIPFS(metadata: IMetadata) {
+
   const tmp = tmpdir();
   const metadataPath = join(tmp, "metadata.json");
   fs.writeFileSync(metadataPath, JSON.stringify(metadata));
   const storageClient = new Web3Storage({ token: web3Key as string });
   const upload = await getFilesFromPath([metadataPath]);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  const result = await storageClient.put(upload as any) ;
+  const result = await storageClient.put(upload as any);
   console.log(
     "\x1b[1m\x1b[32m%s\x1b[0m",
     `Your MetaData CID is ${result}/metadata.json`
   );
 }
+
 
 export default main;

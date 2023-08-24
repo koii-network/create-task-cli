@@ -18,12 +18,8 @@ jest.mock("prompts", () => {
       .mockResolvedValueOnce({ author: "author" })
       .mockResolvedValueOnce({ description: "description" })
       .mockResolvedValueOnce({ repositoryUrl: "repositoryUrl" })
-      .mockResolvedValueOnce({ imageURL: "imageURL" })
-      .mockResolvedValueOnce({ createdAt: "createdAt" })
-      .mockResolvedValueOnce({ requirementsTags: "requirementsTags" })
-      .mockResolvedValueOnce({ type: "type" })
-      .mockResolvedValueOnce({ value: "value" })
-      .mockResolvedValueOnce({ type: "type" })
+      .mockResolvedValueOnce({ imageURL: "imageURL" }).mockResolvedValueOnce({ response: true })
+      .mockResolvedValueOnce({ mode: "CPU" })
   );
 });
 //write test cases here

@@ -1,5 +1,10 @@
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 
 import {
   Keypair,
@@ -15,7 +20,7 @@ import fs from "fs";
 import path from "path";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const BufferLayout = require("@solana/buffer-layout");
-const rustString = (property = "string") => {
+export const rustString = (property = "string") => {
   const rsl = BufferLayout.struct(
     [
       BufferLayout.u32("length"),
@@ -49,18 +54,7 @@ const rustString = (property = "string") => {
 
   return rsl;
 };
-const publicKey = (property = "publicKey") => {
-  return BufferLayout.blob(32, property);
-};
-const toBuffer = (arr: any) => {
-  if (Buffer.isBuffer(arr)) {
-    return arr;
-  } else if (arr instanceof Uint8Array) {
-    return Buffer.from(arr.buffer, arr.byteOffset, arr.byteLength);
-  } else {
-    return Buffer.from(arr);
-  }
-};
+
 import { getPayer, getRpcUrl, createKeypairFromFile } from "./utils";
 
 const SYSTEM_PUBLIC_KEY = new PublicKey("11111111111111111111111111111111");
