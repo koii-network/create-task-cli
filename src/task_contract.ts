@@ -55,7 +55,9 @@ export const rustString = (property = "string") => {
   return rsl;
 };
 
-import { getPayer, getRpcUrl, createKeypairFromFile } from "./utils";
+import { getRpcUrl, createKeypairFromFile } from "./utils";
+import { getPayer } from "./utils/getPayer";
+
 
 const SYSTEM_PUBLIC_KEY = new PublicKey("11111111111111111111111111111111");
 const CLOCK_PUBLIC_KEY = new PublicKey(
@@ -231,7 +233,7 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
     // Calculate the cost of sending transactions
     fees += feeCalculator.lamportsPerSignature * 100; // wag
 
-    payerWallet = await getPayer();
+    payerWallet = getPayer();
   }
 
   const lamports = await connection.getBalance(payerWallet.publicKey);

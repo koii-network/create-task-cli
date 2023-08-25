@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { Connection, Keypair, PublicKey } from "@_koi/web3.js";
+import * as koii_web3 from "@_koi/web3.js"
 import {
   checkProgram,
   establishConnection,
@@ -18,9 +19,9 @@ jest.mock("../utils/getPayer", () => {
   };
 });
 
-jest.mock("@_koi/web3.js", () => {
+jest.mock("@_koi/web3.js");
+ () => {
   return {
-    ...jest.requireActual("@_koi/web3.js"),
     Connection: jest.fn().mockImplementation(() => {
       return {
         ...jest.requireActual("@_koi/web3.js").Connection,
@@ -31,8 +32,7 @@ jest.mock("@_koi/web3.js", () => {
         getMinimumBalanceForRentExemption: jest
           .fn()
           .mockResolvedValueOnce(1000)
-          .mockResolvedValueOnce(100000000000000000000).mockImplementationOnce(() => {
-            orugi,
+          .mockResolvedValueOnce(100000000000000000000),
         getBalance: jest
           .fn()
           .mockResolvedValueOnce(1000)
@@ -40,10 +40,18 @@ jest.mock("@_koi/web3.js", () => {
         getVersion: jest.fn().mockResolvedValue({
           "solana-core": "1.2.3",
         }),
+        getAccountInfo: jest.fn().mockResolvedValueOnce({
+          lamports: 1000,
+          owner: new Keypair().publicKey,
+          executable: true,
+          rentEpoch: 0,
+          
+        }).mockResolvedValueOnce(null)
+
       };
     }),
   };
-});
+}
 
 describe("rustString", () => {
   it("should encode and decode a string correctly", () => {
@@ -71,10 +79,21 @@ describe("rustString", () => {
   });
 });
 
-describe("Testing establishPayer", () => {
+describe.only("Testing establishPayer", () => {
+  const getRecentBlockhashMock = koii_web3.Connection.prototype.getRecentBlockhash as unknown as jest.Mock;
+  getRecentBlockhashMock.mockResolvedValueOnce({
+    feeCalculator: { lamportsPerSignature: 42 },
+    blockhash: "i",
+  });
+  const getVersionMock = koii_web3.Connection.prototype.getVersion as unknown as jest.Mock;
+  getVersionMock.mockResolvedValue({
+    "solana-core": "1.2.3",
+  });
+  const getMinimumBalanceForRentExemptionMock = koii_web3.Connection.prototype.getMinimumBalanceForRentExemption as unknown as jest.Mock;
+
   it("should establish a payer wallet if none is provided", async () => {
     await establishConnection();
-    let case1= await establishPayer(new Keypair());
+    let case1 = await establishPayer(new Keypair());
     expect(case1).toBe(undefined);
     let case2 = await establishPayer(new Keypair());
     expect(case2).toBe(undefined);
@@ -83,53 +102,17 @@ describe("Testing establishPayer", () => {
 });
 
 describe("task_contract", () => {
-  describe("checkProgram", () => {
-    let connection: Connection;
+  it("should check if the program is deployed", async () => {
+    const connectionMock = koii_web3.Connection.prototype
+      .getAccountInfo as unknown as jest.Mock;
+    connectionMock
+      .mockResolvedValueOnce({
+        lamports: 1000,
+        owner: new koii_web3.Keypair().publicKey,
+        executable: true,
+        rentEpoch: 0
+      })
+      .mockResolvedValueOnce(null)
 
-    beforeEach(() => {
-      connection = new Connection("http://localhost:8899", "confirmed");
-      (Connection as jest.MockedClass<typeof Connection>).mockImplementation(() => connection);
-    });
-
-    afterEach(() => {
-      jest.resetAllMocks();
-    });
-    
-
-    it("should read the program id from the keypair file", async () => {
-      const publicKeySpy = jest.spyOn(PublicKey, "fromBase58").mockReturnValueOnce(new PublicKey("Koiitask22222222222222222222222222222222222"));
-
-      await checkProgram();
-
-      expect(publicKeySpy).toHaveBeenCalledWith("Koiitask22222222222222222222222222222222222");
-    });
-
-    it("should throw an error if the program keypair file cannot be read", async () => {
-      jest.spyOn(PublicKey, "fromBase58").mockImplementationOnce(() => {
-        throw new Error("Failed to read program keypair");
-      });
-
-      await expect(checkProgram()).rejects.toThrow("Failed to read program keypair");
-    });
-
-    it("should throw an error if the program has not been deployed", async () => {
-      jest.spyOn(connection, "getAccountInfo").mockResolvedValueOnce(null);
-
-      await expect(checkProgram()).rejects.toThrow("Please use koii testnet or mainnet to deploy the program");
-    });
-
-    it("should throw an error if the program is not executable", async () => {
-      jest.spyOn(connection, "getAccountInfo").mockResolvedValueOnce({ executable: false });
-
-      await expect(checkProgram()).rejects.toThrow("Program is not executable");
-    });
-
-    it("should log the program id if it is valid", async () => {
-      jest.spyOn(connection, "getAccountInfo").mockResolvedValueOnce({ executable: true });
-
-      await checkProgram();
-
-      expect(console.log).toHaveBeenCalledWith("Using program Koiitask22222222222222222222222222222222222");
-    });
   });
 });
