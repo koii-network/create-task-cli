@@ -237,7 +237,7 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
   const lamports = await connection.getBalance(payerWallet.publicKey);
   if (lamports < fees) {
     console.error(
-      "Your balance is not sufficient: " + payerWallet.publicKey.toBase58
+      "Your balance is not sufficient: " + payerWallet.publicKey.toBase58()
     );
     process.exit(0);
     // If current balance is not enough to pay for fees, request an airdrop
@@ -245,6 +245,7 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
     // await connection.confirmTransaction(sig);
     // lamports = await connection.getBalance(payer.publicKey);
   }
+  console.log({lamports, fees});
 
   console.log(
     "Using account",
