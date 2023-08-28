@@ -4,7 +4,7 @@ export interface IMetadata {
     repositoryUrl: string;
     createdAt: string;
     imageURL: string;
-    requirementsTags: RequirementTag[];
+    requirementsTags: IRequirementTag[];
 }
 
 export interface IRequirementTag {

@@ -12,6 +12,6 @@
     "outDir": "build",
     "esModuleInterop": true
   },
-  "include": ["src/*/*", "src/utils/*", "src/**/*.spec.ts", "src/__tests__/task_contract.spec.ts"],
+  // "include": ["src/**/*","src/main.ts", "src/utils/*", "src/**/*.spec.ts", "src/__tests__/task_contract.spec.ts"],
   "exclude": ["node_modules", "build"]
 }

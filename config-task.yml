@@ -16,8 +16,8 @@ task_audit_program: "./build/main.js"
 # Total round time of your task : it must be given in slots and each slot is rougly equal to 4ms
 round_time: 50
 
-audit_window: 200
-submission_window: 200
+audit_window: 40
+submission_window: 10
 
 # Amounts in KOII
 

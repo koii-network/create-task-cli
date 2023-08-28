@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+
+
+
+
 import {
   establishConnection,
   establishPayer,
@@ -10,8 +14,8 @@ import {
   FundTask,
   Withdraw,
 } from "./task_contract";
-import { uploadIpfs } from "./utils";
-import { getConfig } from "./utils";
+import { uploadIpfs } from "./utils/uploadToIPFS";
+import { getConfig } from "./utils/configHelper";
 import prompts from "prompts";
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
 import fs from "fs";
@@ -24,7 +28,9 @@ import { join } from "path";
 import { tmpdir } from "os";
 import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
 import readYamlFile from "read-yaml-file";
+import { dns } from "mz";
 config();
+dns.setDefaultResultOrder('ipv4first') 
 
 interface Task {
   task_name: string;

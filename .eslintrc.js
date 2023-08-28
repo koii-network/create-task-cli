@@ -27,6 +27,6 @@ module.exports = {
         files: ['./**/*.{ts,tsx}'],
       },
     ],
-    "rules": {}
+    "rules": {"jest/no-focused-tests": "off"}
   }
   

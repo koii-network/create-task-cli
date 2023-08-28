@@ -17,7 +17,7 @@ describe("hello", () => {
   it("should say hello", async () => {
     const connectionMock = koii_web3.Connection.prototype
       .getAccountInfo as unknown as jest.Mock;
-      .mockResolvedValueOnce({
+      connectionMock.mockResolvedValueOnce({
         lamports: 1000,
         owner: new koii_web3.Keypair().publicKey,
         executable: true,
