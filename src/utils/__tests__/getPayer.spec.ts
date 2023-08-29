@@ -4,7 +4,8 @@ import { getPayer } from "../getPayer";
 afterEach(() => {
   jest.clearAllMocks();
 });
-
+jest.spyOn(console,"log").mockImplementation();
+jest.spyOn(console,"error").mockImplementation()
 
 const warn = jest.spyOn(console, "warn").mockImplementation();
 jest.mock("../configHelper", () => ({

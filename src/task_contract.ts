@@ -19,40 +19,7 @@ import fs from "fs";
 import path from "path";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const BufferLayout = require("@solana/buffer-layout");
-export const rustString = (property = "string") => {
-  const rsl = BufferLayout.struct(
-    [
-      BufferLayout.u32("length"),
-      BufferLayout.u32("lengthPadding"),
-      BufferLayout.blob(BufferLayout.offset(BufferLayout.u32(), -8), "chars"),
-    ],
-    property
-  );
-  const _decode = rsl.decode.bind(rsl);
-  const _encode = rsl.encode.bind(rsl);
 
-  rsl.decode = (buffer: any, offset: any) => {
-    const data = _decode(buffer, offset);
-    return data["chars"].toString("utf8");
-  };
-
-  rsl.encode = (str: any, buffer: any, offset: any) => {
-    const data = {
-      chars: Buffer.from(str, "utf8"),
-    };
-    return _encode(data, buffer, offset);
-  };
-
-  rsl.alloc = (str: any) => {
-    return (
-      BufferLayout.u32().span +
-      BufferLayout.u32().span +
-      Buffer.from(str, "utf8").length
-    );
-  };
-
-  return rsl;
-};
 
 import { getPayer } from "./utils/getPayer";
 import { getRpcUrl } from "./utils/RPCHelper";
@@ -67,7 +34,7 @@ const CLOCK_PUBLIC_KEY = new PublicKey(
 /**
  * Connection to the network
  */
-let connection: Connection;
+export let connection:Connection;
 
 /**
  * Hello world's program id
@@ -235,9 +202,7 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
 
     payerWallet = getPayer();
   }
-  console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
   console.log(payerWallet);
-  console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
 
   const lamports = await connection.getBalance(payerWallet.publicKey);
   if (lamports < fees) {
@@ -285,15 +250,16 @@ export async function checkProgram(): Promise<void> {
   }
   console.log(`Using program ${programId.toBase58()}`);
 }
-function encodeData(type: any, fields: any) {
+export function encodeData(type: any, fields: any) {
   const allocLength =
     type.layout.span >= 0 ? type.layout.span : getAlloc(type, fields);
   const data = Buffer.alloc(allocLength);
   const layoutFields = Object.assign({ instruction: type.index }, fields);
   type.layout.encode(layoutFields, data);
+  console.log(data)
   return data;
 }
-function getAlloc(type: any, fields: any) {
+export function getAlloc(type: any, fields: any) {
   let alloc = 0;
   type.layout.fields.forEach((item: any) => {
     if (item.span >= 0) {
@@ -305,7 +271,7 @@ function getAlloc(type: any, fields: any) {
   return alloc;
 }
 
-function padStringWithSpaces(input: string, length: number) {
+export function padStringWithSpaces(input: string, length: number) {
   const encoder = new TextEncoder();
   const encoded = encoder.encode(input);
   const padding = length - encoded.length;

@@ -8,6 +8,8 @@ afterEach(() => {
   jest.resetAllMocks();
   jest.clearAllMocks()
 });
+jest.spyOn(console,"log").mockImplementation();
+jest.spyOn(console,"error").mockImplementation()
 
 describe("Testing uploadFiles to IPFS", () => {
   it("should return a valid CID", async () => {

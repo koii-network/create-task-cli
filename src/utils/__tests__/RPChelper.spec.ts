@@ -1,5 +1,6 @@
 import { getRpcUrl } from "../RPCHelper";
-
+jest.spyOn(console,"log").mockImplementation();
+jest.spyOn(console,"error").mockImplementation()
 jest.mock("../configHelper", () => ({
   getConfig: jest
     .fn()

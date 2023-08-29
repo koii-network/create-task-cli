@@ -1,6 +1,8 @@
 import { createKeypairFromFile } from "../getWalletFromFile";
 import fs from "fs";
 import { PublicKey } from "@_koi/web3.js";
+jest.spyOn(console,"log").mockImplementation();
+jest.spyOn(console,"error").mockImplementation()
 
 jest.mock("fs");
 const fsReadFileSyncMock = fs.readFileSync as jest.Mock;

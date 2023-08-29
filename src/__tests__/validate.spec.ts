@@ -4,6 +4,8 @@ const mockExit = jest.spyOn(process, "exit").mockImplementation();
 const mockconsoleError = jest.spyOn(console, "error")
 const mockconsoleLog = jest.spyOn(console, "log")
 const Web3StorageKey = "P9C19R6QxkGjwShTPSdak0c5XXMWXeyYW4h9sf6VWFAoUNVKBl3JD5qxmzGMarVvEzC2sTHu5WnPF3bFmv319D8bIwJQRH1t313lPHFAxu47ebzmYWcmzdwbTPK5AHsAsmdRRMGpgPFIpQ5wamtDYBeJeuWC6OwayHjacSbXOyilGTvdIo2XbCnffvrdNWCfxpz678I1"
+jest.spyOn(console,"log").mockImplementation();
+jest.spyOn(console,"error").mockImplementation()
 
 //function to generate a random strig n  of 200 characters
 

@@ -1,7 +1,8 @@
 import { getConfig } from "../configHelper";
 import fs from "fs";
 import yaml from "yaml";
-
+jest.spyOn(console,"log").mockImplementation();
+jest.spyOn(console,"error").mockImplementation()
 const config = `json_rpc_url: "http://localhost:8899"
 websocket_url: ""
 keypair_path: /home/dev/.config/koii/id.json
@@ -26,11 +27,11 @@ commitment: confirmed`
 const mockExit = jest.spyOn(process, "exit").mockImplementation();
 
 describe("Testing getConfig", () => {
-  it("should return the parsed YAML config", async () => {
-    expect(await getConfig()).toEqual(yaml.parse(config));
+  it("should return the parsed YAML config",  () => {
+    expect( getConfig()).toEqual(yaml.parse(config));
   });
-  it("should print instructions to install CLI", async () => {
-    await getConfig();
+  it("should print instructions to install CLI",  () => {
+     getConfig();
     expect(mockExit).toHaveBeenCalledWith(1);
   });
 });

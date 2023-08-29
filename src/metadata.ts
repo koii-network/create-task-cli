@@ -6,7 +6,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { Web3Storage, getFilesFromPath } from "web3.storage";
 import { IMetadata } from "./interfaces/metadata";
-config();
+
 let web3Key: string | null;
 
 // interface TaskMetadata {
@@ -40,6 +40,7 @@ let web3Key: string | null;
 // }
 
 export async function takeInputForRequirementTypes() {
+  console.log("fffffffffffffffffffffffffffffffffffffffffffffffffff")
   const value = (
     await prompts({
       type: "text",
