@@ -5,7 +5,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
-
 import {
   Keypair,
   Connection,
@@ -58,7 +57,6 @@ export const rustString = (property = "string") => {
 import { getPayer } from "./utils/getPayer";
 import { getRpcUrl } from "./utils/RPCHelper";
 import { createKeypairFromFile } from "./utils/getWalletFromFile";
-
 
 const SYSTEM_PUBLIC_KEY = new PublicKey("11111111111111111111111111111111");
 const CLOCK_PUBLIC_KEY = new PublicKey(
@@ -213,7 +211,7 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
  * Establish a connection to the cluster
  */
 export async function establishConnection(): Promise<Connection> {
-  const rpcUrl =  getRpcUrl();
+  const rpcUrl = getRpcUrl();
   connection = new Connection(rpcUrl, "confirmed");
   const version = await connection.getVersion();
   console.log("Connection to cluster established:", rpcUrl, version);
@@ -225,6 +223,7 @@ export async function establishConnection(): Promise<Connection> {
  */
 export async function establishPayer(payerWallet: Keypair): Promise<void> {
   let fees = 0;
+  console.log(payerWallet.publicKey);
   if (!payerWallet) {
     const { feeCalculator } = await connection.getRecentBlockhash();
 
@@ -236,6 +235,9 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
 
     payerWallet = getPayer();
   }
+  console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
+  console.log(payerWallet);
+  console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
 
   const lamports = await connection.getBalance(payerWallet.publicKey);
   if (lamports < fees) {
@@ -248,7 +250,8 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
     // await connection.confirmTransaction(sig);
     // lamports = await connection.getBalance(payer.publicKey);
   }
-  console.log({lamports, fees});
+  console.log({ lamports, fees });
+  console.log(payerWallet);
 
   console.log(
     "Using account",
