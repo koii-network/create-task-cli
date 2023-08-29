@@ -188,9 +188,9 @@ export async function establishConnection(): Promise<Connection> {
 /**
  * Establish an account to pay for everything
  */
-export async function establishPayer(payerWallet: Keypair): Promise<void> {
+export async function  establishPayer(payerWallet: Keypair): Promise<void> {
   let fees = 0;
-  console.log(payerWallet.publicKey);
+  console.log({payerWallet});
   if (!payerWallet) {
     const { feeCalculator } = await connection.getRecentBlockhash();
 
@@ -226,7 +226,10 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
     "SOL to pay for fees"
   );
 }
-
+export  function hh()  {
+  console.log(new Keypair());
+  return 1;
+}
 /**
  * Check if the hello world BPF program has been deployed
  */

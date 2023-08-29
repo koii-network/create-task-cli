@@ -6,6 +6,7 @@ import {
   encodeData,
   establishConnection,
   establishPayer,
+  hh,
   padStringWithSpaces,
 } from "../task_contract";
 import { connection as originalConnection } from "../task_contract";
@@ -13,52 +14,23 @@ import * as taskContract from "../task_contract";
 import Layout from "@solana/buffer-layout";
 
 const mockSomeConnection = jest.fn();
-jest.mock("@_koi/web3.js");
+
+const actualKeypair = jest.requireActual("@_koi/web3.js");
+
+// (koii_web3.Keypair as unknown as jest.Mock).mockImplementation(() => {
+//   return new actualKeypair.Keypair()
+// });
+afterEach(() => {
+  jest.restoreAllMocks();
+});
 const BufferLayout = require("@solana/buffer-layout");
 let mockedExit = jest.spyOn(process, "exit").mockImplementation();
 jest.mock("../utils/getPayer", () => {
   return {
     ...jest.requireActual("../utils/getPayer"),
-    getPayer: jest.fn().mockReturnValue(Keypair.generate())
+    getPayer: jest.fn().mockReturnValue(Keypair.generate()),
   };
 });
-
-() => {
-  return {
-    Connection: jest.fn().mockImplementation(() => {
-      console.log("TESTTTTTTTTTTTTTT");
-      return {
-        ...jest.requireActual("@_koi/web3.js").Connection,
-        getRecentBlockhash: jest.fn().mockResolvedValueOnce({
-          feeCalculator: { lamportsPerSignature: 42 },
-          blockhash: "i"
-        }),
-        getMinimumBalanceForRentExemption: jest
-          .fn()
-          .mockResolvedValueOnce(1000)
-          .mockResolvedValueOnce(100000000000000000000),
-        getBalance: jest
-          .fn()
-          .mockResolvedValueOnce(1000)
-          .mockResolvedValueOnce(-1),
-        getVersion: jest.fn().mockResolvedValue({
-          "solana-core": "1.2.3"
-        }),
-        getAccountInfo: jest
-          .fn()
-          .mockResolvedValueOnce({
-            lamports: 1000,
-            owner: new Keypair().publicKey,
-            executable: true,
-            rentEpoch: 0
-          })
-          .mockResolvedValueOnce(null)
-      };
-    })
-  };
-};
-
-
 
 describe("Testing establishPayer", () => {
   beforeEach(() => {
@@ -68,50 +40,53 @@ describe("Testing establishPayer", () => {
     .getRecentBlockhash as unknown as jest.Mock;
   getRecentBlockhashMock.mockResolvedValueOnce({
     feeCalculator: { lamportsPerSignature: 42 },
-    blockhash: "i"
+    blockhash: "i",
   });
   const getVersionMock = koii_web3.Connection.prototype
     .getVersion as unknown as jest.Mock;
   getVersionMock.mockResolvedValue({
-    "solana-core": "1.2.3"
+    "solana-core": "1.2.3",
   });
 
   it("should establish a payer wallet if none is provided", async () => {
-    await establishConnection()
-    let connection: any = taskContract.connection;
-    connection = koii_web3.Connection as unknown as jest.Mock;
+    const connection = koii_web3.Connection as unknown as jest.Mock;
     const getMinimumBalanceForRentExemptionMock = koii_web3.Connection.prototype
       .getMinimumBalanceForRentExemption as unknown as jest.Mock;
     const getBalanceMock = koii_web3.Connection.prototype
       .getBalance as unknown as jest.Mock;
     getBalanceMock.mockResolvedValue(100);
-    // await establishConnection();
+    await establishConnection();
     let case1 = await establishPayer(new Keypair());
     expect(case1).toBe(undefined);
-    // let case2 = await establishPayer(new Keypair());
-    // expect(case2).toBe(undefined);
-    // expect(mockedExit).toHaveBeenCalledTimes(1);
+    let case2 = await establishPayer(new Keypair());
+    expect(case2).toBe(undefined);
+    expect(mockedExit).toHaveBeenCalledTimes(0);
   });
 });
 
-describe("task_contract", () => {
+describe.only("task_contract", () => {
   it("should check if the program is deployed", async () => {
-    await establishConnection()
-    const connectionMock = koii_web3.Connection.prototype
-      .getAccountInfo as unknown as jest.Mock;
-    connectionMock
-      .mockResolvedValueOnce({
-        lamports: 1000,
-        owner: new koii_web3.Keypair().publicKey,
-        executable: true,
-        rentEpoch: 0
+    // const connectionMock = koii_web3.Connection.prototype
+    //   .getAccountInfo as unknown as jest.Mock;
+    // connectionMock
+    jest
+      .spyOn(koii_web3.Connection.prototype, "getAccountInfo")
+      .mockImplementationOnce(() => {
+        return Promise.resolve({
+          lamports: 1000,
+          owner: new koii_web3.Keypair().publicKey,
+          executable: true,
+          rentEpoch: 0,
+        });
       })
+
       .mockResolvedValueOnce(null);
+    await establishConnection();
   });
 });
 
-describe('encodeData', () => {
-  it('should encode data correctly', () => {
+describe("encodeData", () => {
+  it("should encode data correctly", () => {
     const type = {
       layout: {
         span: 10,
@@ -120,32 +95,32 @@ describe('encodeData', () => {
       index: 1,
     };
     const fields = {
-      property1: 'value1',
-      };
-    
+      property1: "value1",
+    };
+
     const result = encodeData(type, fields);
-    
+
     expect(result).toBeDefined();
     expect(type.layout.encode).toHaveBeenCalledWith(
-      expect.objectContaining({ instruction: 1, property1: 'value1' }),
+      expect.objectContaining({ instruction: 1, property1: "value1" }),
       expect.any(Buffer)
     );
   });
 });
 
-describe('padStringWithSpaces', () => {
-  it('should pad string with spaces to the specified length', () => {
-    const input = 'hello';
+describe("padStringWithSpaces", () => {
+  it("should pad string with spaces to the specified length", () => {
+    const input = "hello";
     const length = 10;
-    const expectedOutput = 'hello     '; // 'hello' padded with 5 spaces
+    const expectedOutput = "hello     "; // 'hello' padded with 5 spaces
 
     const result = padStringWithSpaces(input, length);
 
     expect(result).toBe(expectedOutput);
   });
 
-  it('should not pad if input length is greater than or equal to the specified length', () => {
-    const input = 'hello';
+  it("should not pad if input length is greater than or equal to the specified length", () => {
+    const input = "hello";
     const length = 5;
 
     const result = padStringWithSpaces(input, length);
@@ -153,14 +128,20 @@ describe('padStringWithSpaces', () => {
     expect(result).toBe(input);
   });
 
-  it('should pad an empty string correctly', () => {
-    const input = '';
+  it("should pad an empty string correctly", () => {
+    const input = "";
     const length = 5;
-    const expectedOutput = '     '; // 5 spaces
+    const expectedOutput = "     "; // 5 spaces
 
     const result = padStringWithSpaces(input, length);
 
     expect(result).toBe(expectedOutput);
   });
+});
 
+describe.only("de", () => {
+  it("should", () => {
+    const a = hh();
+    expect(a).toBe(1);
+  });
 });
