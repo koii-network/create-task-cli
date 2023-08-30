@@ -226,8 +226,11 @@ export async function  establishPayer(payerWallet: Keypair): Promise<void> {
     "SOL to pay for fees"
   );
 }
-export  function hh()  {
+export async   function hh()  {
   console.log(new Keypair());
+  const programId = new PublicKey("Koiitask22222222222222222222222222222222222");
+
+  const balance = await connection.getBalance(programId)
   return 1;
 }
 /**

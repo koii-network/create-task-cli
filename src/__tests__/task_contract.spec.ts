@@ -12,6 +12,7 @@ import {
 import { connection as originalConnection } from "../task_contract";
 import * as taskContract from "../task_contract";
 import Layout from "@solana/buffer-layout";
+jest.mock("@_koi/web3.js")
 
 const mockSomeConnection = jest.fn();
 
@@ -64,23 +65,13 @@ describe("Testing establishPayer", () => {
   });
 });
 
-describe.only("task_contract", () => {
+describe("task_contract", () => {
   it("should check if the program is deployed", async () => {
-    // const connectionMock = koii_web3.Connection.prototype
-    //   .getAccountInfo as unknown as jest.Mock;
-    // connectionMock
-    jest
-      .spyOn(koii_web3.Connection.prototype, "getAccountInfo")
-      .mockImplementationOnce(() => {
-        return Promise.resolve({
-          lamports: 1000,
-          owner: new koii_web3.Keypair().publicKey,
-          executable: true,
-          rentEpoch: 0,
-        });
-      })
+    const connectionMock = koii_web3.Connection.prototype
+      .getAccountInfo as unknown as jest.Mock;
+    connectionMock
 
-      .mockResolvedValueOnce(null);
+      // .mockResolvedValueOnce(null);
     await establishConnection();
   });
 });
@@ -139,9 +130,4 @@ describe("padStringWithSpaces", () => {
   });
 });
 
-describe.only("de", () => {
-  it("should", () => {
-    const a = hh();
-    expect(a).toBe(1);
-  });
-});
+
