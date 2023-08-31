@@ -7,21 +7,18 @@ repositoryUrl: "https://github.com/koii-network/task-examples"
 # network value can be DEVELOPMENT , ARWEAVE or IPFS, Recommended IPFS as the cli automatically takes care of uploading the executable with the help of web3.js key
 task_executable_network: "IPFS"
 
-# Provide your transaction ID in case of ARWEAVE and in case of DEVELOPMENT give your executable name as main otherwise leave blank
-task_audit_program_id: "main"
-
-# Path to your executable webpack if the selected network is IPFS otherwise leave blank
-task_audit_program: "./build/main.js"
+# Path to your executable webpack if the selected network is IPFS and in case of DEVELOPMENT  name it as main
+task_audit_program: "main"
 
 # Total round time of your task : it must be given in slots and each slot is rougly equal to 4ms
-round_time: 50
+round_time: 650
 
-audit_window: 40
-submission_window: 10
+audit_window: 250
+submission_window: 250
 
 # Amounts in KOII
 
-minimum_stake_amount: 2
+minimum_stake_amount: 1
 
 # total_bounty_amount cannot be grater than bounty_amount_per_round
 # total bounty is not accepted in case of update task
@@ -55,8 +52,13 @@ requirementsTags:
   - type: OS
     value: "OSX"
 
-# OPTIONAL variables below
+# OPTIONAL variables for creatinf task / REQUIRED varibales for update task
 
-# OPTIONAL Only provide the taskId if you are updating the task otherwise leave blank
+#Provide the taskId for the task you want to update
 task_id: ""
 
+# Provide the description for changes made in new version of task
+migrationDescription: ""
+
+# ImageUrl is an option parameter for the task, if you want to add an image to your task, you can add the url here
+imageUrl: ""

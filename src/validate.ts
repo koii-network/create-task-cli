@@ -24,6 +24,7 @@ interface TaskMetadata {
   description: string;
   repositoryUrl: string;
   createdAt: number;
+  migrationDescription?: string;
   imageUrl?: string | undefined;
   requirementsTags?: RequirementTag[];
 }
@@ -97,8 +98,16 @@ const taskSchema = Joi.object({
     .message("Space cannot be less than 1 mb"),
 });
 
-function main(metaData: TaskMetadata, task: Task) {
-  let isValid = true;
+async function main(metaData: TaskMetadata, task: Task) {
+  const error: any = {};
+  const {
+    author,
+    description,
+    repositoryUrl,
+    createdAt,
+    requirementsTags,
+  } = metaData;
+  let isValid;
 
   const validatedTask = taskSchema.validate(task, { abortEarly: false });
   if (validatedTask.error) {

@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-
-
-
-
 import {
   establishConnection,
   establishPayer,
@@ -25,7 +21,7 @@ import handleMetadata from "./metadata";
 import validateTaskInputs from "./validate";
 import validateUpdateTaskInputs from "./validateUpdate";
 import { join } from "path";
-import { tmpdir } from "os";
+import { tmpdir, homedir } from "os";
 import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
 import readYamlFile from "read-yaml-file";
 import { dns } from "mz";
@@ -69,6 +65,7 @@ interface TaskMetadata {
   description: string;
   repositoryUrl: string;
   createdAt: number;
+  migrationDescription?: string;
   imageUrl?: string | undefined;
   requirementsTags?: RequirementTag[];
 }
@@ -92,11 +89,14 @@ enum RequirementType {
 
 export async function main() {
   let payerWallet: Keypair;
-  const currentDir = path.resolve(process.cwd());
-  //let walletPath: string = `${currentDir}/id.json`;
-  let walletPath: string = (await getConfig()).keypair_path;
-
-  console.log("Wallet path: ", walletPath);
+  let walletPath;
+  let config;
+  try {
+    config = await getConfig();
+    walletPath = config.keypair_path;
+  } catch (error) {
+    walletPath = path.resolve(homedir(), ".config", "koii", "id.json");
+  }
 
   if (!fs.existsSync(walletPath)) {
     walletPath = (
@@ -112,6 +112,7 @@ export async function main() {
       throw Error("Please make sure that the wallet path is correct");
     }
   }
+  console.log("Wallet path: ", walletPath);
 
   try {
     const wallet = fs.readFileSync(walletPath, "utf-8");
@@ -319,7 +320,7 @@ export async function main() {
               data.task_executable_network == "DEVELOPMENT"
             ) {
               //console.log("IN DEVELOPMENT");
-              task_audit_program_id = data.task_audit_program_id;
+              task_audit_program_id = data.task_audit_program;
               if (!data.secret_web3_storage_key) {
                 console.log(
                   "WEB3.STORAGE KEY FROM ENV",
@@ -504,8 +505,22 @@ export async function main() {
     }
     case "fund-task": {
       console.log("Calling FundTask");
-      const { stakePotAccount, taskStateInfoAddress, amount } =
-        await takeInputForFundTask();
+      const { taskStateInfoAddress, amount } = await takeInputForFundTask();
+
+      const accountInfo = await connection.getAccountInfo(
+        new PublicKey(taskStateInfoAddress)
+      );
+
+      // Add this in validation
+
+      if (accountInfo == null) {
+        console.error("No task found with this Id");
+        process.exit();
+      }
+      const rawData: any = accountInfo.data + "";
+      const state = JSON.parse(rawData);
+      const stakePotAccount = new PublicKey(state.stake_pot_account);
+
       await FundTask(
         payerWallet,
         taskStateInfoAddress,
@@ -677,17 +692,13 @@ export async function main() {
 
             if (data.task_executable_network == "IPFS") {
               if (!data.secret_web3_storage_key) {
-                data.secret_web3_storage_key = (
-                  await prompts({
-                    type: "text",
-                    name: "secret_web3_storage_key",
-                    message: "Enter the web3.storage API key",
-                  })
-                ).secret_web3_storage_key;
-                while (data.secret_web3_storage_key < 200) {
-                  console.error(
-                    "secret_web3_storage_key cannot be less than 200 characters"
-                  );
+                console.log(
+                  "WEB3.STORAGE KEY FROM ENV",
+                  process.env.secret_web3_storage_key
+                );
+                data.secret_web3_storage_key =
+                  process.env.secret_web3_storage_key;
+                if (!data.secret_web3_storage_key) {
                   data.secret_web3_storage_key = (
                     await prompts({
                       type: "text",
@@ -695,6 +706,18 @@ export async function main() {
                       message: "Enter the web3.storage API key",
                     })
                   ).secret_web3_storage_key;
+                  while (data.secret_web3_storage_key < 200) {
+                    console.error(
+                      "secret_web3_storage_key cannot be less than 200 characters"
+                    );
+                    data.secret_web3_storage_key = (
+                      await prompts({
+                        type: "text",
+                        name: "secret_web3_storage_key",
+                        message: "Enter the web3.storage API key",
+                      })
+                    ).secret_web3_storage_key;
+                  }
                 }
               }
               task_audit_program_id_update = await uploadIpfs(
@@ -707,7 +730,7 @@ export async function main() {
               data.task_executable_network == "DEVELOPMENT"
             ) {
               //console.log("IN DEVELOPMENT");
-              task_audit_program_id_update = data.task_audit_program_id;
+              task_audit_program_id_update = data.task_audit_program;
               if (!data.secret_web3_storage_key) {
                 console.log(
                   "WEB3.STORAGE KEY FROM ENV",
@@ -749,6 +772,7 @@ export async function main() {
               description: data.description.trim(),
               repositoryUrl: data.repositoryUrl,
               createdAt: Date.now(),
+              migrationDescription: data.migrationDescription,
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };
@@ -1262,13 +1286,6 @@ async function takeInputForFundTask() {
       message: "Enter the task id",
     })
   ).taskStateInfoAddress;
-  const stakePotAccount = (
-    await prompts({
-      type: "text",
-      name: "stakePotAccount",
-      message: "Enter the stakePotAccount address",
-    })
-  ).stakePotAccount;
   const amount = (
     await prompts({
       type: "text",
@@ -1278,7 +1295,6 @@ async function takeInputForFundTask() {
   ).amount;
   return {
     amount: amount * LAMPORTS_PER_SOL,
-    stakePotAccount: new PublicKey(stakePotAccount),
     taskStateInfoAddress: new PublicKey(taskStateInfoAddress),
   };
 }
