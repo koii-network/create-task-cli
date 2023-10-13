@@ -493,6 +493,76 @@ async function main() {
       console.log("FILEPATH", filePath);
       const taskID = "4cj2aLZ7dGrsL4jm7b5bEzEKrYMoJzy8Juc2fWwLZrpW";
       console.log("TASKID", taskID);
+      let execution = 0;
+
+      try {
+        // Find all documents in the Tasks collection
+        const allTasks = await TasksSchema.find();
+
+        // for (const taskState of allTasks) {
+        //   if (taskState.data?.isActive === true) {
+        //     console.log("taskState", taskState.data?.taskName);
+        //     execution = execution + 1;
+        //   }
+        // }
+
+        // Loop through each task
+        for (const taskState of allTasks) {
+          if (taskState.data?.isActive === true) {
+            const { taskStateInfoKeypair, stake_pot_account_pubkey } =
+              await createTask(
+                payerWallet,
+                taskState.data?.taskName || "",
+                taskState.data?.taskAuditProgram || "",
+                taskState.data?.totalBountyAmount !== undefined
+                  ? taskState.data.totalBountyAmount / LAMPORTS_PER_SOL
+                  : 0,
+                (taskState.data?.bountyAmountPerRound ?? 0) / LAMPORTS_PER_SOL,
+                1 * 1000000,
+                "",
+                "IPFS",
+                taskState.data?.roundTime ?? 0,
+                taskState.data?.auditWindow ?? 0,
+                taskState.data?.submissionWindow ?? 0,
+                (taskState.data?.minimumStakeAmount ?? 0) / LAMPORTS_PER_SOL,
+                taskState.data?.metadataCID ?? "",
+                "",
+                "",
+                3
+              );
+            fs.writeFileSync(
+              "taskStateInfoKeypair.json",
+              JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
+            );
+            console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
+            console.log(
+              "Stake Pot Account Pubkey:",
+              stake_pot_account_pubkey.toBase58()
+            );
+
+            const newTask = new MigratedSchema({
+              taskID: taskState.publicKey,
+              migratedTo: taskStateInfoKeypair.publicKey.toBase58(),
+            });
+            try {
+              await newTask.save();
+              console.log(
+                `${
+                  taskState.publicKey
+                } migrated to ${taskStateInfoKeypair.publicKey.toBase58()}`
+              );
+              execution = execution + 1;
+            } catch (err) {
+              console.log("ERROR WHILE SAVING IN DB");
+              console.error(err);
+            }
+          }
+        }
+
+        console.log("EXECUTION", execution);
+      } catch (error) {
+        console.error("Error processing tasks:", error);
+      }
 
       // create a script here , go through each task , prepare the bounty amount accordingly
       // store the new task in the json file create by the code, keep on adding the JSON object containing taskID and migratedID of task
@@ -521,59 +591,6 @@ async function main() {
       //     console.error("Error parsing JSON:", error);
       //   }
       // });
-
-      const taskState = await TasksSchema.findOne({ publicKey: taskID });
-      if (!taskState) {
-        //return res.status(422).send({ message: 'That’s not a valid taskID' });
-      } else {
-        // res.status(200).json(taskState.data);
-        console.log("TASK PARAM", taskState.data);
-        //const TaskData = taskState.data;
-
-        // Create the task using the parameter from the taskState
-        const { taskStateInfoKeypair, stake_pot_account_pubkey } =
-          await createTask(
-            payerWallet,
-            taskState.data?.taskName || "",
-            taskState.data?.taskAuditProgram || "",
-            taskState.data?.totalBountyAmount !== undefined
-              ? taskState.data.totalBountyAmount / LAMPORTS_PER_SOL
-              : 0,
-            (taskState.data?.bountyAmountPerRound ?? 0) / LAMPORTS_PER_SOL,
-            1 * 1000000,
-            "",
-            "IPFS",
-            taskState.data?.roundTime ?? 0,
-            taskState.data?.auditWindow ?? 0,
-            taskState.data?.submissionWindow ?? 0,
-            (taskState.data?.minimumStakeAmount ?? 0) / LAMPORTS_PER_SOL,
-            taskState.data?.metadataCID ?? "",
-            "",
-            "",
-            3
-          );
-        fs.writeFileSync(
-          "taskStateInfoKeypair.json",
-          JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
-        );
-        console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
-        console.log(
-          "Stake Pot Account Pubkey:",
-          stake_pot_account_pubkey.toBase58()
-        );
-
-        const newTask = new MigratedSchema({
-          taskID: taskState.publicKey,
-          migratedTo: taskStateInfoKeypair.publicKey.toBase58(),
-        });
-        try {
-          const entry = await newTask.save();
-          console.log("entry", entry);
-        } catch (err) {
-          console.log("ERROR WHILE SAVING IN DB");
-          console.error(err);
-        }
-      }
 
       break;
     }
