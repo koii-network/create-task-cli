@@ -489,22 +489,25 @@ async function main() {
       break;
     }
     case "migration-script": {
-      const filePath = "./allTASKS.json";
-      console.log("FILEPATH", filePath);
-      const taskID = "4cj2aLZ7dGrsL4jm7b5bEzEKrYMoJzy8Juc2fWwLZrpW";
-      console.log("TASKID", taskID);
+      // const filePath = "./allTASKS.json";
+      // console.log("FILEPATH", filePath);
+      // const taskID = "4cj2aLZ7dGrsL4jm7b5bEzEKrYMoJzy8Juc2fWwLZrpW";
+      // console.log("TASKID", taskID);
       let execution = 0;
 
       try {
         // Find all documents in the Tasks collection
         const allTasks = await TasksSchema.find();
 
+        // let bountySum=0;
         // for (const taskState of allTasks) {
         //   if (taskState.data?.isActive === true) {
         //     console.log("taskState", taskState.data?.taskName);
+        //     bountySum+=taskState.data?.totalBountyAmount || 0;
         //     execution = execution + 1;
         //   }
         // }
+        // console.log({bountySum})
 
         // Loop through each task
         for (const taskState of allTasks) {
