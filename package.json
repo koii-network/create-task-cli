@@ -17,6 +17,7 @@
     "@solana/buffer-layout": "^4.0.0",
     "borsh": "^0.6.0",
     "dotenv": "^16.0.1",
+    "mongoose": "^7.6.1",
     "mz": "^2.7.0",
     "ora": "^6.1.2",
     "prompts": "^2.4.2",

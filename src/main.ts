@@ -25,7 +25,12 @@ import { join } from "path";
 import { tmpdir, homedir } from "os";
 import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
 import readYamlFile from "read-yaml-file";
+import TasksSchema from "./getTaskStateModal";
+import MigratedSchema from "./migrationModel";
+
 config();
+import mongoInit from "./MoongooseInit";
+mongoInit();
 
 interface Task {
   task_name: string;
@@ -138,6 +143,10 @@ async function main() {
         {
           title: "upload assets to IPFS(metadata/local vars)",
           value: "handle-assets",
+        },
+        {
+          title: "Run migration script for all tasks",
+          value: "migration-script",
         },
       ],
     })
@@ -477,6 +486,95 @@ async function main() {
           break;
         }
       }
+      break;
+    }
+    case "migration-script": {
+      const filePath = "./allTASKS.json";
+      console.log("FILEPATH", filePath);
+      const taskID = "4cj2aLZ7dGrsL4jm7b5bEzEKrYMoJzy8Juc2fWwLZrpW";
+      console.log("TASKID", taskID);
+
+      // create a script here , go through each task , prepare the bounty amount accordingly
+      // store the new task in the json file create by the code, keep on adding the JSON object containing taskID and migratedID of task
+
+      // fs.readFile(filePath, "utf8", async (err, data) => {
+      //   if (err) {
+      //     console.error("Error reading the file:", err);
+      //     return;
+      //   }
+
+      //   try {
+      //     // Parse the JSON data
+      //     const taskAccountInfo = JSON.parse(data);
+      //     console.log("Parsed JSON data:", taskAccountInfo);
+      //     for (let i = 0; i < taskAccountInfo.length; i++) {
+      //       // console.log('CHECK', taskAccountInfo[i].account.data.toString());
+      //       //const state = JSON.parse(taskAccountInfo[i].account.data);
+      //       if (taskAccountInfo[i].pubkey === taskID) {
+      //         const state = JSON.parse(
+      //           new Buffer(taskAccountInfo[i].account.data).toString()
+      //         );
+      //         console.log("STATE", state);
+      //       }
+      //     }
+      //   } catch (error) {
+      //     console.error("Error parsing JSON:", error);
+      //   }
+      // });
+
+      const taskState = await TasksSchema.findOne({ publicKey: taskID });
+      if (!taskState) {
+        //return res.status(422).send({ message: 'That’s not a valid taskID' });
+      } else {
+        // res.status(200).json(taskState.data);
+        console.log("TASK PARAM", taskState.data);
+        //const TaskData = taskState.data;
+
+        // Create the task using the parameter from the taskState
+        const { taskStateInfoKeypair, stake_pot_account_pubkey } =
+          await createTask(
+            payerWallet,
+            taskState.data?.taskName || "",
+            taskState.data?.taskAuditProgram || "",
+            taskState.data?.totalBountyAmount !== undefined
+              ? taskState.data.totalBountyAmount / LAMPORTS_PER_SOL
+              : 0,
+            (taskState.data?.bountyAmountPerRound ?? 0) / LAMPORTS_PER_SOL,
+            1 * 1000000,
+            "",
+            "IPFS",
+            taskState.data?.roundTime ?? 0,
+            taskState.data?.auditWindow ?? 0,
+            taskState.data?.submissionWindow ?? 0,
+            (taskState.data?.minimumStakeAmount ?? 0) / LAMPORTS_PER_SOL,
+            taskState.data?.metadataCID ?? "",
+            "",
+            "",
+            3
+          );
+        fs.writeFileSync(
+          "taskStateInfoKeypair.json",
+          JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
+        );
+        console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
+        console.log(
+          "Stake Pot Account Pubkey:",
+          stake_pot_account_pubkey.toBase58()
+        );
+
+        const newTask = new MigratedSchema({
+          taskID: taskState.publicKey,
+          migratedTo: taskStateInfoKeypair.publicKey.toBase58(),
+        });
+        try {
+          const entry = await newTask.save();
+          console.log("entry", entry);
+        } catch (err) {
+          console.log("ERROR WHILE SAVING IN DB");
+          console.error(err);
+        }
+      }
+
       break;
     }
     case "set-active": {
