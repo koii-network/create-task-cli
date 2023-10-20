@@ -29,4 +29,4 @@ const TaskSchema = new mongoose.Schema({
 });
 
 // Create a model for the task collection
-export default mongoose.model("Task", TaskSchema);
+export default mongoose.model("TaskState", TaskSchema);
