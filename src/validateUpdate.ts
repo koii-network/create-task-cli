@@ -41,6 +41,7 @@ enum RequirementType {
   NETWORK = "NETWORK",
   ARCHITECTURE = "ARCHITECTURE",
   OS = "OS",
+  ADDON = "ADDON",
 }
 
 async function main(metaData: TaskMetadata, task: UpdateTask) {
@@ -251,6 +252,7 @@ function validateRequirementsTags(requirementsTags: RequirementTag[]): boolean {
         }
         break;
       case RequirementType.CPU:
+      case RequirementType.ADDON:
       case RequirementType.RAM:
       case RequirementType.STORAGE:
       case RequirementType.NETWORK:
