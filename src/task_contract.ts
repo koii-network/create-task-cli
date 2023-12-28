@@ -209,6 +209,13 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       BufferLayout.ns64("round"),
     ]),
   },
+  HandleManagerAccounts: {
+    index: 16,
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      BufferLayout.blob(24, 'operation'),
+    ]),
+  },
 });
 
 /**
@@ -560,10 +567,16 @@ export async function Whitelist(
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Whitelist, {
     isWhitelisted,
   });
+  const [managerAccountPDA] = await PublicKey.findProgramAddress(
+    [Buffer.from('manager')],
+    programId,
+  );
   const instruction = new TransactionInstruction({
     keys: [
       { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
       { pubkey: programKeypair.publicKey, isSigner: true, isWritable: false },
+      { pubkey: managerAccountPDA, isSigner: false, isWritable: false },
+
     ],
     programId,
     data: data,
@@ -582,10 +595,15 @@ export async function SetActive(
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetActive, {
     isActive: setActive ? 1 : 0,
   });
+  const [managerAccountPDA] = await PublicKey.findProgramAddress(
+    [Buffer.from('manager')],
+    programId,
+  );
   const instruction = new TransactionInstruction({
     keys: [
       { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
       { pubkey: payerWallet.publicKey, isSigner: true, isWritable: false },
+      { pubkey: managerAccountPDA, isSigner: false, isWritable: false },
     ],
     programId,
     data: data,
@@ -594,6 +612,72 @@ export async function SetActive(
     connection,
     new Transaction().add(instruction),
     [payerWallet]
+  );
+}
+
+export async function handleManagerAccounts(
+  payerWallet: Keypair,
+  operation: string,
+  signer1?: Keypair,
+  signer2?: Keypair,
+  insertOrDeleteAccountPubkey?: PublicKey
+): Promise<void> {
+  if (operation != 'init' && operation != 'insert' && operation != 'remove') {
+    throw new Error("Invalid operation");
+  }
+  const encodedTransactionInstruction = encodeData(
+    TASK_INSTRUCTION_LAYOUTS.HandleManagerAccounts,
+    { operation: new TextEncoder().encode(padStringWithSpaces(operation, 24)) },
+  );
+  const [managerAccountPDA] = await PublicKey.findProgramAddress(
+    [Buffer.from('manager')],
+    programId,
+  );
+  let keys = []
+  let signers = []
+  if (operation == "init") {
+    keys = [
+      { pubkey: managerAccountPDA, isSigner: false, isWritable: true },
+      { pubkey: payerWallet.publicKey, isSigner: true, isWritable: false },
+    ]
+    signers = [payerWallet]
+  } else {
+    if (!signer1 || !signer2 || !insertOrDeleteAccountPubkey) {
+      throw new Error("Provided wallets are undefined");
+    }
+    keys = [
+      {
+        pubkey: managerAccountPDA,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: signer1.publicKey,
+        isSigner: true,
+        isWritable: false,
+      },
+      {
+        pubkey: signer2.publicKey,
+        isSigner: true,
+        isWritable: false,
+      },
+      {
+        pubkey: insertOrDeleteAccountPubkey,
+        isSigner: false,
+        isWritable: false,
+      },
+    ]
+    signers = [payerWallet, signer1, signer2]
+  }
+  const instruction = new TransactionInstruction({
+    keys: keys,
+    programId,
+    data: encodedTransactionInstruction,
+  });
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    signers
   );
 }
 
@@ -683,7 +767,7 @@ function getStakePotAccount(): PublicKey {
       if (PublicKey.isOnCurve(pubkey.toBytes())) {
         break;
       }
-    } catch (e) {}
+    } catch (e) { }
   }
   return pubkey;
 }

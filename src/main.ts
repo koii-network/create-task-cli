@@ -11,6 +11,7 @@ import {
   ClaimReward,
   FundTask,
   Withdraw,
+  handleManagerAccounts,
 } from "./task_contract";
 import { uploadIpfs } from "./utils";
 import prompts from "prompts";
@@ -65,6 +66,10 @@ async function main() {
         {
           title: "upload assets to IPFS(metadata/local vars)",
           value: "handle-assets",
+        },
+        {
+          title: "Handle manager accounts on k2",
+          value: "handle-manager-accounts",
         },
       ],
     })
@@ -261,7 +266,7 @@ async function main() {
             const storageClient = new Web3Storage({
               token: data.secret_web3_storage_key as string,
             });
-            let upload:any = await getFilesFromPath([metadataPath]);
+            let upload: any = await getFilesFromPath([metadataPath]);
             try {
               metaDataCid = await storageClient.put(upload);
             } catch (err) {
@@ -513,6 +518,19 @@ async function main() {
       );
       console.log(
         "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
+      );
+      break;
+    }
+    case "handle-manager-accounts": {
+      console.log("Calling Withdraw");
+      const { operation, signer1, signer2, insertOrDeleteAccount } =
+        await takeInputForHandleManagerAccounts();
+      await handleManagerAccounts(
+        payerWallet,
+        operation,
+        signer1,
+        signer2,
+        insertOrDeleteAccount
       );
       break;
     }
@@ -998,6 +1016,73 @@ async function takeInputForWithdraw() {
     submitterKeypair,
   };
 }
+
+async function takeInputForHandleManagerAccounts() {
+  let operation = (
+    await prompts({
+      type: "text",
+      name: "operation",
+      message: "Enter the operation (init, remove, insert)",
+    })
+  ).operation;
+  while (
+    operation != "init" &&
+    operation != "remove" &&
+    operation != "insert"
+  ) {
+    operation = (
+      await prompts({
+        type: "text",
+        name: "operation",
+        message: "Enter the operation (init, remove, insert)",
+      })
+    ).operation;
+  }
+  if (operation == "init") 
+    return {
+      operation,
+    };
+  
+  const signer1_wallet_path = (
+    await prompts({
+      type: "text",
+      name: "signer1_path",
+      message: "Enter the signer1 wallet path address",
+    })
+  ).signer1_path;
+
+  let wallet_signer1 = fs.readFileSync(signer1_wallet_path, "utf-8");
+  let signer1 = Keypair.fromSecretKey(
+    Uint8Array.from(JSON.parse(wallet_signer1))
+  );
+  const signer2_wallet_path = (
+    await prompts({
+      type: "text",
+      name: "signer2_path",
+      message: "Enter the signer2 wallet path address",
+    })
+  ).signer2_path;
+
+  let wallet_signer2 = fs.readFileSync(signer2_wallet_path, "utf-8");
+  let signer2 = Keypair.fromSecretKey(
+    Uint8Array.from(JSON.parse(wallet_signer2))
+  );
+  const insertOrDeleteAccount = (
+    await prompts({
+      type: "text",
+      name: "insertOrDeleteAccount_address",
+      message: `Enter the wallet address to ${operation}`,
+    })
+  ).insertOrDeleteAccount_address;
+
+  return {
+    operation,
+    signer1,
+    signer2,
+    insertOrDeleteAccount: new PublicKey(insertOrDeleteAccount),
+  };
+}
+
 main().then(
   () => process.exit(),
   (err) => {
