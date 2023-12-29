@@ -11,7 +11,7 @@ import {
   FundTask,
   Withdraw,
 } from "./task_contract";
-import { uploadIpfs } from "./utils";
+import { uploadExecutableFileToIpfs } from "./utils";
 import { getConfig } from "./utils";
 import prompts from "prompts";
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
@@ -23,7 +23,8 @@ import validateTaskInputs from "./validate";
 import validateUpdateTaskInputs from "./validateUpdate";
 import { join } from "path";
 import { tmpdir, homedir } from "os";
-import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
+// import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
+import { SpheronClient, ProtocolEnum } from "@spheron/storage";
 import readYamlFile from "read-yaml-file";
 config();
 
@@ -282,17 +283,17 @@ async function main() {
             if (data.task_executable_network == "IPFS") {
               if (!data.secret_web3_storage_key) {
                 console.log(
-                  "WEB3.STORAGE KEY FROM ENV",
-                  process.env.secret_web3_storage_key
+                  "Spheron KEY FROM ENV",
+                  process.env.secret_spheron_storage_key?.substring(0,5)
                 );
                 data.secret_web3_storage_key =
-                  process.env.secret_web3_storage_key;
+                  process.env.secret_spheron_storage_key;
                 if (!data.secret_web3_storage_key) {
                   data.secret_web3_storage_key = (
                     await prompts({
                       type: "text",
                       name: "secret_web3_storage_key",
-                      message: "Enter the web3.storage API key",
+                      message: "Enter the spheron API key",
                     })
                   ).secret_web3_storage_key;
                   while (data.secret_web3_storage_key < 200) {
@@ -303,13 +304,13 @@ async function main() {
                       await prompts({
                         type: "text",
                         name: "secret_web3_storage_key",
-                        message: "Enter the web3.storage API key",
+                        message: "Enter the spheron API key",
                       })
                     ).secret_web3_storage_key;
                   }
                 }
               }
-              task_audit_program_id = await uploadIpfs(
+              task_audit_program_id = await uploadExecutableFileToIpfs(
                 data.task_audit_program,
                 data.secret_web3_storage_key
               );
@@ -322,17 +323,17 @@ async function main() {
               task_audit_program_id = data.task_audit_program;
               if (!data.secret_web3_storage_key) {
                 console.log(
-                  "WEB3.STORAGE KEY FROM ENV",
-                  process.env.secret_web3_storage_key
+                  "Spheron KEY FROM ENV",
+                  process.env.secret_spheron_storage_key?.substring(0,5)
                 );
                 data.secret_web3_storage_key =
-                  process.env.secret_web3_storage_key;
+                  process.env.secret_spheron_storage_key;
                 if (!data.secret_web3_storage_key) {
                   data.secret_web3_storage_key = (
                     await prompts({
                       type: "text",
                       name: "secret_web3_storage_key",
-                      message: "Enter the web3.storage API key",
+                      message: "Enter the spheron API key",
                     })
                   ).secret_web3_storage_key;
                   while (data.secret_web3_storage_key < 200) {
@@ -343,7 +344,7 @@ async function main() {
                       await prompts({
                         type: "text",
                         name: "secret_web3_storage_key",
-                        message: "Enter the web3.storage API key",
+                        message: "Enter the spheron API key",
                       })
                     ).secret_web3_storage_key;
                   }
@@ -389,17 +390,25 @@ async function main() {
             const tmp = tmpdir();
             const metadataPath = join(tmp, "metadata.json");
             fs.writeFileSync(metadataPath, JSON.stringify(metaData));
-            const storageClient = new Web3Storage({
+            // const storageClient = new Web3Storage({
+            //   token: data.secret_web3_storage_key as string,
+            // });
+            const client = new SpheronClient({
               token: data.secret_web3_storage_key as string,
             });
 
-            const upload: any = await getFilesFromPath([metadataPath]);
+            // const upload: any = await getFilesFromPath([metadataPath]);
 
             try {
-              metaDataCid = await storageClient.put(upload);
+              // metaDataCid = await storageClient.put(upload);
+              const ipfsData = await client.upload(metadataPath, {
+                protocol: ProtocolEnum.IPFS,
+                name: "metadata.json",
+              });
+              metaDataCid = ipfsData.cid || "";
             } catch (err) {
               console.error(
-                "IPFS upload failed, please check your web3.storage key"
+                "IPFS upload failed, please check your spheron key"
               );
               process.exit();
             }
@@ -692,17 +701,17 @@ async function main() {
             if (data.task_executable_network == "IPFS") {
               if (!data.secret_web3_storage_key) {
                 console.log(
-                  "WEB3.STORAGE KEY FROM ENV",
-                  process.env.secret_web3_storage_key
+                  "Spheron KEY FROM ENV",
+                  process.env.secret_spheron_storage_key?.substring(0,5)
                 );
                 data.secret_web3_storage_key =
-                  process.env.secret_web3_storage_key;
+                  process.env.secret_spheron_storage_key;
                 if (!data.secret_web3_storage_key) {
                   data.secret_web3_storage_key = (
                     await prompts({
                       type: "text",
                       name: "secret_web3_storage_key",
-                      message: "Enter the web3.storage API key",
+                      message: "Enter the spheron API key",
                     })
                   ).secret_web3_storage_key;
                   while (data.secret_web3_storage_key < 200) {
@@ -713,13 +722,13 @@ async function main() {
                       await prompts({
                         type: "text",
                         name: "secret_web3_storage_key",
-                        message: "Enter the web3.storage API key",
+                        message: "Enter the spheron API key",
                       })
                     ).secret_web3_storage_key;
                   }
                 }
               }
-              task_audit_program_id_update = await uploadIpfs(
+              task_audit_program_id_update = await uploadExecutableFileToIpfs(
                 data.task_audit_program,
                 data.secret_web3_storage_key
               );
@@ -732,17 +741,17 @@ async function main() {
               task_audit_program_id_update = data.task_audit_program;
               if (!data.secret_web3_storage_key) {
                 console.log(
-                  "WEB3.STORAGE KEY FROM ENV",
-                  process.env.secret_web3_storage_key
+                  "Spheron KEY FROM ENV",
+                  process.env.secret_spheron_storage_key?.substring(0,5)
                 );
                 data.secret_web3_storage_key =
-                  process.env.secret_web3_storage_key;
+                  process.env.secret_spheron_storage_key;
                 if (!data.secret_web3_storage_key) {
                   data.secret_web3_storage_key = (
                     await prompts({
                       type: "text",
                       name: "secret_web3_storage_key",
-                      message: "Enter the web3.storage API key",
+                      message: "Enter the spheron API key",
                     })
                   ).secret_web3_storage_key;
                   while (data.secret_web3_storage_key < 200) {
@@ -753,7 +762,7 @@ async function main() {
                       await prompts({
                         type: "text",
                         name: "secret_web3_storage_key",
-                        message: "Enter the web3.storage API key",
+                        message: "Enter the spheron API key",
                       })
                     ).secret_web3_storage_key;
                   }
@@ -800,15 +809,23 @@ async function main() {
             const tmp = tmpdir();
             const metadataPath = join(tmp, "metadata.json");
             fs.writeFileSync(metadataPath, JSON.stringify(metaData));
-            const storageClient = new Web3Storage({
+            // const storageClient = new Web3Storage({
+            //   token: data.secret_web3_storage_key as string,
+            // });
+            const client = new SpheronClient({
               token: data.secret_web3_storage_key as string,
             });
-            const upload: any = await getFilesFromPath([metadataPath]);
+            // const upload: any = await getFilesFromPath([metadataPath]);
             try {
-              metaDataCid = await storageClient.put(upload);
+              // metaDataCid = await storageClient.put(upload);
+              const ipfsData = await client.upload(metadataPath, {
+                protocol: ProtocolEnum.IPFS,
+                name:"metadata.json"
+              });
+              metaDataCid = ipfsData.cid || "";
             } catch (err) {
               console.error(
-                "IPFS upload failed, please check your web3.storage key"
+                "IPFS upload failed, please check your spheron key"
               );
               process.exit();
             }
@@ -971,7 +988,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
       await prompts({
         type: "text",
         name: "secret_web3_storage_key",
-        message: "Enter the web3.storage API key",
+        message: "Enter the spheron API key",
       })
     ).secret_web3_storage_key;
     while (secret_web3_storage_key < 200) {
@@ -982,7 +999,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
         await prompts({
           type: "text",
           name: "secret_web3_storage_key",
-          message: "Enter the web3.storage API key",
+          message: "Enter the spheron API key",
         })
       ).secret_web3_storage_key;
     }
@@ -1005,7 +1022,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
         })
       ).task_audit_program;
     }
-    task_audit_program_id = await uploadIpfs(
+    task_audit_program_id = await uploadExecutableFileToIpfs(
       task_audit_program,
       secret_web3_storage_key
     );
@@ -1018,7 +1035,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
           message: "Enter the path to your executable webpack",
         })
       ).task_audit_program;
-      task_audit_program_id = await uploadIpfs(
+      task_audit_program_id = await uploadExecutableFileToIpfs(
         task_audit_program,
         secret_web3_storage_key
       );

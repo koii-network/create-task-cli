@@ -7,7 +7,9 @@ import fs from "fs";
 import { config } from "dotenv";
 import { tmpdir } from "os";
 import { join } from "path";
-import { Web3Storage, getFilesFromPath } from "web3.storage";
+// import { Web3Storage, getFilesFromPath } from "web3.storage";
+import { SpheronClient, ProtocolEnum } from "@spheron/storage";
+
 config();
 let web3Key: string | null;
 
@@ -167,12 +169,18 @@ async function takeInputForMetadata() {
   const tmp = tmpdir();
   const metadataPath = join(tmp, "metadata.json");
   fs.writeFileSync(metadataPath, JSON.stringify(metadata));
-  const storageClient = new Web3Storage({ token: web3Key as string });
-  const upload: any = await getFilesFromPath([metadataPath]);
-  const result = await storageClient.put(upload);
+  // const storageClient = new Web3Storage({ token: web3Key as string });
+  const client = new SpheronClient({ token: web3Key as string });
+
+  // const upload: any = await getFilesFromPath([metadataPath]);
+  // const result = await storageClient.put(upload);
+  const ipfsData = await client.upload(metadataPath, {
+    protocol: ProtocolEnum.IPFS,
+    name:"metadata.json"
+  });
   console.log(
     "\x1b[1m\x1b[32m%s\x1b[0m",
-    `Your MetaData CID is ${result}/metadata.json`
+    `Your MetaData CID is ${ipfsData.cid}/metadata.json`
   );
 }
 

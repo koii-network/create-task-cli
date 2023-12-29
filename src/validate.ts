@@ -1,4 +1,3 @@
-//import { Web3Storage } from "web3.storage";
 
 interface Task {
   task_name: string;
@@ -87,7 +86,7 @@ async function main(metaData: TaskMetadata, task: Task) {
 
   if (!task.secret_web3_storage_key) {
     error["secret_web3_storage_key"] =
-      "Please specify the web3.storage secret key in YML";
+      "Please specify the spheron secret key in YML";
   }
 
   if (!task.task_executable_network) {
@@ -116,7 +115,7 @@ async function main(metaData: TaskMetadata, task: Task) {
     error["task_name"] = "cannot be more than 24 characters long";
   }
 
-  // verify web3.storage key
+  // verify storage key
 
   if (task.secret_web3_storage_key.length < 200) {
     error["secret_web3_storage_key"] = "cannot be less than 200 characters";

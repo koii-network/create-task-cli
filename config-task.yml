@@ -5,10 +5,10 @@ description: "This will be description of your task"
 repositoryUrl: "https://github.com/koii-network/task-examples"
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS, Recommended IPFS as the cli automatically takes care of uploading the executable with the help of web3.js key
-task_executable_network: "DEVELOPMENT"
+task_executable_network: "IPFS"
 
 # Path to your executable webpack if the selected network is IPFS and in case of DEVELOPMENT  name it as main
-task_audit_program: "main"
+task_audit_program: "/home/ghazanfer/Extended-Ubuntu/KOII/K2-Task-Template/dist/main.js"
 
 # Total round time of your task : it must be given in slots and each slot is rougly equal to 4ms
 round_time: 650

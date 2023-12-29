@@ -9,7 +9,8 @@ import yaml from "yaml";
 import { Keypair } from "@_koi/web3.js";
 import * as dotenv from "dotenv";
 dotenv.config();
-import { Web3Storage, getFilesFromPath } from "web3.storage";
+// import { Web3Storage, getFilesFromPath } from "web3.storage";
+import { SpheronClient, ProtocolEnum } from "@spheron/storage";
 
 /**
  * @private
@@ -73,7 +74,7 @@ export async function createKeypairFromFile(
   return Keypair.fromSecretKey(secretKey);
 }
 
-export async function uploadIpfs(
+export async function uploadExecutableFileToIpfs(
   filePath: string,
   secret_web3_storage_key: string
 ): Promise<string> {
@@ -86,15 +87,21 @@ export async function uploadIpfs(
     process.exit();
   }
   if (fs.existsSync(path)) {
-    const storageClient = new Web3Storage({
-      token: secret_web3_storage_key || "",
-    });
+    // const storageClient = new Web3Storage({
+    //   token: secret_web3_storage_key || "",
+    // });
+    const client = new SpheronClient({ token: secret_web3_storage_key || "" });
 
     let cid: any;
 
-    if (storageClient) {
-      const upload: any = await getFilesFromPath(path);
-      cid = await storageClient.put(upload);
+    if (client) {
+      // const upload: any = await getFilesFromPath(path);
+      // cid = await storageClient.put(upload);
+      const ipfsData = await client.upload(filePath, {
+        protocol: ProtocolEnum.IPFS,
+        name:"main.js"
+      });
+      cid = ipfsData.cid;
     }
     console.log("CID of executable", cid);
     return cid;
