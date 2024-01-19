@@ -425,6 +425,19 @@ export async function createTask(
     new Transaction().add(instruction),
     [payerWallet, taskStateInfoKeypair]
   );
+  // Transfer to stakepot account
+  const transferTx = new Transaction().add(
+    SystemProgram.transfer({
+      fromPubkey: payerWallet.publicKey,
+      toPubkey: stake_pot_account_pubkey,
+      lamports: 0.001 * LAMPORTS_PER_SOL,
+    })
+  );
+  try {
+    await sendAndConfirmTransaction(connection, transferTx, [payerWallet]);
+  } catch (e: any) {
+    console.error(e);
+  }
   return { taskStateInfoKeypair, stake_pot_account_pubkey };
 }
 
