@@ -257,7 +257,7 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
     payerWallet.publicKey.toBase58(),
     "containing",
     lamports / LAMPORTS_PER_SOL,
-    "SOL to pay for fees"
+    "KOII to pay for fees"
   );
 }
 
