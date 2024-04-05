@@ -26,6 +26,9 @@ import { tmpdir, homedir } from "os";
 // import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
 import { SpheronClient, ProtocolEnum } from "@spheron/storage";
 import readYamlFile from "read-yaml-file";
+import fetch from 'node-fetch';
+import { createWriteStream } from 'fs';
+import { Extract } from 'unzipper';
 config();
 
 interface Task {
@@ -87,17 +90,8 @@ enum RequirementType {
   OS = "OS",
 }
 
-async function main() {
+async function initializeConnection(walletPath:string){
   let payerWallet: Keypair;
-  let walletPath;
-  let config;
-  try {
-    config = await getConfig();
-    walletPath = config.keypair_path;
-  } catch (error) {
-    walletPath = path.resolve(homedir(), ".config", "koii", "id.json");
-  }
-
   if (!fs.existsSync(walletPath)) {
     walletPath = (
       await prompts({
@@ -122,6 +116,28 @@ async function main() {
     //console.error(logSymbols.error, "Wallet is not valid");
     process.exit();
   }
+  // Establish connection to the cluster
+  const connection = await establishConnection();
+
+  // Determine who pays for the fees
+  await establishPayer(payerWallet);
+
+  // Check if the program has been deployed
+  await checkProgram();
+
+  return {walletPath, payerWallet,connection};
+}
+async function main() {
+  let walletPath;
+  let config;
+
+  try {
+    config = await getConfig();
+    walletPath = config.keypair_path;
+  } catch (error) {
+    walletPath = path.resolve(homedir(), ".config", "koii", "id.json");
+  }
+
 
   const mode = (
     await prompts({
@@ -130,7 +146,8 @@ async function main() {
       message: "Select operation",
 
       choices: [
-        { title: "Create a new task", value: "create-task" },
+        {title: "Create a new local repository", value: "create-repo"},
+        { title: "Deploy a new task", value: "create-task" },
         { title: "update existing task", value: "update-task" },
         { title: "Activate/Deactivate task", value: "set-active" },
         { title: "Claim reward", value: "claim-reward" },
@@ -143,18 +160,35 @@ async function main() {
       ],
     })
   ).mode;
+
   console.log(mode);
-  // Establish connection to the cluster
-  const connection = await establishConnection();
-
-  // Determine who pays for the fees
-  await establishPayer(payerWallet);
-
-  // Check if the program has been deployed
-  await checkProgram();
 
   switch (mode) {
-    case "create-task": {
+    case "create-repo": {
+      const repoZipUrl = 'https://github.com/koii-network/task-template/archive/refs/heads/master.zip';
+      const outputDir = path.resolve(process.cwd(), 'task-template');
+      try {
+        const res = await fetch(repoZipUrl);
+        if (!res.ok || res.body == null) throw new Error('Failed to access the network');
+        await new Promise((resolve, reject) => {
+          const stream = res.body.pipe(Extract({ path: outputDir }));
+          console.log(`Creating local repository task-template at ${outputDir}...`);
+          stream.on('finish', resolve);
+          stream.on('error', reject);
+        });
+        console.log('Template creation complete! Please check https://docs.koii.network/develop/onboarding/welcome-to-koii for dev guide! Happy coding!');
+        console.log(`Current working directory: ${process.cwd()}`);
+      } catch (error) {
+        console.error(error);
+      }
+      process.exit(0);
+      break;
+    }
+
+    case "create-task": {   
+      const result = await initializeConnection(walletPath);
+      walletPath = result.walletPath;
+      const { payerWallet, connection } = result;
       const taskMode = (
         await prompts({
           type: "select",
@@ -489,12 +523,18 @@ async function main() {
       break;
     }
     case "set-active": {
+      const result = await initializeConnection(walletPath);
+      walletPath = result.walletPath;
+      const { payerWallet, connection } = result;
       console.log("Calling SetActive");
       const { isActive, taskStateInfoAddress } = await takeInputForSetActive();
       await SetActive(payerWallet, taskStateInfoAddress, isActive);
       break;
     }
     case "claim-reward": {
+      const result = await initializeConnection(walletPath);
+      walletPath = result.walletPath;
+      const { payerWallet, connection } = result;
       console.log("Calling ClaimReward");
       const {
         beneficiaryAccount,
@@ -512,6 +552,9 @@ async function main() {
       break;
     }
     case "fund-task": {
+      const result = await initializeConnection(walletPath);
+      walletPath = result.walletPath;
+      const { payerWallet, connection } = result;
       console.log("Calling FundTask");
       const { taskStateInfoAddress, amount } = await takeInputForFundTask();
 
@@ -538,6 +581,9 @@ async function main() {
       break;
     }
     case "withdraw": {
+      const result = await initializeConnection(walletPath);
+      walletPath = result.walletPath;
+      const { payerWallet, connection } = result;
       console.log("Calling Withdraw");
       const { taskStateInfoAddress, submitterKeypair } =
         await takeInputForWithdraw();
@@ -545,10 +591,16 @@ async function main() {
       break;
     }
     case "handle-assets": {
+      const result = await initializeConnection(walletPath);
+      walletPath = result.walletPath;
+      const { payerWallet, connection } = result;
       await handleMetadata();
       break;
     }
     case "update-task": {
+      const result = await initializeConnection(walletPath);
+      walletPath = result.walletPath;
+      const { payerWallet, connection } = result;
       const taskMode = (
         await prompts({
           type: "select",

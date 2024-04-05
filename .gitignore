@@ -7,3 +7,4 @@ id.json
 .idea
 .env
 coverage
+package-lock.json
