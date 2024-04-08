@@ -590,6 +590,10 @@ export async function Whitelist(
   const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
 
   console.log("WHITELIST", programKeypair.publicKey.toBase58());
+  const [managerAccountPDA] = await PublicKey.findProgramAddress(
+    [Buffer.from('manager')],
+    programId,
+  );
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.Whitelist, {
     isWhitelisted,
   });
@@ -597,6 +601,7 @@ export async function Whitelist(
     keys: [
       { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
       { pubkey: programKeypair.publicKey, isSigner: true, isWritable: false },
+      { pubkey: managerAccountPDA, isSigner: false, isWritable: false },
     ],
     programId,
     data: data,
@@ -615,10 +620,15 @@ export async function SetActive(
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SetActive, {
     isActive: setActive ? 1 : 0,
   });
+  const [managerAccountPDA] = await PublicKey.findProgramAddress(
+    [Buffer.from('manager')],
+    programId,
+  );
   const instruction = new TransactionInstruction({
     keys: [
       { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
       { pubkey: payerWallet.publicKey, isSigner: true, isWritable: false },
+      { pubkey: managerAccountPDA, isSigner: false, isWritable: false },
     ],
     programId,
     data: data,
