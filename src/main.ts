@@ -461,6 +461,7 @@ async function main() {
               TaskData.task_executable_network == "ARWEAVE" ||
               TaskData.task_executable_network == "DEVELOPMENT"
             ) {
+              console.log("IN DEVELOPMENT");
               fs.writeFileSync("metadata.json", JSON.stringify(metaData));
               metaDataCid = "metadata.json";
               console.log(
