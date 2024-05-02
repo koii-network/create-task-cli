@@ -146,15 +146,15 @@ async function main() {
       message: "Select operation",
 
       choices: [
-        {title: "Create a new local repository", value: "create-repo"},
-        { title: "Deploy a new task", value: "create-task" },
-        { title: "update existing task", value: "update-task" },
-        { title: "Activate/Deactivate task", value: "set-active" },
-        { title: "Claim reward", value: "claim-reward" },
-        { title: "Fund task with more KOII", value: "fund-task" },
-        { title: "Withdraw staked funds from task", value: "withdraw" },
+        {title: "Create a New Local Repository", value: "create-repo"},
+        { title: "Deploy a New Task", value: "create-task" },
+        { title: "Update Existing Task", value: "update-task" },
+        { title: "Activate/Deactivate Task", value: "set-active" },
+        { title: "Claim Reward", value: "claim-reward" },
+        { title: "Fund Task with More KOII", value: "fund-task" },
+        { title: "Withdraw Staked Funds from Task", value: "withdraw" },
         {
-          title: "upload assets to IPFS(metadata/local vars)",
+          title: "Upload Assets to IPFS (Metadata/Local Vars)",
           value: "handle-assets",
         },
       ],
@@ -166,22 +166,35 @@ async function main() {
   switch (mode) {
     case "create-repo": {
       const repoZipUrl = 'https://github.com/koii-network/task-template/archive/refs/heads/master.zip';
+      const outputPath = path.resolve(process.cwd(), 'task-template.zip');
       const outputDir = path.resolve(process.cwd(), 'task-template');
+      
       try {
-        const res = await fetch(repoZipUrl);
-        if (!res.ok || res.body == null) throw new Error('Failed to access the network');
-        await new Promise((resolve, reject) => {
-          const stream = res.body.pipe(Extract({ path: outputDir }));
-          console.log(`Creating local repository task-template at ${outputDir}...`);
-          stream.on('finish', resolve);
-          stream.on('error', reject);
-        });
-        console.log('Template creation complete! Please check https://docs.koii.network/develop/onboarding/welcome-to-koii for dev guide! Happy coding!');
-        console.log(`Current working directory: ${process.cwd()}`);
+          const res = await fetch(repoZipUrl);
+          if (!res.ok) throw new Error('Failed to download the repository');
+          const fileStream = fs.createWriteStream(outputPath);
+          await new Promise((resolve, reject) => {
+              res.body.pipe(fileStream);
+              res.body.on("error", reject);
+              fileStream.on("finish", resolve);
+          });
+          console.log(`Download completed, saved as ${outputPath}`);
+  
+          await fs.createReadStream(outputPath)
+              .pipe(Extract({ path: outputDir }))
+              .promise();
+  
+          console.log(`Repository has been extracted to ${outputDir}`);
+          console.log('Template creation complete! Please check https://docs.koii.network/develop/onboarding/welcome-to-koii for dev guide! Happy coding!');
       } catch (error) {
-        console.error(error);
+          console.error(`Error: ${error}`);
+      } finally {
+          // Clean up the zip file after extraction
+          fs.unlink(outputPath, (err) => {
+              if (err) console.error(`Error removing temporary zip file: ${err.message}`);
+              else console.log(`Temporary zip file removed.`);
+          });
       }
-      process.exit(0);
       break;
     }
 
