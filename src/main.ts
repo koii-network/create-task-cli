@@ -16,6 +16,7 @@ import { getConfig } from "./utils";
 import prompts from "prompts";
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
 import fs from "fs";
+import { rename } from 'fs';
 import { config } from "dotenv";
 import path from "path";
 import handleMetadata from "./metadata";
@@ -165,10 +166,26 @@ async function main() {
 
   switch (mode) {
     case "create-repo": {
-      const repoZipUrl = 'https://github.com/koii-network/task-template/archive/refs/heads/master.zip';
+      let repoZipUrl = 'https://github.com/koii-network/task-template/archive/refs/heads/master.zip';
       const outputPath = path.resolve(process.cwd(), 'task-template.zip');
-      const outputDir = path.resolve(process.cwd(), 'task-template');
-      
+      const outputDir = path.resolve(process.cwd());
+      const tasktype = (
+        await prompts({
+          type: "select",
+          name: "mode",
+          message: "Select task type",
+          choices: [
+            { title: "Regular Task", value: "regular"},
+            { title: "Regular TypeScript Task", value: "regular-ts"},
+            { title: "UPNP Task", value: "upnp"},
+          ],
+        })
+      ).mode;
+    if (tasktype === "upnp") {
+      repoZipUrl = 'https://github.com/koii-network/task-template/archive/refs/heads/@feature/UPnP.zip';
+    }else if (tasktype === "regular-ts") {
+      repoZipUrl = 'https://github.com/koii-network/task-template/archive/refs/heads/@feature/typescript.zip';
+    }
       try {
           const res = await fetch(repoZipUrl);
           if (!res.ok) throw new Error('Failed to download the repository');
@@ -185,6 +202,18 @@ async function main() {
               .promise();
   
           console.log(`Repository has been extracted to ${outputDir}`);
+          let oldPath = path.join(outputDir, 'task-template-master');
+          if (tasktype === "upnp"){
+            oldPath = path.join(outputDir, 'task-template--feature-UPnP');
+          }else if (tasktype === "regular-ts") {
+            oldPath = path.join(outputDir, 'task-template--feature-typescript');
+          }
+          const newPath = path.join(outputDir, 'koii-task');
+          rename(oldPath, newPath, (err) => {
+            if (err) throw err;
+            console.log(`Renamed directory to ${newPath}`);
+          });
+
           console.log('Template creation complete! Please check https://docs.koii.network/develop/onboarding/welcome-to-koii for dev guide! Happy coding!');
       } catch (error) {
           console.error(`Error: ${error}`);
