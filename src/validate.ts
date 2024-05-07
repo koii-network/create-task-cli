@@ -84,7 +84,7 @@ async function main(metaData: TaskMetadata, task: Task) {
 
   // Validating task parameters
 
-  if (!task.secret_web3_storage_key) {
+  if (!task.secret_web3_storage_key && task.task_executable_network !== "DEVELOPMENT") {
     error["secret_web3_storage_key"] =
       "Please specify the spheron secret key in YML";
   }
@@ -98,7 +98,6 @@ async function main(metaData: TaskMetadata, task: Task) {
   if (
     !task.task_name ||
     !task.task_executable_network ||
-    !task.secret_web3_storage_key ||
     !task.round_time ||
     !task.audit_window ||
     !task.submission_window ||
@@ -116,10 +115,11 @@ async function main(metaData: TaskMetadata, task: Task) {
   }
 
   // verify storage key
-
+if (task.task_executable_network !== "DEVELOPMENT") {
   if (task.secret_web3_storage_key.length < 200) {
     error["secret_web3_storage_key"] = "cannot be less than 200 characters";
   }
+}
 
   //   const verify: boolean = await validateSecretKey(task.secret_web3_storage_key);
   //   if (!verify) {
@@ -138,7 +138,6 @@ async function main(metaData: TaskMetadata, task: Task) {
   // Check if all properties have valid types and values
   if (
     typeof task.task_name !== "string" ||
-    typeof task.secret_web3_storage_key !== "string" ||
     typeof task.round_time !== "number" ||
     typeof task.audit_window !== "number" ||
     typeof task.submission_window !== "number" ||

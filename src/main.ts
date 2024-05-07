@@ -466,7 +466,8 @@ async function main() {
               );
             } else if (
               TaskData.task_executable_network == "ARWEAVE" ||
-              TaskData.task_executable_network == "DEVELOPMENT"
+              TaskData.task_executable_network == "DEVELOPMENT" ||
+              TaskData.task_executable_network == "development"
             ) {
               console.log("IN DEVELOPMENT");
               fs.writeFileSync("metadata.json", JSON.stringify(metaData));
