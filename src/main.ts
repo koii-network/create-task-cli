@@ -546,7 +546,7 @@ async function main() {
             );
             // If it's in DEVELOPMENT mode, then rename metadata.json file to <taskID>.json
             if (TaskData.task_executable_network == "DEVELOPMENT") {
-              fs.renameSync("metadata.json", `${taskStateInfoKeypair.publicKey.toBase58()}.json`);
+              fs.renameSync("metadata.json", `./dist/${taskStateInfoKeypair.publicKey.toBase58()}.json`);
             }
             console.log(
               "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
