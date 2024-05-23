@@ -6,11 +6,11 @@ import os from "os";
 import fs from "fs";
 import path from "path";
 import yaml from "yaml";
-import { Keypair } from "@_koi/web3.js";
+import { Keypair } from "@_koii/web3.js";
+import KoiiStorageClient from '@_koii/storage-task-sdk';
 import * as dotenv from "dotenv";
 dotenv.config();
-// import { Web3Storage, getFilesFromPath } from "web3.storage";
-import { SpheronClient, ProtocolEnum } from "@spheron/storage";
+
 
 /**
  * @private
@@ -43,7 +43,7 @@ export async function getRpcUrl(): Promise<string> {
     console.warn(
       "Failed to read RPC url from CLI config file, falling back to testnet"
     );
-    return "https://testnet.koii.live/";
+    return "https://testnet.koii.network/";
   }
 }
 
@@ -76,7 +76,7 @@ export async function createKeypairFromFile(
 
 export async function uploadExecutableFileToIpfs(
   filePath: string,
-  secret_web3_storage_key: string
+  stakingWalletKeypair: Keypair
 ): Promise<string> {
   const path = `${filePath}`;
   //console.log(filePath);
@@ -90,17 +90,17 @@ export async function uploadExecutableFileToIpfs(
     // const storageClient = new Web3Storage({
     //   token: secret_web3_storage_key || "",
     // });
-    const client = new SpheronClient({ token: secret_web3_storage_key || "" });
+    const storageClient = new KoiiStorageClient();
 
     let cid: any;
 
-    if (client) {
+    if (storageClient) {
       // const upload: any = await getFilesFromPath(path);
       // cid = await storageClient.put(upload);
-      const ipfsData = await client.upload(filePath, {
-        protocol: ProtocolEnum.IPFS,
-        name:"main.js"
-      });
+      const ipfsData = await storageClient.uploadFile(
+        filePath,
+        stakingWalletKeypair
+      )
       cid = ipfsData.cid;
     }
     console.log("CID of executable", cid);

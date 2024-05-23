@@ -1,6 +1,6 @@
 {
   "name": "@_koii/create-task-cli",
-  "version": "0.1.43",
+  "version": "0.1.5",
   "description": "",
   "keywords": [],
   "author": "",
@@ -13,9 +13,9 @@
     "lint": "eslint . --quiet --ext .ts,.tsx"
   },
   "dependencies": {
-    "@_koi/web3.js": "^0.0.6",
+    "@_koii/storage-task-sdk": "^1.2.2",
+    "@_koii/web3.js": "^0.1.11",
     "@solana/buffer-layout": "^4.0.0",
-    "@spheron/storage": "^2.0.4",
     "borsh": "^0.6.0",
     "dotenv": "^16.0.1",
     "mz": "^2.7.0",

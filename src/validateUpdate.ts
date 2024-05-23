@@ -94,11 +94,6 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
 
   // Validating task parameters
 
-  if (!task.secret_web3_storage_key) {
-    error["secret_web3_storage_key"] =
-      "Please specify the spheron secret key in YML";
-  }
-
   if (!task.task_executable_network) {
     error["task_executable_network"] = "Missing";
   }

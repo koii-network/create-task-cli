@@ -14,7 +14,7 @@ import {
 import { uploadExecutableFileToIpfs } from "./utils";
 import { getConfig } from "./utils";
 import prompts from "prompts";
-import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
+import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koii/web3.js";
 import fs from "fs";
 import { config } from "dotenv";
 import path from "path";
@@ -23,12 +23,13 @@ import validateTaskInputs from "./validate";
 import validateUpdateTaskInputs from "./validateUpdate";
 import { join } from "path";
 import { tmpdir, homedir } from "os";
-// import { Web3Storage, getFilesFromPath, Filelike } from "web3.storage";
-import { SpheronClient, ProtocolEnum } from "@spheron/storage";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import KoiiStorageClient from "@_koii/storage-task-sdk";
 import readYamlFile from "read-yaml-file";
-import fetch from 'node-fetch';
-import { createWriteStream } from 'fs';
-import { Extract } from 'unzipper';
+import fetch from "node-fetch";
+import { createWriteStream } from "fs";
+import { Extract } from "unzipper";
 config();
 
 interface Task {
@@ -90,7 +91,7 @@ enum RequirementType {
   OS = "OS",
 }
 
-async function initializeConnection(walletPath:string){
+async function initializeConnection(walletPath: string) {
   let payerWallet: Keypair;
   if (!fs.existsSync(walletPath)) {
     walletPath = (
@@ -125,7 +126,7 @@ async function initializeConnection(walletPath:string){
   // Check if the program has been deployed
   await checkProgram();
 
-  return {walletPath, payerWallet,connection};
+  return { walletPath, payerWallet, connection };
 }
 async function main() {
   let walletPath;
@@ -138,7 +139,6 @@ async function main() {
     walletPath = path.resolve(homedir(), ".config", "koii", "id.json");
   }
 
-
   const mode = (
     await prompts({
       type: "select",
@@ -146,7 +146,7 @@ async function main() {
       message: "Select operation",
 
       choices: [
-        {title: "Create a New Local Repository", value: "create-repo"},
+        { title: "Create a New Local Repository", value: "create-repo" },
         { title: "Deploy a New Task", value: "create-task" },
         { title: "Update Existing Task", value: "update-task" },
         { title: "Activate/Deactivate Task", value: "set-active" },
@@ -165,40 +165,45 @@ async function main() {
 
   switch (mode) {
     case "create-repo": {
-      const repoZipUrl = 'https://github.com/koii-network/task-template/archive/refs/heads/master.zip';
-      const outputPath = path.resolve(process.cwd(), 'task-template.zip');
-      const outputDir = path.resolve(process.cwd(), 'task-template');
-      
+      const repoZipUrl =
+        "https://github.com/koii-network/task-template/archive/refs/heads/master.zip";
+      const outputPath = path.resolve(process.cwd(), "task-template.zip");
+      const outputDir = path.resolve(process.cwd(), "task-template");
+
       try {
-          const res = await fetch(repoZipUrl);
-          if (!res.ok) throw new Error('Failed to download the repository');
-          const fileStream = fs.createWriteStream(outputPath);
-          await new Promise((resolve, reject) => {
-              res.body.pipe(fileStream);
-              res.body.on("error", reject);
-              fileStream.on("finish", resolve);
-          });
-          console.log(`Download completed, saved as ${outputPath}`);
-  
-          await fs.createReadStream(outputPath)
-              .pipe(Extract({ path: outputDir }))
-              .promise();
-  
-          console.log(`Repository has been extracted to ${outputDir}`);
-          console.log('Template creation complete! Please check https://docs.koii.network/develop/onboarding/welcome-to-koii for dev guide! Happy coding!');
+        const res = await fetch(repoZipUrl);
+        if (!res.ok) throw new Error("Failed to download the repository");
+        const fileStream = fs.createWriteStream(outputPath);
+        await new Promise((resolve, reject) => {
+          res.body.pipe(fileStream);
+          res.body.on("error", reject);
+          fileStream.on("finish", resolve);
+        });
+        console.log(`Download completed, saved as ${outputPath}`);
+
+        await fs
+          .createReadStream(outputPath)
+          .pipe(Extract({ path: outputDir }))
+          .promise();
+
+        console.log(`Repository has been extracted to ${outputDir}`);
+        console.log(
+          "Template creation complete! Please check https://docs.koii.network/develop/onboarding/welcome-to-koii for dev guide! Happy coding!"
+        );
       } catch (error) {
-          console.error(`Error: ${error}`);
+        console.error(`Error: ${error}`);
       } finally {
-          // Clean up the zip file after extraction
-          fs.unlink(outputPath, (err) => {
-              if (err) console.error(`Error removing temporary zip file: ${err.message}`);
-              else console.log(`Temporary zip file removed.`);
-          });
+        // Clean up the zip file after extraction
+        fs.unlink(outputPath, (err) => {
+          if (err)
+            console.error(`Error removing temporary zip file: ${err.message}`);
+          else console.log(`Temporary zip file removed.`);
+        });
       }
       break;
     }
 
-    case "create-task": {   
+    case "create-task": {
       const result = await initializeConnection(walletPath);
       walletPath = result.walletPath;
       const { payerWallet, connection } = result;
@@ -299,6 +304,7 @@ async function main() {
           // const readYamlFile = require("read-yaml-file");
           let metaDataCid: string;
           let task_audit_program_id: string;
+          let stakingWalletKeypair: Keypair;
 
           const currentDir = path.resolve(process.cwd());
           let ymlPath = `${currentDir}/config-task.yml`;
@@ -327,83 +333,6 @@ async function main() {
 
             //console.log("TN", task_executable_network);
 
-            if (data.task_executable_network == "IPFS") {
-              if (!data.secret_web3_storage_key) {
-                console.log(
-                  "Spheron KEY FROM ENV",
-                  process.env.secret_spheron_storage_key?.substring(0,5)
-                );
-                data.secret_web3_storage_key =
-                  process.env.secret_spheron_storage_key;
-                if (!data.secret_web3_storage_key) {
-                  data.secret_web3_storage_key = (
-                    await prompts({
-                      type: "text",
-                      name: "secret_web3_storage_key",
-                      message: "Enter the spheron API key",
-                    })
-                  ).secret_web3_storage_key;
-                  while (data.secret_web3_storage_key < 200) {
-                    console.error(
-                      "secret_web3_storage_key cannot be less than 200 characters"
-                    );
-                    data.secret_web3_storage_key = (
-                      await prompts({
-                        type: "text",
-                        name: "secret_web3_storage_key",
-                        message: "Enter the spheron API key",
-                      })
-                    ).secret_web3_storage_key;
-                  }
-                }
-              }
-              task_audit_program_id = await uploadExecutableFileToIpfs(
-                data.task_audit_program,
-                data.secret_web3_storage_key
-              );
-              console.log("TASK CID", task_audit_program_id);
-            } else if (
-              data.task_executable_network == "ARWEAVE" ||
-              data.task_executable_network == "DEVELOPMENT"
-            ) {
-              //console.log("IN DEVELOPMENT");
-              task_audit_program_id = data.task_audit_program;
-              if (!data.secret_web3_storage_key) {
-                console.log(
-                  "Spheron KEY FROM ENV",
-                  process.env.secret_spheron_storage_key?.substring(0,5)
-                );
-                data.secret_web3_storage_key =
-                  process.env.secret_spheron_storage_key;
-                if (!data.secret_web3_storage_key) {
-                  data.secret_web3_storage_key = (
-                    await prompts({
-                      type: "text",
-                      name: "secret_web3_storage_key",
-                      message: "Enter the spheron API key",
-                    })
-                  ).secret_web3_storage_key;
-                  while (data.secret_web3_storage_key < 200) {
-                    console.error(
-                      "secret_web3_storage_key cannot be less than 200 characters"
-                    );
-                    data.secret_web3_storage_key = (
-                      await prompts({
-                        type: "text",
-                        name: "secret_web3_storage_key",
-                        message: "Enter the spheron API key",
-                      })
-                    ).secret_web3_storage_key;
-                  }
-                }
-              }
-            } else {
-              console.error(
-                "Please specify the correct task_executable_network in YML"
-              );
-              process.exit();
-            }
-
             const metaData: TaskMetadata = {
               author: data.author.trim(),
               description: data.description.trim(),
@@ -412,6 +341,66 @@ async function main() {
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };
+            fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
+
+            if (data.task_executable_network == "IPFS") {
+              const storageClient = new KoiiStorageClient();
+
+              // ask user to enter the stakingWallet Keypair path
+              const stakingWalletPath = (
+                await prompts({
+                  type: "text",
+                  name: "stakingWalletPath",
+                  message: "Enter the path to your staking wallet",
+                })
+              ).stakingWalletPath;
+              if (!fs.existsSync(stakingWalletPath)) {
+                throw Error(
+                  "Please make sure that the staking wallet path is correct"
+                );
+              }
+              const wallet = fs.readFileSync(stakingWalletPath, "utf-8");
+              stakingWalletKeypair = Keypair.fromSecretKey(
+                Uint8Array.from(JSON.parse(wallet))
+              );
+
+              // Upload a main.js file
+              task_audit_program_id = (
+                await storageClient.uploadFile(
+                  data.task_audit_program,
+                  stakingWalletKeypair
+                )
+              ).cid;
+              console.log("TASK CID", task_audit_program_id);
+
+              // Upload a metadata.json file
+              try {
+                const ipfsData = await storageClient.uploadFile(
+                  './metadata.json',
+                  stakingWalletKeypair
+                );
+                metaDataCid = ipfsData.cid || "";
+              } catch (err) {
+                console.error("IPFS upload faileds");
+                process.exit();
+              }
+              console.log(
+                "\x1b[1m\x1b[32m%s\x1b[0m",
+                `Your MetaData CID is ${metaDataCid}/metadata.json`
+              );
+            } else if (
+              data.task_executable_network == "ARWEAVE" ||
+              data.task_executable_network == "DEVELOPMENT"
+            ) {
+              //console.log("IN DEVELOPMENT");
+              task_audit_program_id = data.task_audit_program;
+              metaDataCid = "metadata.json";
+            } else {
+              console.error(
+                "Please specify the correct task_executable_network in YML"
+              );
+              process.exit();
+            }
 
             const TaskData: Task = {
               task_name: data.task_name.trim(),
@@ -433,36 +422,6 @@ async function main() {
             console.log("Metadata", metaData);
 
             await validateTaskInputs(metaData, TaskData);
-
-            const tmp = tmpdir();
-            const metadataPath = join(tmp, "metadata.json");
-            fs.writeFileSync(metadataPath, JSON.stringify(metaData));
-            // const storageClient = new Web3Storage({
-            //   token: data.secret_web3_storage_key as string,
-            // });
-            const client = new SpheronClient({
-              token: data.secret_web3_storage_key as string,
-            });
-
-            // const upload: any = await getFilesFromPath([metadataPath]);
-
-            try {
-              // metaDataCid = await storageClient.put(upload);
-              const ipfsData = await client.upload(metadataPath, {
-                protocol: ProtocolEnum.IPFS,
-                name: "metadata.json",
-              });
-              metaDataCid = ipfsData.cid || "";
-            } catch (err) {
-              console.error(
-                "IPFS upload failed, please check your spheron key"
-              );
-              process.exit();
-            }
-            console.log(
-              "\x1b[1m\x1b[32m%s\x1b[0m",
-              `Your MetaData CID is ${metaDataCid}/metadata.json`
-            );
 
             // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
 
@@ -521,6 +480,12 @@ async function main() {
               "taskStateInfoKeypair.json",
               JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
             );
+            if (data.task_executable_network == "DEVELOPMENT") {
+              fs.renameSync(
+                "metadata.json",
+                `dist/${taskStateInfoKeypair.publicKey.toBase58()}.json`
+              );
+            }
             console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
             console.log(
               "Stake Pot Account Pubkey:",
@@ -736,6 +701,7 @@ async function main() {
         case "yml": {
           let metaDataCid: string;
           let task_audit_program_id_update: string;
+          let stakingWalletKeypair: Keypair;
 
           const currentDir = path.resolve(process.cwd());
           let ymlPath = `${currentDir}/config-task.yml`;
@@ -763,83 +729,6 @@ async function main() {
 
             //console.log("TN", task_executable_network);
 
-            if (data.task_executable_network == "IPFS") {
-              if (!data.secret_web3_storage_key) {
-                console.log(
-                  "Spheron KEY FROM ENV",
-                  process.env.secret_spheron_storage_key?.substring(0,5)
-                );
-                data.secret_web3_storage_key =
-                  process.env.secret_spheron_storage_key;
-                if (!data.secret_web3_storage_key) {
-                  data.secret_web3_storage_key = (
-                    await prompts({
-                      type: "text",
-                      name: "secret_web3_storage_key",
-                      message: "Enter the spheron API key",
-                    })
-                  ).secret_web3_storage_key;
-                  while (data.secret_web3_storage_key < 200) {
-                    console.error(
-                      "secret_web3_storage_key cannot be less than 200 characters"
-                    );
-                    data.secret_web3_storage_key = (
-                      await prompts({
-                        type: "text",
-                        name: "secret_web3_storage_key",
-                        message: "Enter the spheron API key",
-                      })
-                    ).secret_web3_storage_key;
-                  }
-                }
-              }
-              task_audit_program_id_update = await uploadExecutableFileToIpfs(
-                data.task_audit_program,
-                data.secret_web3_storage_key
-              );
-              console.log("TASK CID", task_audit_program_id_update);
-            } else if (
-              data.task_executable_network == "ARWEAVE" ||
-              data.task_executable_network == "DEVELOPMENT"
-            ) {
-              //console.log("IN DEVELOPMENT");
-              task_audit_program_id_update = data.task_audit_program;
-              if (!data.secret_web3_storage_key) {
-                console.log(
-                  "Spheron KEY FROM ENV",
-                  process.env.secret_spheron_storage_key?.substring(0,5)
-                );
-                data.secret_web3_storage_key =
-                  process.env.secret_spheron_storage_key;
-                if (!data.secret_web3_storage_key) {
-                  data.secret_web3_storage_key = (
-                    await prompts({
-                      type: "text",
-                      name: "secret_web3_storage_key",
-                      message: "Enter the spheron API key",
-                    })
-                  ).secret_web3_storage_key;
-                  while (data.secret_web3_storage_key < 200) {
-                    console.error(
-                      "secret_web3_storage_key cannot be less than 200 characters"
-                    );
-                    data.secret_web3_storage_key = (
-                      await prompts({
-                        type: "text",
-                        name: "secret_web3_storage_key",
-                        message: "Enter the spheron API key",
-                      })
-                    ).secret_web3_storage_key;
-                  }
-                }
-              }
-            } else {
-              console.error(
-                "Please specify the correct task_executable_network in YML"
-              );
-              process.exit();
-            }
-
             const metaData: TaskMetadata = {
               author: data.author.trim(),
               description: data.description.trim(),
@@ -849,6 +738,62 @@ async function main() {
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };
+            fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
+
+            if (data.task_executable_network == "IPFS") {
+              const storageClient = new KoiiStorageClient();
+
+              // ask user to enter the stakingWallet Keypair path
+              const stakingWalletPath = (
+                await prompts({
+                  type: "text",
+                  name: "stakingWalletPath",
+                  message: "Enter the path to your staking wallet",
+                })
+              ).stakingWalletPath;
+              if (!fs.existsSync(stakingWalletPath)) {
+                throw Error(
+                  "Please make sure that the staking wallet path is correct"
+                );
+              }
+              const wallet = fs.readFileSync(stakingWalletPath, "utf-8");
+              stakingWalletKeypair = Keypair.fromSecretKey(
+                Uint8Array.from(JSON.parse(wallet))
+              );
+
+              // Upload a file
+              const upload = await storageClient.uploadFile(
+                data.task_audit_program,
+                stakingWalletKeypair
+              );
+              const task_audit_program_id_update = upload.cid;
+              console.log("TASK CID", task_audit_program_id_update);
+
+               // Upload a metadata.json file
+               try {
+                const ipfsData = await storageClient.uploadFile(
+                  './metadata.json',
+                  stakingWalletKeypair
+                );
+                metaDataCid = ipfsData.cid || "";
+              } catch (err) {
+                console.error("IPFS upload faileds");
+                process.exit();
+              }
+              console.log(
+                "\x1b[1m\x1b[32m%s\x1b[0m",
+                `Your MetaData CID is ${metaDataCid}/metadata.json`
+              );
+            } else if (
+              data.task_executable_network == "ARWEAVE" ||
+              data.task_executable_network == "DEVELOPMENT"
+            ) {
+              //console.log("IN DEVELOPMENT");
+              task_audit_program_id_update = data.task_audit_program;
+              metaDataCid = "metadata.json";
+              process.exit();
+            }
+
 
             const TaskData: UpdateTask = {
               task_id: data.task_id,
@@ -870,34 +815,6 @@ async function main() {
             console.log("Metadata", metaData);
 
             await validateUpdateTaskInputs(metaData, TaskData);
-
-            const tmp = tmpdir();
-            const metadataPath = join(tmp, "metadata.json");
-            fs.writeFileSync(metadataPath, JSON.stringify(metaData));
-            // const storageClient = new Web3Storage({
-            //   token: data.secret_web3_storage_key as string,
-            // });
-            const client = new SpheronClient({
-              token: data.secret_web3_storage_key as string,
-            });
-            // const upload: any = await getFilesFromPath([metadataPath]);
-            try {
-              // metaDataCid = await storageClient.put(upload);
-              const ipfsData = await client.upload(metadataPath, {
-                protocol: ProtocolEnum.IPFS,
-                name:"metadata.json"
-              });
-              metaDataCid = ipfsData.cid || "";
-            } catch (err) {
-              console.error(
-                "IPFS upload failed, please check your spheron key"
-              );
-              process.exit();
-            }
-            console.log(
-              "\x1b[1m\x1b[32m%s\x1b[0m",
-              `Your MetaData CID is ${metaDataCid}/metadata.json`
-            );
 
             const accountInfo = await connection.getAccountInfo(
               new PublicKey(TaskData.task_id)
@@ -972,6 +889,12 @@ async function main() {
               "taskStateInfoKeypair.json",
               JSON.stringify(Array.from(newTaskStateInfoKeypair.secretKey))
             );
+            if (data.task_executable_network == "DEVELOPMENT") {
+              fs.renameSync(
+                "metadata.json",
+                `dist/${newTaskStateInfoKeypair.publicKey.toBase58()}.json`
+              );
+            }
             console.log(
               "Task Id:",
               newTaskStateInfoKeypair.publicKey.toBase58()
@@ -1045,29 +968,27 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
     })
   ).task_executable_network;
 
-  let secret_web3_storage_key;
+  let stakingWalletKeypair;
   let task_audit_program;
   let task_audit_program_id;
   if (task_executable_network == "IPFS") {
-    secret_web3_storage_key = (
+    const stakingWalletPath = (
       await prompts({
         type: "text",
-        name: "secret_web3_storage_key",
-        message: "Enter the spheron API key",
+        name: "stakingWalletPath",
+        message: "Enter the path to your staking wallet",
       })
-    ).secret_web3_storage_key;
-    while (secret_web3_storage_key < 200) {
-      console.error(
-        "secret_web3_storage_key cannot be less than 200 characters"
+    ).stakingWalletPath;
+    if (!fs.existsSync(stakingWalletPath)) {
+      throw Error(
+        "Please make sure that the staking wallet path is correct"
       );
-      secret_web3_storage_key = (
-        await prompts({
-          type: "text",
-          name: "secret_web3_storage_key",
-          message: "Enter the spheron API key",
-        })
-      ).secret_web3_storage_key;
     }
+    const wallet = fs.readFileSync(stakingWalletPath, "utf-8");
+    stakingWalletKeypair = Keypair.fromSecretKey(
+      Uint8Array.from(JSON.parse(wallet))
+    );
+
     task_audit_program = (
       await prompts({
         type: "text",
@@ -1089,7 +1010,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
     }
     task_audit_program_id = await uploadExecutableFileToIpfs(
       task_audit_program,
-      secret_web3_storage_key
+      stakingWalletKeypair
     );
     //console.log("CID OUTSIDE LOOP", cid);
     while (task_audit_program_id == "File not found") {
@@ -1102,7 +1023,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
       ).task_audit_program;
       task_audit_program_id = await uploadExecutableFileToIpfs(
         task_audit_program,
-        secret_web3_storage_key
+        stakingWalletKeypair
       );
       //console.log("CID VALUE",task_audit_program_id);
     }

@@ -8,10 +8,11 @@ import { config } from "dotenv";
 import { tmpdir } from "os";
 import { join } from "path";
 // import { Web3Storage, getFilesFromPath } from "web3.storage";
-import { SpheronClient, ProtocolEnum } from "@spheron/storage";
+import KoiiStorageClient from "@_koii/storage-task-sdk";
+import { Keypair } from "@_koii/web3.js";
 
 config();
-let web3Key: string | null;
+let stakingWalletKeypair: Keypair;
 
 // interface TaskMetadata {
 //     author: string;
@@ -64,19 +65,21 @@ async function takeInputForRequirementTypes() {
 }
 
 async function main() {
-  web3Key = process.env["web3_key"] || null;
-  if (!web3Key) {
-    while (!web3Key)
-      web3Key = (
-        await prompts({
-          type: "text",
-          name: "web3Key",
-          message: "Enter your WEB3 Access Key",
-          validate: (value) =>
-            value ? true : "Please Enter a valid WEB3 Access key",
-        })
-      ).web3Key;
+  // ask user to enter the stakingWallet Keypair path
+  const stakingWalletPath = (
+    await prompts({
+      type: "text",
+      name: "stakingWalletPath",
+      message: "Enter the path to your staking wallet",
+    })
+  ).stakingWalletPath;
+  if (!fs.existsSync(stakingWalletPath)) {
+    throw Error("Please make sure that the staking wallet path is correct");
   }
+  const wallet = fs.readFileSync(stakingWalletPath, "utf-8");
+  stakingWalletKeypair = Keypair.fromSecretKey(
+    Uint8Array.from(JSON.parse(wallet))
+  );
   await takeInputForMetadata();
 }
 
@@ -170,14 +173,15 @@ async function takeInputForMetadata() {
   const metadataPath = join(tmp, "metadata.json");
   fs.writeFileSync(metadataPath, JSON.stringify(metadata));
   // const storageClient = new Web3Storage({ token: web3Key as string });
-  const client = new SpheronClient({ token: web3Key as string });
+  const storageClient = new KoiiStorageClient();
+
 
   // const upload: any = await getFilesFromPath([metadataPath]);
   // const result = await storageClient.put(upload);
-  const ipfsData = await client.upload(metadataPath, {
-    protocol: ProtocolEnum.IPFS,
-    name:"metadata.json"
-  });
+  const ipfsData =  await storageClient.uploadFile(
+    metadataPath,
+    stakingWalletKeypair
+  )
   console.log(
     "\x1b[1m\x1b[32m%s\x1b[0m",
     `Your MetaData CID is ${ipfsData.cid}/metadata.json`
