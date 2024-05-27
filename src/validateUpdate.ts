@@ -104,7 +104,6 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
     !task.task_id ||
     !task.task_name ||
     !task.task_executable_network ||
-    !task.secret_web3_storage_key ||
     !task.round_time ||
     !task.audit_window ||
     !task.submission_window ||
@@ -122,10 +121,6 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
   }
 
   // verify storage key
-
-  if (task.secret_web3_storage_key.length < 200) {
-    error["secret_web3_storage_key"] = "cannot be less than 200 characters";
-  }
 
   //   const verify: boolean = await validateSecretKey(task.secret_web3_storage_key);
   //   if (!verify) {
@@ -145,7 +140,6 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
   if (
     typeof task.task_id !== "string" ||
     typeof task.task_name !== "string" ||
-    typeof task.secret_web3_storage_key !== "string" ||
     typeof task.round_time !== "number" ||
     typeof task.audit_window !== "number" ||
     typeof task.submission_window !== "number" ||

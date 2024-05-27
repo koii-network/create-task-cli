@@ -8,7 +8,7 @@ import { config } from "dotenv";
 import { tmpdir } from "os";
 import { join } from "path";
 // import { Web3Storage, getFilesFromPath } from "web3.storage";
-import KoiiStorageClient from "@_koii/storage-task-sdk";
+import {KoiiStorageClient} from "@_koii/storage-task-sdk";
 import { Keypair } from "@_koii/web3.js";
 
 config();
@@ -173,7 +173,7 @@ async function takeInputForMetadata() {
   const metadataPath = join(tmp, "metadata.json");
   fs.writeFileSync(metadataPath, JSON.stringify(metadata));
   // const storageClient = new Web3Storage({ token: web3Key as string });
-  const storageClient = new KoiiStorageClient();
+  const storageClient = new KoiiStorageClient(undefined,undefined,true);
 
 
   // const upload: any = await getFilesFromPath([metadataPath]);

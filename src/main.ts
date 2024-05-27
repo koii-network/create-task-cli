@@ -25,7 +25,7 @@ import { join } from "path";
 import { tmpdir, homedir } from "os";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import KoiiStorageClient from "@_koii/storage-task-sdk";
+import {KoiiStorageClient} from "@_koii/storage-task-sdk";
 import readYamlFile from "read-yaml-file";
 import fetch from "node-fetch";
 import { createWriteStream } from "fs";
@@ -344,7 +344,7 @@ async function main() {
             fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
 
             if (data.task_executable_network == "IPFS") {
-              const storageClient = new KoiiStorageClient();
+              const storageClient = new KoiiStorageClient(undefined,undefined,true);
 
               // ask user to enter the stakingWallet Keypair path
               const stakingWalletPath = (
@@ -741,7 +741,7 @@ async function main() {
             fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
 
             if (data.task_executable_network == "IPFS") {
-              const storageClient = new KoiiStorageClient();
+              const storageClient = new KoiiStorageClient(undefined,undefined,true);
 
               // ask user to enter the stakingWallet Keypair path
               const stakingWalletPath = (
@@ -766,9 +766,9 @@ async function main() {
                 data.task_audit_program,
                 stakingWalletKeypair
               );
-              const task_audit_program_id_update = upload.cid;
+              task_audit_program_id_update = upload.cid;
               console.log("TASK CID", task_audit_program_id_update);
-
+              
                // Upload a metadata.json file
                try {
                 const ipfsData = await storageClient.uploadFile(
@@ -788,7 +788,6 @@ async function main() {
               data.task_executable_network == "ARWEAVE" ||
               data.task_executable_network == "DEVELOPMENT"
             ) {
-              //console.log("IN DEVELOPMENT");
               task_audit_program_id_update = data.task_audit_program;
               metaDataCid = "metadata.json";
               process.exit();
@@ -815,7 +814,7 @@ async function main() {
             console.log("Metadata", metaData);
 
             await validateUpdateTaskInputs(metaData, TaskData);
-
+            console.log("Task id",TaskData.task_id);
             const accountInfo = await connection.getAccountInfo(
               new PublicKey(TaskData.task_id)
             );

@@ -7,7 +7,7 @@ import fs from "fs";
 import path from "path";
 import yaml from "yaml";
 import { Keypair } from "@_koii/web3.js";
-import KoiiStorageClient from '@_koii/storage-task-sdk';
+import {KoiiStorageClient} from '@_koii/storage-task-sdk';
 import * as dotenv from "dotenv";
 dotenv.config();
 
@@ -90,7 +90,7 @@ export async function uploadExecutableFileToIpfs(
     // const storageClient = new Web3Storage({
     //   token: secret_web3_storage_key || "",
     // });
-    const storageClient = new KoiiStorageClient();
+    const storageClient = new KoiiStorageClient(undefined,undefined,true);
 
     let cid: any;
 
