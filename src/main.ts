@@ -344,6 +344,36 @@ async function main() {
             fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
 
             if (data.task_executable_network == "IPFS") {
+              const ipfsMode = (
+                await prompts({
+                  type: "select",
+                  name: "mode",
+                  message: "Select operation",
+        
+                  choices: [
+                    { title: "Manually Input IPFS", value: "manual" },
+                    { title: "Using KOII Storage SDK", value: "koii-storage" },
+                  ],
+                })
+              ).mode;
+              if (ipfsMode == "manual") {
+                const ipfsCid = (
+                  await prompts({
+                    type: "text",
+                    name: "ipfsCid",
+                    message: "Enter the IPFS CID",
+                  })
+                ).ipfsCid.trim();
+                task_audit_program_id = ipfsCid;
+                const ipfsData = (
+                  await prompts({
+                    type: "text",
+                    name: "metadataCid",
+                    message: "Enter the Metadata CID",
+                  })
+                ).metadataCid.trim();
+                metaDataCid = ipfsData||'';
+              }else{
               const storageClient = new KoiiStorageClient(undefined,undefined,true);
 
               // ask user to enter the stakingWallet Keypair path
@@ -388,6 +418,7 @@ async function main() {
                 "\x1b[1m\x1b[32m%s\x1b[0m",
                 `Your MetaData CID is ${metaDataCid}/metadata.json`
               );
+            }
             } else if (
               data.task_executable_network == "ARWEAVE" ||
               data.task_executable_network == "DEVELOPMENT"
@@ -741,6 +772,36 @@ async function main() {
             fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
 
             if (data.task_executable_network == "IPFS") {
+              const ipfsMode = (
+                await prompts({
+                  type: "select",
+                  name: "mode",
+                  message: "Select operation",
+        
+                  choices: [
+                    { title: "Manually Input IPFS", value: "manual" },
+                    { title: "Using KOII Storage SDK", value: "koii-storage" },
+                  ],
+                })
+              ).mode;
+              if (ipfsMode == "manual") {
+                const ipfsCid = (
+                  await prompts({
+                    type: "text",
+                    name: "ipfsCid",
+                    message: "Enter the IPFS CID",
+                  })
+                ).ipfsCid.trim();
+                task_audit_program_id_update = ipfsCid;
+                const ipfsData = (
+                  await prompts({
+                    type: "text",
+                    name: "metadataCid",
+                    message: "Enter the Metadata CID",
+                  })
+                ).metadataCid.trim();
+                metaDataCid = ipfsData||'';
+              }else{
               const storageClient = new KoiiStorageClient(undefined,undefined,true);
 
               // ask user to enter the stakingWallet Keypair path
@@ -784,6 +845,7 @@ async function main() {
                 "\x1b[1m\x1b[32m%s\x1b[0m",
                 `Your MetaData CID is ${metaDataCid}/metadata.json`
               );
+            }
             } else if (
               data.task_executable_network == "ARWEAVE" ||
               data.task_executable_network == "DEVELOPMENT"
