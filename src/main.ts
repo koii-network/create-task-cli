@@ -25,11 +25,11 @@ import { join } from "path";
 import { tmpdir, homedir } from "os";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import {KoiiStorageClient} from "@_koii/storage-task-sdk";
+import { KoiiStorageClient } from "@_koii/storage-task-sdk";
 import readYamlFile from "read-yaml-file";
 import fetch from "node-fetch";
 import { createWriteStream } from "fs";
-import { Extract } from "unzipper";
+import StreamZip from "node-stream-zip";
 config();
 
 interface Task {
@@ -163,43 +163,50 @@ async function main() {
 
   console.log(mode);
 
+  const downloadRepo = async () => {
+    const repoZipUrl =
+      "https://github.com/koii-network/task-template/archive/refs/heads/master.zip";
+    const outputPath = path.resolve(process.cwd(), "task-template.zip");
+    const outputDir = path.resolve(process.cwd(), "task-template");
+
+    try {
+      const res = await fetch(repoZipUrl);
+      if (!res.ok) throw new Error("Failed to download the repository");
+
+      const fileStream = fs.createWriteStream(outputPath);
+      await new Promise((resolve, reject) => {
+        res.body.pipe(fileStream);
+        res.body.on("error", reject);
+        fileStream.on("finish", resolve);
+      });
+
+      console.log(`Download completed, saved as ${outputPath}`);
+
+      const zip = new StreamZip.async({ file: outputPath });
+      await zip.extract(null, outputDir);
+      await zip.close();
+
+      console.log(`Repository has been extracted to ${outputDir}`);
+      console.log(
+        "Template creation complete! Please check https://docs.koii.network/develop/onboarding/welcome-to-koii for dev guide! Happy coding!"
+      );
+    } catch (error) {
+      console.error(`Error: ${error}`);
+    } finally {
+      // Clean up the zip file after extraction
+      fs.unlink(outputPath, (err) => {
+        if (err) {
+          console.error(`Error removing temporary zip file: ${err.message}`);
+        } else {
+          console.log(`Temporary zip file removed.`);
+        }
+      });
+    }
+  };
+
   switch (mode) {
     case "create-repo": {
-      const repoZipUrl =
-        "https://github.com/koii-network/task-template/archive/refs/heads/master.zip";
-      const outputPath = path.resolve(process.cwd(), "task-template.zip");
-      const outputDir = path.resolve(process.cwd(), "task-template");
-
-      try {
-        const res = await fetch(repoZipUrl);
-        if (!res.ok) throw new Error("Failed to download the repository");
-        const fileStream = fs.createWriteStream(outputPath);
-        await new Promise((resolve, reject) => {
-          res.body.pipe(fileStream);
-          res.body.on("error", reject);
-          fileStream.on("finish", resolve);
-        });
-        console.log(`Download completed, saved as ${outputPath}`);
-
-        await fs
-          .createReadStream(outputPath)
-          .pipe(Extract({ path: outputDir }))
-          .promise();
-
-        console.log(`Repository has been extracted to ${outputDir}`);
-        console.log(
-          "Template creation complete! Please check https://docs.koii.network/develop/onboarding/welcome-to-koii for dev guide! Happy coding!"
-        );
-      } catch (error) {
-        console.error(`Error: ${error}`);
-      } finally {
-        // Clean up the zip file after extraction
-        fs.unlink(outputPath, (err) => {
-          if (err)
-            console.error(`Error removing temporary zip file: ${err.message}`);
-          else console.log(`Temporary zip file removed.`);
-        });
-      }
+      await downloadRepo();
       break;
     }
 
@@ -341,7 +348,7 @@ async function main() {
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };
-            fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
+            fs.writeFileSync("./metadata.json", JSON.stringify(metaData));
 
             if (data.task_executable_network == "IPFS") {
               const ipfsMode = (
@@ -349,7 +356,7 @@ async function main() {
                   type: "select",
                   name: "mode",
                   message: "Select operation",
-        
+
                   choices: [
                     { title: "Manually Input IPFS", value: "manual" },
                     { title: "Using KOII Storage SDK", value: "koii-storage" },
@@ -372,53 +379,57 @@ async function main() {
                     message: "Enter the Metadata CID",
                   })
                 ).metadataCid.trim();
-                metaDataCid = ipfsData||'';
-              }else{
-              const storageClient = new KoiiStorageClient(undefined,undefined,true);
+                metaDataCid = ipfsData || "";
+              } else {
+                const storageClient = new KoiiStorageClient(
+                  undefined,
+                  undefined,
+                  true
+                );
 
-              // ask user to enter the stakingWallet Keypair path
-              const stakingWalletPath = (
-                await prompts({
-                  type: "text",
-                  name: "stakingWalletPath",
-                  message: "Enter the path to your staking wallet",
-                })
-              ).stakingWalletPath;
-              if (!fs.existsSync(stakingWalletPath)) {
-                throw Error(
-                  "Please make sure that the staking wallet path is correct"
+                // ask user to enter the stakingWallet Keypair path
+                const stakingWalletPath = (
+                  await prompts({
+                    type: "text",
+                    name: "stakingWalletPath",
+                    message: "Enter the path to your staking wallet",
+                  })
+                ).stakingWalletPath;
+                if (!fs.existsSync(stakingWalletPath)) {
+                  throw Error(
+                    "Please make sure that the staking wallet path is correct"
+                  );
+                }
+                const wallet = fs.readFileSync(stakingWalletPath, "utf-8");
+                stakingWalletKeypair = Keypair.fromSecretKey(
+                  Uint8Array.from(JSON.parse(wallet))
+                );
+
+                // Upload a main.js file
+                task_audit_program_id = (
+                  await storageClient.uploadFile(
+                    data.task_audit_program,
+                    stakingWalletKeypair
+                  )
+                ).cid;
+                console.log("TASK CID", task_audit_program_id);
+
+                // Upload a metadata.json file
+                try {
+                  const ipfsData = await storageClient.uploadFile(
+                    "./metadata.json",
+                    stakingWalletKeypair
+                  );
+                  metaDataCid = ipfsData.cid || "";
+                } catch (err) {
+                  console.error("IPFS upload faileds");
+                  process.exit();
+                }
+                console.log(
+                  "\x1b[1m\x1b[32m%s\x1b[0m",
+                  `Your MetaData CID is ${metaDataCid}/metadata.json`
                 );
               }
-              const wallet = fs.readFileSync(stakingWalletPath, "utf-8");
-              stakingWalletKeypair = Keypair.fromSecretKey(
-                Uint8Array.from(JSON.parse(wallet))
-              );
-
-              // Upload a main.js file
-              task_audit_program_id = (
-                await storageClient.uploadFile(
-                  data.task_audit_program,
-                  stakingWalletKeypair
-                )
-              ).cid;
-              console.log("TASK CID", task_audit_program_id);
-
-              // Upload a metadata.json file
-              try {
-                const ipfsData = await storageClient.uploadFile(
-                  './metadata.json',
-                  stakingWalletKeypair
-                );
-                metaDataCid = ipfsData.cid || "";
-              } catch (err) {
-                console.error("IPFS upload faileds");
-                process.exit();
-              }
-              console.log(
-                "\x1b[1m\x1b[32m%s\x1b[0m",
-                `Your MetaData CID is ${metaDataCid}/metadata.json`
-              );
-            }
             } else if (
               data.task_executable_network == "ARWEAVE" ||
               data.task_executable_network == "DEVELOPMENT"
@@ -769,7 +780,7 @@ async function main() {
               imageUrl: data.imageUrl,
               requirementsTags: data.requirementsTags,
             };
-            fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
+            fs.writeFileSync("./metadata.json", JSON.stringify(metaData));
 
             if (data.task_executable_network == "IPFS") {
               const ipfsMode = (
@@ -777,7 +788,7 @@ async function main() {
                   type: "select",
                   name: "mode",
                   message: "Select operation",
-        
+
                   choices: [
                     { title: "Manually Input IPFS", value: "manual" },
                     { title: "Using KOII Storage SDK", value: "koii-storage" },
@@ -800,52 +811,56 @@ async function main() {
                     message: "Enter the Metadata CID",
                   })
                 ).metadataCid.trim();
-                metaDataCid = ipfsData||'';
-              }else{
-              const storageClient = new KoiiStorageClient(undefined,undefined,true);
-
-              // ask user to enter the stakingWallet Keypair path
-              const stakingWalletPath = (
-                await prompts({
-                  type: "text",
-                  name: "stakingWalletPath",
-                  message: "Enter the path to your staking wallet",
-                })
-              ).stakingWalletPath;
-              if (!fs.existsSync(stakingWalletPath)) {
-                throw Error(
-                  "Please make sure that the staking wallet path is correct"
+                metaDataCid = ipfsData || "";
+              } else {
+                const storageClient = new KoiiStorageClient(
+                  undefined,
+                  undefined,
+                  true
                 );
-              }
-              const wallet = fs.readFileSync(stakingWalletPath, "utf-8");
-              stakingWalletKeypair = Keypair.fromSecretKey(
-                Uint8Array.from(JSON.parse(wallet))
-              );
 
-              // Upload a file
-              const upload = await storageClient.uploadFile(
-                data.task_audit_program,
-                stakingWalletKeypair
-              );
-              task_audit_program_id_update = upload.cid;
-              console.log("TASK CID", task_audit_program_id_update);
-              
-               // Upload a metadata.json file
-               try {
-                const ipfsData = await storageClient.uploadFile(
-                  './metadata.json',
+                // ask user to enter the stakingWallet Keypair path
+                const stakingWalletPath = (
+                  await prompts({
+                    type: "text",
+                    name: "stakingWalletPath",
+                    message: "Enter the path to your staking wallet",
+                  })
+                ).stakingWalletPath;
+                if (!fs.existsSync(stakingWalletPath)) {
+                  throw Error(
+                    "Please make sure that the staking wallet path is correct"
+                  );
+                }
+                const wallet = fs.readFileSync(stakingWalletPath, "utf-8");
+                stakingWalletKeypair = Keypair.fromSecretKey(
+                  Uint8Array.from(JSON.parse(wallet))
+                );
+
+                // Upload a file
+                const upload = await storageClient.uploadFile(
+                  data.task_audit_program,
                   stakingWalletKeypair
                 );
-                metaDataCid = ipfsData.cid || "";
-              } catch (err) {
-                console.error("IPFS upload faileds");
-                process.exit();
+                task_audit_program_id_update = upload.cid;
+                console.log("TASK CID", task_audit_program_id_update);
+
+                // Upload a metadata.json file
+                try {
+                  const ipfsData = await storageClient.uploadFile(
+                    "./metadata.json",
+                    stakingWalletKeypair
+                  );
+                  metaDataCid = ipfsData.cid || "";
+                } catch (err) {
+                  console.error("IPFS upload faileds");
+                  process.exit();
+                }
+                console.log(
+                  "\x1b[1m\x1b[32m%s\x1b[0m",
+                  `Your MetaData CID is ${metaDataCid}/metadata.json`
+                );
               }
-              console.log(
-                "\x1b[1m\x1b[32m%s\x1b[0m",
-                `Your MetaData CID is ${metaDataCid}/metadata.json`
-              );
-            }
             } else if (
               data.task_executable_network == "ARWEAVE" ||
               data.task_executable_network == "DEVELOPMENT"
@@ -854,7 +869,6 @@ async function main() {
               metaDataCid = "metadata.json";
               process.exit();
             }
-
 
             const TaskData: UpdateTask = {
               task_id: data.task_id,
@@ -876,7 +890,7 @@ async function main() {
             console.log("Metadata", metaData);
 
             await validateUpdateTaskInputs(metaData, TaskData);
-            console.log("Task id",TaskData.task_id);
+            console.log("Task id", TaskData.task_id);
             const accountInfo = await connection.getAccountInfo(
               new PublicKey(TaskData.task_id)
             );
@@ -1041,9 +1055,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
       })
     ).stakingWalletPath;
     if (!fs.existsSync(stakingWalletPath)) {
-      throw Error(
-        "Please make sure that the staking wallet path is correct"
-      );
+      throw Error("Please make sure that the staking wallet path is correct");
     }
     const wallet = fs.readFileSync(stakingWalletPath, "utf-8");
     stakingWalletKeypair = Keypair.fromSecretKey(
