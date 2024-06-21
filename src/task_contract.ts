@@ -659,11 +659,12 @@ export async function ClaimReward(
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(
+  const signature = await sendAndConfirmTransaction(
     connection,
     new Transaction().add(instruction),
     [payerWallet, claimerKeypair]
   );
+  console.log(`Claimed reward with signature: ${signature}`);
 }
 
 export async function FundTask(

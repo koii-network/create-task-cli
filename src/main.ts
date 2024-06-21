@@ -558,14 +558,22 @@ async function main() {
       console.log("Calling ClaimReward");
       const {
         beneficiaryAccount,
-        stakePotAccount,
         taskStateInfoAddress,
         claimerKeypair,
       } = await takeInputForClaimReward();
+      const taskState = await connection.getAccountInfo( taskStateInfoAddress);
+      let taskStateJSON = null;
+      if (taskState && taskState.data) {
+        taskStateJSON = JSON.parse(taskState.data.toString());
+      }else {
+          return console.error("Task not found");
+      }
+      const stake_pot_account = new PublicKey(taskStateJSON.stake_pot_account);
+      console.log("Stake Pot Account", stake_pot_account.toString());
       await ClaimReward(
         payerWallet,
         taskStateInfoAddress,
-        stakePotAccount,
+        stake_pot_account,
         beneficiaryAccount,
         claimerKeypair
       );
@@ -1324,13 +1332,6 @@ async function takeInputForClaimReward() {
       message: "Enter the task id",
     })
   ).taskStateInfoAddress;
-  const stakePotAccount = (
-    await prompts({
-      type: "text",
-      name: "stakePotAccount",
-      message: "Enter the stakePotAccount address",
-    })
-  ).stakePotAccount;
   const beneficiaryAccount = (
     await prompts({
       type: "text",
@@ -1349,7 +1350,6 @@ async function takeInputForClaimReward() {
   return {
     claimerKeypair,
     beneficiaryAccount: new PublicKey(beneficiaryAccount),
-    stakePotAccount: new PublicKey(stakePotAccount),
     taskStateInfoAddress: new PublicKey(taskStateInfoAddress),
   };
 }
