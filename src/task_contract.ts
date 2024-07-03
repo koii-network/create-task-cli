@@ -643,7 +643,7 @@ export async function FundTask(
   });
   const funderKeypair = Keypair.generate();
   console.log("Making new account", funderKeypair.publicKey.toBase58());
-
+  await saveFunderKeypair(funderKeypair);
   const createSubmitterAccTransaction = new Transaction().add(
     SystemProgram.createAccount({
       fromPubkey: payerWallet.publicKey,
@@ -689,8 +689,7 @@ export async function FundTask(
       console.error("Retry attempt to send transaction failed:", retryError);
       // Save the funderKeypair for future us 
       console.log(`[${funderKeypair.secretKey.toString()}]`);
-      saveFunderKeypair(funderKeypair);
-      console.log("Please keep this keypair to retry funding the task in the future.")
+      console.log("Please keep this keypair to retry funding the task.")
     }
   }
 }
@@ -737,11 +736,15 @@ export async function FundTaskFromMiddleAccount(
   }
 }
 
-function saveFunderKeypair(funderKeypair: Keypair): void {
+async function saveFunderKeypair(funderKeypair: Keypair): Promise<void> {
+  try{
   const keypairJson = `[${funderKeypair.secretKey.toString()}]`;
   const filePath = `./funder-keypair-${funderKeypair.publicKey.toBase58()}.json`;
   fs.writeFileSync(filePath, keypairJson);
   console.log("Saved funderKeypair to", filePath);
+  } catch (error) {
+    console.error("Failed to save funderKeypair:", error);
+  }
 }
 
 function getStakePotAccount(): PublicKey {
