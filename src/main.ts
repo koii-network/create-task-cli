@@ -10,6 +10,7 @@ import {
   ClaimReward,
   FundTask,
   Withdraw,
+  FundTaskFromMiddleAccount,
 } from "./task_contract";
 import { uploadExecutableFileToIpfs } from "./utils";
 import { getConfig } from "./utils";
@@ -585,12 +586,18 @@ async function main() {
       const { payerWallet, connection } = result;
       console.log("Calling FundTask");
       const { taskStateInfoAddress, amount } = await takeInputForFundTask();
-
+      const middleWalletPath = (
+        await prompts({
+          type: "text",
+          name: "middleWalletPath",
+          message: "Enter the path of your retry wallet: (Leave empty unless for retry) ",
+        })
+      ).middleWalletPath;
+    
       const accountInfo = await connection.getAccountInfo(
         new PublicKey(taskStateInfoAddress)
       );
 
-      // Add this in validation
 
       if (accountInfo == null) {
         console.error("No task found with this Id");
@@ -599,13 +606,31 @@ async function main() {
       const rawData: any = accountInfo.data + "";
       const state = JSON.parse(rawData);
       const stakePotAccount = new PublicKey(state.stake_pot_account);
-
-      await FundTask(
-        payerWallet,
-        taskStateInfoAddress,
-        stakePotAccount,
-        amount
-      );
+      if(middleWalletPath){
+        if (!fs.existsSync(middleWalletPath)) {
+          throw Error(
+            "Please make sure that the middle wallet path is correct"
+          );
+        }
+        const wallet = fs.readFileSync(middleWalletPath, "utf-8");
+        const middleWalletKeypair = Keypair.fromSecretKey(
+          Uint8Array.from(JSON.parse(wallet))
+        );
+        await FundTaskFromMiddleAccount(
+          payerWallet,
+          taskStateInfoAddress,
+          stakePotAccount,
+          amount,
+          middleWalletKeypair
+        );
+      }else{
+        await FundTask(
+          payerWallet,
+          taskStateInfoAddress,
+          stakePotAccount,
+          amount
+        );
+      }
       break;
     }
     case "withdraw": {

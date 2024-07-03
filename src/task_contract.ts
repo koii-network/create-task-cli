@@ -546,41 +546,6 @@ async function sleep(ms: any) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// export async function submitTask(taskStateInfoKeypair: Keypair): Promise<PublicKey> {
-//   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.SubmitTask, {
-//     submission: new TextEncoder().encode(padStringWithSpaces('test1111111111111111111111111111', 512)), //must be 512 chracters long
-//     stakeAmount: 10000000,
-//   });
-//   let submitterKeypair = Keypair.generate();
-//   console.log('Making new account', submitterKeypair.publicKey.toBase58());
-
-//   const createSubmitterAccTransaction = new Transaction().add(
-//     SystemProgram.createAccount({
-//       fromPubkey: payer.publicKey,
-//       newAccountPubkey: submitterKeypair.publicKey,
-//       lamports: 10000000 + (await connection.getMinimumBalanceForRentExemption(100)) + 10000, //Adding 10,000 extra lamports for padding
-//       space: 100,
-//       programId: programId,
-//     })
-//   );
-//   await sendAndConfirmTransaction(connection, createSubmitterAccTransaction, [payer, submitterKeypair]);
-//   await sleep(10000);
-//   console.log('CAAALLL', submitterKeypair.publicKey.toBase58());
-//   const instruction = new TransactionInstruction({
-//     keys: [
-//       {pubkey: taskStateInfoKeypair.publicKey, isSigner: false, isWritable: true},
-//       {pubkey: submitterKeypair.publicKey, isSigner: true, isWritable: true},
-//       {pubkey: STAKE_POT_ACCOUNT, isSigner: false, isWritable: true},
-//       {pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false},
-//       {pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false},
-//     ],
-//     programId,
-//     data: data,
-//   });
-//   await sendAndConfirmTransaction(connection, new Transaction().add(instruction), [payer, submitterKeypair]);
-//   return submitterKeypair.publicKey;
-// }
-
 export async function Whitelist(
   payerWallet: Keypair,
   taskStateInfoAddress: PublicKey,
@@ -706,11 +671,77 @@ export async function FundTask(
     programId,
     data: data,
   });
-  await sendAndConfirmTransaction(
-    connection,
-    new Transaction().add(instruction),
-    [payerWallet, funderKeypair]
-  );
+  try {
+    await sendAndConfirmTransaction(
+      connection,
+      new Transaction().add(instruction),
+      [payerWallet, funderKeypair]
+    );
+  } catch (error) {
+    console.error("First attempt to send transaction failed:", error); 
+    try {
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(instruction),
+        [payerWallet, funderKeypair]
+      );
+    } catch (retryError) {
+      console.error("Retry attempt to send transaction failed:", retryError);
+      // Save the funderKeypair for future us 
+      console.log(`[${funderKeypair.secretKey.toString()}]`);
+      saveFunderKeypair(funderKeypair);
+      console.log("Please keep this keypair to retry funding the task in the future.")
+    }
+  }
+}
+
+export async function FundTaskFromMiddleAccount(
+  payerWallet: Keypair,
+  taskStateInfoAddress: PublicKey,
+  stakePotAccount: PublicKey,
+  amount: number,
+  funderKeypair: Keypair
+): Promise<void> {
+  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
+    amount,
+  });
+
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
+      { pubkey: funderKeypair.publicKey, isSigner: true, isWritable: true },
+      { pubkey: stakePotAccount, isSigner: false, isWritable: true },
+      { pubkey: SYSTEM_PUBLIC_KEY, isSigner: false, isWritable: false },
+      { pubkey: CLOCK_PUBLIC_KEY, isSigner: false, isWritable: false },
+    ],
+    programId,
+    data: data,
+  });
+  try {
+    await sendAndConfirmTransaction(
+      connection,
+      new Transaction().add(instruction),
+      [payerWallet, funderKeypair]
+    );
+  } catch (error) {
+    console.error("First attempt to send transaction failed:", error); 
+    try {
+      await sendAndConfirmTransaction(
+        connection,
+        new Transaction().add(instruction),
+        [payerWallet, funderKeypair]
+      );
+    } catch (retryError) {
+      console.error("Retry attempt to send transaction failed:", retryError);
+    }
+  }
+}
+
+function saveFunderKeypair(funderKeypair: Keypair): void {
+  const keypairJson = `[${funderKeypair.secretKey.toString()}]`;
+  const filePath = `./funder-keypair-${funderKeypair.publicKey.toBase58()}.json`;
+  fs.writeFileSync(filePath, keypairJson);
+  console.log("Saved funderKeypair to", filePath);
 }
 
 function getStakePotAccount(): PublicKey {
@@ -755,3 +786,4 @@ export async function Withdraw(
     [payerWallet, submitterKeypair]
   );
 }
+

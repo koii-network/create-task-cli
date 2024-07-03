@@ -5,7 +5,7 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "main": "./build/main.js",
+  "main": "./build/export.js",
   "scripts": {
     "start": "NODE_NO_WARNINGS=1 ts-node src/main.ts",
     "pretty": "prettier --write '{,src/**/}*.ts'",
