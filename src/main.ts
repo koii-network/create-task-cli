@@ -128,8 +128,7 @@ async function initializeConnection(walletPath: string) {
           message: "Enter the path to your wallet",
         })
       ).walletPath;
-      walletPath = walletPath.trim();
-
+      walletPath = sanitizePath(walletPath);
       if (!fs.existsSync(walletPath)) {
         throw Error("Please make sure that the wallet path is correct");
       }
@@ -156,6 +155,12 @@ async function initializeConnection(walletPath: string) {
 
   return { walletPath, payerWallet, connection };
 }
+const sanitizePath = (path:string) => {
+  let sanitizedPath = path.trim();
+  sanitizedPath = sanitizedPath.replace(/[<>"'|?*]/g, '');
+  return sanitizedPath;
+};
+
 async function main() {
   let walletPath;
   let config;
@@ -352,7 +357,7 @@ async function main() {
                 message: "Enter the path to your config-task.yml file",
               })
             ).ymlPath;
-
+            ymlPath = sanitizePath(ymlPath);
             if (
               !fs.existsSync(ymlPath) ||
               (!ymlPath.includes(".yml") && !ymlPath.includes(".yaml"))
@@ -444,7 +449,7 @@ async function main() {
                     })
                   ).stakingWalletPath;
                 }
-
+                stakingWalletPath = sanitizePath(stakingWalletPath);
                 if (!fs.existsSync(stakingWalletPath)) {
                   throw Error(
                     "Please make sure that the staking wallet path is correct"
@@ -632,7 +637,7 @@ async function main() {
       const { payerWallet, connection } = result;
       console.log("Calling FundTask");
       const { taskStateInfoAddress, amount } = await takeInputForFundTask();
-      const middleWalletPath = (
+      let middleWalletPath = (
         await prompts({
           type: "text",
           name: "middleWalletPath",
@@ -640,7 +645,7 @@ async function main() {
             "Enter the path of your retry wallet: (Leave empty unless for retry) ",
         })
       ).middleWalletPath;
-
+  middleWalletPath = sanitizePath(middleWalletPath);
       const accountInfo = await connection.getAccountInfo(
         new PublicKey(taskStateInfoAddress)
       );
@@ -716,14 +721,14 @@ async function main() {
 
       switch (taskMode) {
         case "cli": {
-          const taskId = (
+          let taskId = (
             await prompts({
               type: "text",
               name: "taskId",
               message: "Enter id of the task you want to edit",
             })
           ).taskId;
-
+          taskId = sanitizePath(taskId);
           const accountInfo = await connection.getAccountInfo(
             new PublicKey(taskId)
           );
@@ -835,6 +840,7 @@ async function main() {
                 message: "Enter the path to your config-task.yml file",
               })
             ).ymlPath;
+            ymlPath = sanitizePath(ymlPath);
             if (
               !fs.existsSync(ymlPath) ||
               (!ymlPath.includes(".yml") && !ymlPath.includes(".yaml"))
@@ -899,13 +905,14 @@ async function main() {
                 );
 
                 // ask user to enter the stakingWallet Keypair path
-                const stakingWalletPath = (
+                let stakingWalletPath = (
                   await prompts({
                     type: "text",
                     name: "stakingWalletPath",
                     message: "Enter the path to your staking wallet",
                   })
                 ).stakingWalletPath;
+                stakingWalletPath = sanitizePath(stakingWalletPath);
                 if (!fs.existsSync(stakingWalletPath)) {
                   throw Error(
                     "Please make sure that the staking wallet path is correct"
