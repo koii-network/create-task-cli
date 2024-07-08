@@ -94,18 +94,45 @@ enum RequirementType {
 
 async function initializeConnection(walletPath: string) {
   let payerWallet: Keypair;
-  if (!fs.existsSync(walletPath)) {
-    walletPath = (
+  let isConfirm = true;
+  if (fs.existsSync(walletPath)) {
+    isConfirm = (
       await prompts({
-        type: "text",
-        name: "walletPath",
-        message: "Enter the path to your wallet",
+        type: "confirm",
+        name: "value",
+        message: `It looks like you have a koii cli installed. Would you like to use your koii cli key (${walletPath}) to deploy this task?`,
       })
-    ).walletPath;
-    walletPath = walletPath.trim();
+    ).value;
+  }
+  if (!fs.existsSync(walletPath) || !isConfirm) {
+    // Above check is for the koii cli wallet config file
+    const mainWalletDesktopNodePath =
+      getWalletPathFromDesktopNode("MainWallet");
+    if (mainWalletDesktopNodePath && fs.existsSync(mainWalletDesktopNodePath)) {
+      isConfirm = (
+        await prompts({
+          type: "confirm",
+          name: "value",
+          message: `It looks like you have a desktop node installed. Would you like to use your desktop node key (${mainWalletDesktopNodePath}) to deploy this task?`,
+        })
+      ).value;
+      if (isConfirm) {
+        walletPath = mainWalletDesktopNodePath;
+      }
+    }
+    if (!fs.existsSync(walletPath) || !isConfirm) {
+      walletPath = (
+        await prompts({
+          type: "text",
+          name: "walletPath",
+          message: "Enter the path to your wallet",
+        })
+      ).walletPath;
+      walletPath = walletPath.trim();
 
-    if (!fs.existsSync(walletPath)) {
-      throw Error("Please make sure that the wallet path is correct");
+      if (!fs.existsSync(walletPath)) {
+        throw Error("Please make sure that the wallet path is correct");
+      }
     }
   }
   console.log("Wallet path: ", walletPath);
@@ -359,8 +386,8 @@ async function main() {
                   message: "Select operation",
 
                   choices: [
-                    { title: "Manually Input IPFS", value: "manual" },
                     { title: "Using KOII Storage SDK", value: "koii-storage" },
+                    { title: "Manually Input IPFS", value: "manual" },
                   ],
                 })
               ).mode;
@@ -385,17 +412,39 @@ async function main() {
                 const storageClient = new KoiiStorageClient(
                   undefined,
                   undefined,
-                  true
+                  false
                 );
 
-                // ask user to enter the stakingWallet Keypair path
-                const stakingWalletPath = (
-                  await prompts({
-                    type: "text",
-                    name: "stakingWalletPath",
-                    message: "Enter the path to your staking wallet",
-                  })
-                ).stakingWalletPath;
+                const stakingWalletDesktopNodePath =
+                  getWalletPathFromDesktopNode("StakingWallet");
+                let stakingWalletPath;
+                let isConfirm = true;
+                if (
+                  stakingWalletDesktopNodePath &&
+                  fs.existsSync(stakingWalletDesktopNodePath)
+                ) {
+                  isConfirm = (
+                    await prompts({
+                      type: "confirm",
+                      name: "value",
+                      message: `It looks like you have a desktop node installed. Would you like to use your desktop node staking key (${stakingWalletDesktopNodePath}) to sign this upload to IPFS?`,
+                    })
+                  ).value;
+                  if (isConfirm) {
+                    stakingWalletPath = stakingWalletDesktopNodePath;
+                  }
+                }
+                if (!fs.existsSync(stakingWalletPath || "") || !isConfirm) {
+                  // ask user to enter the stakingWallet Keypair path
+                  stakingWalletPath = (
+                    await prompts({
+                      type: "text",
+                      name: "stakingWalletPath",
+                      message: "Enter the path to your staking wallet",
+                    })
+                  ).stakingWalletPath;
+                }
+
                 if (!fs.existsSync(stakingWalletPath)) {
                   throw Error(
                     "Please make sure that the staking wallet path is correct"
@@ -557,17 +606,14 @@ async function main() {
       walletPath = result.walletPath;
       const { payerWallet, connection } = result;
       console.log("Calling ClaimReward");
-      const {
-        beneficiaryAccount,
-        taskStateInfoAddress,
-        claimerKeypair,
-      } = await takeInputForClaimReward();
-      const taskState = await connection.getAccountInfo( taskStateInfoAddress);
+      const { beneficiaryAccount, taskStateInfoAddress, claimerKeypair } =
+        await takeInputForClaimReward();
+      const taskState = await connection.getAccountInfo(taskStateInfoAddress);
       let taskStateJSON = null;
       if (taskState && taskState.data) {
         taskStateJSON = JSON.parse(taskState.data.toString());
-      }else {
-          return console.error("Task not found");
+      } else {
+        return console.error("Task not found");
       }
       const stake_pot_account = new PublicKey(taskStateJSON.stake_pot_account);
       console.log("Stake Pot Account", stake_pot_account.toString());
@@ -590,14 +636,14 @@ async function main() {
         await prompts({
           type: "text",
           name: "middleWalletPath",
-          message: "Enter the path of your retry wallet: (Leave empty unless for retry) ",
+          message:
+            "Enter the path of your retry wallet: (Leave empty unless for retry) ",
         })
       ).middleWalletPath;
-    
+
       const accountInfo = await connection.getAccountInfo(
         new PublicKey(taskStateInfoAddress)
       );
-
 
       if (accountInfo == null) {
         console.error("No task found with this Id");
@@ -606,7 +652,7 @@ async function main() {
       const rawData: any = accountInfo.data + "";
       const state = JSON.parse(rawData);
       const stakePotAccount = new PublicKey(state.stake_pot_account);
-      if(middleWalletPath){
+      if (middleWalletPath) {
         if (!fs.existsSync(middleWalletPath)) {
           throw Error(
             "Please make sure that the middle wallet path is correct"
@@ -623,7 +669,7 @@ async function main() {
           amount,
           middleWalletKeypair
         );
-      }else{
+      } else {
         await FundTask(
           payerWallet,
           taskStateInfoAddress,
@@ -661,8 +707,8 @@ async function main() {
           message: "Select operation",
 
           choices: [
-            { title: "using CLI", value: "cli" },
             { title: "using config YML", value: "yml" },
+            { title: "using CLI", value: "cli" },
           ],
         })
       ).mode;
@@ -849,7 +895,7 @@ async function main() {
                 const storageClient = new KoiiStorageClient(
                   undefined,
                   undefined,
-                  true
+                  false
                 );
 
                 // ask user to enter the stakingWallet Keypair path
@@ -1432,4 +1478,71 @@ main().then(
 );
 async function sleep(ms: any) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getWalletPathFromDesktopNode(type: string) {
+  try {
+    let desktopNodeFolderLocation = getKoiiDesktopNodePath();
+    if (type == "StakingWallet") {
+      desktopNodeFolderLocation = path.join(
+        desktopNodeFolderLocation,
+        "namespace"
+      );
+      const files = fs.readdirSync(desktopNodeFolderLocation);
+      if (!files || files.length == 0) {
+        return null;
+      }
+      const stakingWalletPath = files.find((e) =>
+        e.includes("stakingWallet.json")
+      );
+      return path.join(desktopNodeFolderLocation, stakingWalletPath || "");
+    } else if (type == "MainWallet") {
+      desktopNodeFolderLocation = path.join(
+        desktopNodeFolderLocation,
+        "wallets"
+      );
+    } else {
+      throw new Error("INVALID TYPE");
+    }
+    const files = fs.readdirSync(desktopNodeFolderLocation);
+    if (!files || files.length == 0) {
+      return null;
+    }
+    const mainSystemWallet = files.find((e) =>
+      e.includes("mainSystemWallet.json")
+    );
+    return path.join(desktopNodeFolderLocation, mainSystemWallet || "");
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+function getKoiiDesktopNodePath() {
+  let basePath;
+
+  switch (process.platform) {
+    case "darwin": // MacOS
+      basePath = path.join(
+        process.env.HOME || "",
+        "Library",
+        "Application Support",
+        "KOII-Desktop-Node"
+      );
+      break;
+    case "win32": // Windows
+      basePath = path.join(process.env.APPDATA || "", "KOII-Desktop-Node");
+      break;
+    case "linux": // Linux
+      basePath = path.join(
+        process.env.HOME || "",
+        ".config",
+        "KOII-Desktop-Node"
+      );
+      break;
+    default:
+      throw new Error("Unsupported operating system");
+  }
+
+  return basePath;
 }
