@@ -415,26 +415,26 @@ export async function createTask(
     payerWallet,
     taskStateInfoKeypair,
   ]);
-  const instruction = new TransactionInstruction({
-    keys,
-    programId,
-    data: data,
-  });
-  await sendAndConfirmTransaction(
-    connection,
-    new Transaction().add(instruction),
-    [payerWallet, taskStateInfoKeypair]
-  );
-  // Transfer to stakepot account
-  const transferTx = new Transaction().add(
-    SystemProgram.transfer({
-      fromPubkey: payerWallet.publicKey,
-      toPubkey: stake_pot_account_pubkey,
-      lamports: 0.001 * LAMPORTS_PER_SOL,
-    })
-  );
   try {
-    await sendAndConfirmTransaction(connection, transferTx, [payerWallet]);
+    const instruction = new TransactionInstruction({
+      keys,
+      programId,
+      data: data,
+    });
+    await sendAndConfirmTransactionAndRetryTransaction(
+      connection,
+      new Transaction().add(instruction),
+      [payerWallet, taskStateInfoKeypair]
+    );
+    // Transfer to stakepot account
+    const transferTx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: payerWallet.publicKey,
+        toPubkey: stake_pot_account_pubkey,
+        lamports: 0.001 * LAMPORTS_PER_SOL,
+      })
+    );
+    await sendAndConfirmTransactionAndRetryTransaction(connection, transferTx, [payerWallet]);
   } catch (e: any) {
     console.error(e);
   }
@@ -790,3 +790,28 @@ export async function Withdraw(
   );
 }
 
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function sendAndConfirmTransactionAndRetryTransaction(connection: Connection, transaction: Transaction, signers : Keypair[], retries = 3) {
+    let attempt = 0;
+    while (attempt < retries) {
+      try {        
+        // Attempt to send and confirm the transaction
+        await sendAndConfirmTransaction(connection, transaction, signers);
+        return; // Success, exit the function
+      } catch (error) {
+        console.error(`Transaction failed on attempt ${attempt + 1}:`, error);
+        attempt++;
+        if (attempt < retries) {
+          console.log(`Retrying in...`);
+          for (let i = 3; i > 0; i--) {
+            console.log(`${i} second(s)`);
+            await delay(1000); // Delay for 1 second, counting down from 3
+          }
+        } else {
+          throw new Error('Transaction failed after maximum retries');
+        }
+      }
+    }
+  }
