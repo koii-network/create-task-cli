@@ -342,15 +342,6 @@ export async function createTask(
     );
   if (task_description.length > 64)
     throw new Error("task_description cannot be greater than 64 characters");
-  // console.log(
-  //   "TEST",
-  //   task_name,
-  //   task_description,
-  //   task_audit_program,
-  //   task_executable_network,
-  //   task_metadata,
-  //   local_vars
-  // );
 
   const createTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
@@ -638,8 +629,9 @@ export async function FundTask(
   stakePotAccount: PublicKey,
   amount: number
 ): Promise<void> {
+  const amountInRoe = amount * LAMPORTS_PER_SOL;
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
-    amount,
+    amountInRoe,
   });
   const funderKeypair = Keypair.generate();
   console.log("Making new account", funderKeypair.publicKey.toBase58());
@@ -649,7 +641,7 @@ export async function FundTask(
       fromPubkey: payerWallet.publicKey,
       newAccountPubkey: funderKeypair.publicKey,
       lamports:
-        amount +
+        amountInRoe +
         (await connection.getMinimumBalanceForRentExemption(100)) +
         1000, //adding 1000 extra lamports for padding
       space: 100,
@@ -701,8 +693,9 @@ export async function FundTaskFromMiddleAccount(
   amount: number,
   funderKeypair: Keypair
 ): Promise<void> {
+  const amountInRoe = amount * LAMPORTS_PER_SOL;
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
-    amount,
+    amountInRoe,
   });
 
   const instruction = new TransactionInstruction({

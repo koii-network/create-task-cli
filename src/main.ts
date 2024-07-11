@@ -11,11 +11,24 @@ import {
   FundTask,
   Withdraw,
   FundTaskFromMiddleAccount,
-} from "./task_contract";
+} from "./task_contract"; 
+
+import { 
+  createTask as KPLCreateTask,
+  establishPayer as KPLEstablishPayer,
+  establishConnection as KPLEstablishConnection,
+  checkProgram as KPLCheckProgram,
+  FundTask as KPLFundTask,
+  ClaimReward as KPLClaimReward,
+  SetActive as KPLSetActive,
+  Withdraw as KPLWithdraw,
+  updateTask as KPLUpdateTask,
+ } from "./kpl_task_contract/task-program";
 import { uploadExecutableFileToIpfs } from "./utils";
 import { getConfig } from "./utils";
 import prompts from "prompts";
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koii/web3.js";
+import { Keypair as SolanaKeypair, PublicKey as SolanaPublicKey } from "@solana/web3.js";
 import fs from "fs";
 import { config } from "dotenv";
 import path from "path";
@@ -31,6 +44,7 @@ import readYamlFile from "read-yaml-file";
 import fetch from "node-fetch";
 import { createWriteStream } from "fs";
 import StreamZip from "node-stream-zip";
+import { check } from "prettier";
 config();
 
 interface Task {
@@ -91,7 +105,22 @@ enum RequirementType {
   ARCHITECTURE = "ARCHITECTURE",
   OS = "OS",
 }
-
+let ISKPLTask:string; 
+async function checkIsKPLTask(){
+  ISKPLTask = (
+    await prompts({
+      type: "select",
+      name: "kpltask",
+      message: "Select operation",
+  
+      choices: [
+        { title: "KOII-Task", value: "no" },
+        { title: "KPL-Task", value: "yes" },
+      ],
+    })
+  ).kpltask;
+  console.log("ISKPLTask", ISKPLTask);
+}
 async function initializeConnection(walletPath: string) {
   let payerWallet: Keypair;
   let isConfirm = true;
@@ -146,13 +175,15 @@ async function initializeConnection(walletPath: string) {
   }
   // Establish connection to the cluster
   const connection = await establishConnection();
-
+  const KPLConnection = await KPLEstablishConnection(); 
+  
   // Determine who pays for the fees
   await establishPayer(payerWallet);
+  await KPLEstablishPayer(payerWallet as unknown as SolanaKeypair);
 
   // Check if the program has been deployed
   await checkProgram();
-
+  await KPLCheckProgram();
   return { walletPath, payerWallet, connection };
 }
 const sanitizePath = (path:string) => {
@@ -341,7 +372,6 @@ async function main() {
         }
 
         case "create-task-yml": {
-          // const readYamlFile = require("read-yaml-file");
           let metaDataCid: string;
           let task_audit_program_id: string;
           let stakingWalletKeypair: Keypair;
@@ -369,10 +399,6 @@ async function main() {
           }
 
           await readYamlFile(ymlPath).then(async (data: any) => {
-            //console.log("CHECK", data.task_executable_network);
-
-            //console.log("TN", task_executable_network);
-
             const metaData: TaskMetadata = {
               author: data.author.trim(),
               description: data.description.trim(),
@@ -498,32 +524,38 @@ async function main() {
               );
               process.exit();
             }
-
-            const TaskData: Task = {
-              task_name: data.task_name.trim(),
-              task_executable_network: data.task_executable_network,
-              secret_web3_storage_key: data.secret_web3_storage_key,
-              task_audit_program: data.task_audit_program,
-              task_audit_program_id: task_audit_program_id,
-              round_time: data.round_time,
-              audit_window: data.audit_window,
-              submission_window: data.submission_window,
-              minimum_stake_amount: data.minimum_stake_amount,
-              total_bounty_amount: data.total_bounty_amount,
-              bounty_amount_per_round: data.bounty_amount_per_round,
-              allowed_failed_distributions: data.allowed_failed_distributions,
-              space: data.space,
-            };
-
-            console.log("TASK DATA", TaskData);
-            console.log("Metadata", metaData);
-
-            await validateTaskInputs(metaData, TaskData);
-
-            // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
-
-            // Before pasing it to createTask validate the input
-            const minimumBalanceForRentExemption =
+            await checkIsKPLTask();
+            if (ISKPLTask === "yes") {
+              
+              let mint_address = (
+                await prompts({
+                  type: "text",
+                  name: "mint_address",
+                  message: "Enter the mint address of the token you want to use for the task",
+                })
+              ).mint_address;
+              mint_address = mint_address.trim();
+              const TaskData = {
+                task_name: data.task_name.trim(),
+                task_executable_network: data.task_executable_network,
+                secret_web3_storage_key: data.secret_web3_storage_key,
+                task_audit_program: data.task_audit_program,
+                task_audit_program_id: task_audit_program_id,
+                round_time: data.round_time,
+                audit_window: data.audit_window,
+                submission_window: data.submission_window,
+                minimum_stake_amount: data.minimum_stake_amount,
+                total_bounty_amount: data.total_bounty_amount,
+                bounty_amount_per_round: data.bounty_amount_per_round,
+                allowed_failed_distributions: data.allowed_failed_distributions,
+                space: data.space,
+                mint_address:mint_address
+              };
+              // TODO : Validate the inputs
+              // TODO : Validate Rent
+              // TODO : Check Cost with correct digit
+              
+              const minimumBalanceForRentExemption =
               (await connection.getMinimumBalanceForRentExemption(
                 data.space * 1000000
               )) + 10000;
@@ -535,16 +567,13 @@ async function main() {
               await prompts({
                 type: "confirm",
                 name: "response",
-                message: `Your account will be deducted ${
-                  totalAmount / LAMPORTS_PER_SOL
-                } KOII for creating the task, which includes the rent exemption(${
+                message: `Your account will be deducted rent exemption(${
                   minimumBalanceForRentExemption / LAMPORTS_PER_SOL
                 } KOII) and bounty amount fees (${
                   data.total_bounty_amount
-                } KOII)`,
+                } Tokens)`,
               })
             ).response;
-
             if (!response) process.exit(0);
             const lamports = await connection.getBalance(payerWallet.publicKey);
             if (lamports < totalAmount) {
@@ -553,60 +582,163 @@ async function main() {
             }
 
             console.log("Calling Create Task");
-            // Before passing it to createTask validate the inputs
-            const { taskStateInfoKeypair, stake_pot_account_pubkey } =
-              await createTask(
-                payerWallet,
-                TaskData.task_name,
-                task_audit_program_id,
-                TaskData.total_bounty_amount,
-                TaskData.bounty_amount_per_round,
-                TaskData.space * 1000000,
-                data?.description?.substring(0, 50),
-                TaskData.task_executable_network,
-                TaskData.round_time,
-                TaskData.audit_window,
-                TaskData.submission_window,
-                TaskData.minimum_stake_amount,
-                metaDataCid,
-                "",
-                "",
-                TaskData.allowed_failed_distributions
+              // Before passing it to createTask validate the inputs
+              const { taskStateInfoKeypair, stake_pot_account_pubkey } =
+                await KPLCreateTask(
+                  payerWallet as unknown as SolanaKeypair,
+                  TaskData.task_name,
+                  task_audit_program_id,
+                  TaskData.total_bounty_amount,
+                  TaskData.bounty_amount_per_round,
+                  TaskData.space * 1000000,
+                  data?.description?.substring(0, 50),
+                  TaskData.task_executable_network,
+                  TaskData.round_time,
+                  TaskData.audit_window,
+                  TaskData.submission_window,
+                  TaskData.minimum_stake_amount,
+                  metaDataCid,
+                  "",
+                  "",
+                  TaskData.allowed_failed_distributions,
+                  mint_address,
+                );
+                
+              fs.writeFileSync(
+                "taskStateInfoKeypair.json",
+                JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
               );
-            fs.writeFileSync(
-              "taskStateInfoKeypair.json",
-              JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
-            );
-            if (data.task_executable_network == "DEVELOPMENT") {
-              fs.renameSync(
-                "metadata.json",
-                `dist/${taskStateInfoKeypair.publicKey.toBase58()}.json`
+              if (data.task_executable_network == "DEVELOPMENT") {
+                fs.renameSync(
+                  "metadata.json",
+                  `dist/${taskStateInfoKeypair.publicKey.toBase58()}.json`
+                );
+              }
+              console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
+              console.log(
+                "Stake Pot Account Pubkey:",
+                stake_pot_account_pubkey.toBase58()
               );
-            }
-            console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
-            console.log(
-              "Stake Pot Account Pubkey:",
-              stake_pot_account_pubkey.toBase58()
-            );
-            console.log(
-              "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
-            );
-          });
+              console.log(
+                "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
+              );
+            }else{
+                const TaskData: Task = {
+                  task_name: data.task_name.trim(),
+                  task_executable_network: data.task_executable_network,
+                  secret_web3_storage_key: data.secret_web3_storage_key,
+                  task_audit_program: data.task_audit_program,
+                  task_audit_program_id: task_audit_program_id,
+                  round_time: data.round_time,
+                  audit_window: data.audit_window,
+                  submission_window: data.submission_window,
+                  minimum_stake_amount: data.minimum_stake_amount,
+                  total_bounty_amount: data.total_bounty_amount,
+                  bounty_amount_per_round: data.bounty_amount_per_round,
+                  allowed_failed_distributions: data.allowed_failed_distributions,
+                  space: data.space,
+                };
+
+         
+
+                await validateTaskInputs(metaData, TaskData);
+
+                // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
+
+                // Before pasing it to createTask validate the input
+                const minimumBalanceForRentExemption =
+                  (await connection.getMinimumBalanceForRentExemption(
+                    data.space * 1000000
+                  )) + 10000;
+
+                const totalAmount =
+                  LAMPORTS_PER_SOL * data.total_bounty_amount +
+                  minimumBalanceForRentExemption;
+                const response = (
+                  await prompts({
+                    type: "confirm",
+                    name: "response",
+                    message: `Your account will be deducted ${
+                      totalAmount / LAMPORTS_PER_SOL
+                    } KOII for creating the task, which includes the rent exemption(${
+                      minimumBalanceForRentExemption / LAMPORTS_PER_SOL
+                    } KOII) and bounty amount fees (${
+                      data.total_bounty_amount
+                    } KOII)`,
+                  })
+                ).response;
+
+                if (!response) process.exit(0);
+                const lamports = await connection.getBalance(payerWallet.publicKey);
+                if (lamports < totalAmount) {
+                  console.error("Insufficient balance for this operation");
+                  process.exit(0);
+                }
+
+                console.log("Calling Create Task");
+                // Before passing it to createTask validate the inputs
+                const { taskStateInfoKeypair, stake_pot_account_pubkey } =
+                  await createTask(
+                    payerWallet,
+                    TaskData.task_name,
+                    task_audit_program_id,
+                    TaskData.total_bounty_amount,
+                    TaskData.bounty_amount_per_round,
+                    TaskData.space * 1000000,
+                    data?.description?.substring(0, 50),
+                    TaskData.task_executable_network,
+                    TaskData.round_time,
+                    TaskData.audit_window,
+                    TaskData.submission_window,
+                    TaskData.minimum_stake_amount,
+                    metaDataCid,
+                    "",
+                    "",
+                    TaskData.allowed_failed_distributions
+                  );
+                fs.writeFileSync(
+                  "taskStateInfoKeypair.json",
+                  JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
+                );
+                if (data.task_executable_network == "DEVELOPMENT") {
+                  fs.renameSync(
+                    "metadata.json",
+                    `dist/${taskStateInfoKeypair.publicKey.toBase58()}.json`
+                  );
+                }
+                console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
+                console.log(
+                  "Stake Pot Account Pubkey:",
+                  stake_pot_account_pubkey.toBase58()
+                );
+                console.log(
+                  "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
+                );
+              }
+              });
+              
           break;
         }
       }
       break;
     }
     case "set-active": {
+      checkIsKPLTask();
       const result = await initializeConnection(walletPath);
       walletPath = result.walletPath;
       const { payerWallet, connection } = result;
       console.log("Calling SetActive");
       const { isActive, taskStateInfoAddress } = await takeInputForSetActive();
-      await SetActive(payerWallet, taskStateInfoAddress, isActive);
+      
+      if (ISKPLTask === "yes") {
+        await KPLSetActive(payerWallet as unknown as SolanaKeypair, taskStateInfoAddress as unknown as SolanaPublicKey, isActive);
+      }else{
+        await SetActive(payerWallet, taskStateInfoAddress, isActive);
+      }
       break;
     }
     case "claim-reward": {
+      await checkIsKPLTask();
       const result = await initializeConnection(walletPath);
       walletPath = result.walletPath;
       const { payerWallet, connection } = result;
@@ -616,19 +748,43 @@ async function main() {
       const taskState = await connection.getAccountInfo(taskStateInfoAddress);
       let taskStateJSON = null;
       if (taskState && taskState.data) {
-        taskStateJSON = JSON.parse(taskState.data.toString());
+        if (ISKPLTask === "yes"){
+          taskStateJSON = JSON.parse(taskState.data.toString().slice(4));
+        }else{
+          taskStateJSON = JSON.parse(taskState.data.toString());
+        }
       } else {
         return console.error("Task not found");
       }
       const stake_pot_account = new PublicKey(taskStateJSON.stake_pot_account);
       console.log("Stake Pot Account", stake_pot_account.toString());
-      await ClaimReward(
-        payerWallet,
-        taskStateInfoAddress,
-        stake_pot_account,
-        beneficiaryAccount,
-        claimerKeypair
-      );
+      if (ISKPLTask === "yes") {
+        let mint_address = (
+          await prompts({
+            type: "text",
+            name: "mint_address",
+            message: "Enter the mint address of the token you want to use for the task",
+          })
+        ).mint_address;
+
+        mint_address = mint_address.trim();
+        await KPLClaimReward(
+          payerWallet as unknown as SolanaKeypair,
+          taskStateInfoAddress as unknown as SolanaPublicKey,
+          stake_pot_account as unknown as SolanaPublicKey,
+          beneficiaryAccount as unknown as SolanaPublicKey,
+          claimerKeypair,
+          mint_address
+        );
+      }else{
+        await ClaimReward(
+          payerWallet,
+          taskStateInfoAddress,
+          stake_pot_account,
+          beneficiaryAccount,
+          claimerKeypair
+        );
+      }
       break;
     }
     case "fund-task": {
@@ -636,6 +792,7 @@ async function main() {
       walletPath = result.walletPath;
       const { payerWallet, connection } = result;
       console.log("Calling FundTask");
+      await checkIsKPLTask();
       const { taskStateInfoAddress, amount } = await takeInputForFundTask();
       let middleWalletPath = (
         await prompts({
@@ -645,7 +802,7 @@ async function main() {
             "Enter the path of your retry wallet: (Leave empty unless for retry) ",
         })
       ).middleWalletPath;
-  middleWalletPath = sanitizePath(middleWalletPath);
+      middleWalletPath = sanitizePath(middleWalletPath);
       const accountInfo = await connection.getAccountInfo(
         new PublicKey(taskStateInfoAddress)
       );
@@ -654,8 +811,14 @@ async function main() {
         console.error("No task found with this Id");
         process.exit();
       }
-      const rawData: any = accountInfo.data + "";
-      const state = JSON.parse(rawData);
+      let state; 
+      if (ISKPLTask === "yes") {
+        const rawData: any = accountInfo.data + "";
+        state = JSON.parse(rawData.toString().slice(4));
+      }else{
+        const rawData: any = accountInfo.data + "";
+        state = JSON.parse(rawData);
+      }
       const stakePotAccount = new PublicKey(state.stake_pot_account);
       if (middleWalletPath) {
         if (!fs.existsSync(middleWalletPath)) {
@@ -674,6 +837,24 @@ async function main() {
           amount,
           middleWalletKeypair
         );
+      }else{
+   
+        if (ISKPLTask === "yes") {
+          let mint_address = (
+            await prompts({
+              type: "text",
+              name: "mint_address",
+              message: "Enter the mint address of the token you want to use for the task",
+            })
+          ).mint_address;
+          mint_address = mint_address.trim();
+          await KPLFundTask(
+            payerWallet as unknown as SolanaKeypair,
+            taskStateInfoAddress as unknown as SolanaPublicKey,
+            stakePotAccount as unknown as SolanaPublicKey,
+            amount,
+            mint_address
+          );
       } else {
         await FundTask(
           payerWallet,
@@ -682,16 +863,21 @@ async function main() {
           amount
         );
       }
+      }
       break;
     }
     case "withdraw": {
+      await checkIsKPLTask();
       const result = await initializeConnection(walletPath);
       walletPath = result.walletPath;
       const { payerWallet, connection } = result;
       console.log("Calling Withdraw");
-      const { taskStateInfoAddress, submitterKeypair } =
-        await takeInputForWithdraw();
-      await Withdraw(payerWallet, taskStateInfoAddress, submitterKeypair);
+      const { taskStateInfoAddress, submitterKeypair } = await takeInputForWithdraw();
+      if (ISKPLTask === "yes") {
+        await KPLWithdraw(payerWallet as unknown as SolanaKeypair, taskStateInfoAddress as unknown as SolanaPublicKey, submitterKeypair as unknown as SolanaKeypair);
+      }else{
+        await Withdraw(payerWallet, taskStateInfoAddress, submitterKeypair);
+      }
       break;
     }
     case "handle-assets": {
@@ -702,6 +888,7 @@ async function main() {
       break;
     }
     case "update-task": {
+      await checkIsKPLTask();
       const result = await initializeConnection(walletPath);
       walletPath = result.walletPath;
       const { payerWallet, connection } = result;
@@ -790,7 +977,8 @@ async function main() {
           }
           console.log("Calling Update Task");
 
-          const { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
+  
+            const { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
             await updateTask(
               payerWallet,
               task_name,
@@ -809,7 +997,7 @@ async function main() {
               taskAccountInfoPubKey,
               statePotAccount
             );
-          fs.writeFileSync(
+                      fs.writeFileSync(
             "taskStateInfoKeypair.json",
             JSON.stringify(Array.from(newTaskStateInfoKeypair.secretKey))
           );
@@ -821,6 +1009,8 @@ async function main() {
           console.log(
             "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
           );
+ 
+  
           break;
         }
 
@@ -987,8 +1177,16 @@ async function main() {
               console.error("No task found with this Id");
               process.exit();
             }
+     
             const rawData: any = accountInfo.data + "";
-            const state = JSON.parse(rawData);
+            console.log(rawData);
+            let state;
+            if(ISKPLTask === "yes"){
+              state = JSON.parse(rawData.slice(4));
+            }else{
+              state = JSON.parse(rawData);
+            }
+            
             //console.log(state);
             if (
               new PublicKey(state.task_manager).toString() !==
@@ -1026,7 +1224,58 @@ async function main() {
               process.exit(0);
             }
             console.log("Calling Update Task");
-
+            if (ISKPLTask === "yes") {
+              const mint_address = (
+                await prompts({
+                  type: "text",
+                  name: "mint_address",
+                  message: "Enter the mint address of the token you want to use for the task",
+                })
+              ).mint_address.trim();
+              
+              const { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
+              await KPLUpdateTask(
+                payerWallet as unknown as SolanaKeypair,
+                TaskData.task_name,
+                task_audit_program_id_update,
+                TaskData.bounty_amount_per_round,
+                TaskData.space * 1000000,
+                data?.description?.substring(0, 50),
+                TaskData.task_executable_network,
+                TaskData.round_time,
+                TaskData.audit_window,
+                TaskData.submission_window,
+                TaskData.minimum_stake_amount,
+                metaDataCid,
+                "",
+                TaskData.allowed_failed_distributions,
+                taskAccountInfoPubKey as unknown as SolanaPublicKey,
+                statePotAccount as unknown as SolanaPublicKey,
+                mint_address
+              );
+            fs.writeFileSync(
+              "taskStateInfoKeypair.json",
+              JSON.stringify(Array.from(newTaskStateInfoKeypair.secretKey))
+            );
+            if (data.task_executable_network == "DEVELOPMENT") {
+              fs.renameSync(
+                "metadata.json",
+                `dist/${newTaskStateInfoKeypair.publicKey.toBase58()}.json`
+              );
+            }
+            console.log(
+              "Task Id:",
+              newTaskStateInfoKeypair.publicKey.toBase58()
+            );
+            console.log(
+              "Stake Pot Account Pubkey:",
+              newStake_pot_account_pubkey.toBase58()
+            );
+            console.log(
+              "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
+            );
+            }
+            else{
             const { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
               await updateTask(
                 payerWallet,
@@ -1067,6 +1316,7 @@ async function main() {
             console.log(
               "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
             );
+          }
           });
           break;
         }
@@ -1133,13 +1383,14 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
   let task_audit_program;
   let task_audit_program_id;
   if (task_executable_network == "IPFS") {
-    const stakingWalletPath = (
+    let stakingWalletPath = (
       await prompts({
         type: "text",
         name: "stakingWalletPath",
         message: "Enter the path to your staking wallet",
       })
     ).stakingWalletPath;
+    stakingWalletPath = sanitizePath(stakingWalletPath);
     if (!fs.existsSync(stakingWalletPath)) {
       throw Error("Please make sure that the staking wallet path is correct");
     }
@@ -1154,7 +1405,8 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
         name: "task_audit_program",
         message: "Enter the path to your executable webpack",
       })
-    ).task_audit_program;
+    ).task_audit_program.trim();
+ 
     while (task_audit_program.length > 200) {
       console.error(
         "The task audit program length cannot be greater than 200 characters"
@@ -1165,7 +1417,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
           name: "task_audit_program",
           message: "Enter the path to your executable webpack",
         })
-      ).task_audit_program;
+      ).task_audit_program.trim();
     }
     task_audit_program_id = await uploadExecutableFileToIpfs(
       task_audit_program,
@@ -1179,7 +1431,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
           name: "task_audit_program",
           message: "Enter the path to your executable webpack",
         })
-      ).task_audit_program;
+      ).task_audit_program.trim();
       task_audit_program_id = await uploadExecutableFileToIpfs(
         task_audit_program,
         stakingWalletKeypair
@@ -1194,7 +1446,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
         message:
           "Enter Arweave id of the deployed koii task executable program",
       })
-    ).task_audit_program_id;
+    ).task_audit_program_id.trim();
     while (task_audit_program_id.length > 64) {
       console.error(
         "The task audit program length cannot be greater than 64 characters"
@@ -1206,7 +1458,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
           message:
             "Enter Arweave id of the deployed koii task executable program",
         })
-      ).task_audit_program_id;
+      ).task_audit_program_id.trim();
     }
   } else {
     task_audit_program_id = (
@@ -1215,7 +1467,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
         name: "task_audit_program_id",
         message: "Enter the name of executable you want to run on  task-nodes",
       })
-    ).task_audit_program_id;
+    ).task_audit_program_id.trim();
     while (task_audit_program_id.length > 64) {
       console.error(
         "The task audit program length cannot be greater than 64 characters"
@@ -1227,7 +1479,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
           message:
             "Enter the name of executable you want to run on  task-nodes",
         })
-      ).task_audit_program_id;
+      ).task_audit_program_id.trim();
     }
   }
   const round_time = (
@@ -1316,7 +1568,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
       name: "task_metadata",
       message: `Enter TaskMetadata CID hosted on ${"IPFS"} (Leave empty for None).`,
     })
-  ).task_metadata;
+  ).task_metadata.trim();
   if (isBounty) {
     while (bounty_amount_per_round > total_bounty_amount) {
       console.error(
@@ -1376,7 +1628,7 @@ async function takeInputForSetActive() {
       name: "taskStateInfoAddress",
       message: "Enter the task id",
     })
-  ).taskStateInfoAddress;
+  ).taskStateInfoAddress.trim();
   const isActive = (
     await prompts({
       type: "select",
@@ -1409,7 +1661,7 @@ async function takeInputForClaimReward() {
       name: "taskStateInfoAddress",
       message: "Enter the task id",
     })
-  ).taskStateInfoAddress;
+  ).taskStateInfoAddress.trim();
   const beneficiaryAccount = (
     await prompts({
       type: "text",
@@ -1417,14 +1669,15 @@ async function takeInputForClaimReward() {
       message:
         "Enter the beneficiaryAccount address (Address that the funds will be transferred to)",
     })
-  ).beneficiaryAccount;
-  const claimerKeypair = (
+  ).beneficiaryAccount.trim();
+  let claimerKeypair = (
     await prompts({
       type: "text",
       name: "claimerKeypair",
       message: "Enter the path to Claimer wallet",
     })
   ).claimerKeypair;
+  claimerKeypair = sanitizePath(claimerKeypair);
   return {
     claimerKeypair,
     beneficiaryAccount: new PublicKey(beneficiaryAccount),
@@ -1438,16 +1691,16 @@ async function takeInputForFundTask() {
       name: "taskStateInfoAddress",
       message: "Enter the task id",
     })
-  ).taskStateInfoAddress;
+  ).taskStateInfoAddress.trim();
   const amount = (
     await prompts({
       type: "text",
       name: "amount",
       message: "Enter the amount(in KOII) to fund",
     })
-  ).amount;
+  ).amount.trim();
   return {
-    amount: amount * LAMPORTS_PER_SOL,
+    amount: amount,
     taskStateInfoAddress: new PublicKey(taskStateInfoAddress),
   };
 }
@@ -1458,15 +1711,15 @@ async function takeInputForWithdraw() {
       name: "taskStateInfoAddress",
       message: "Enter the task id",
     })
-  ).taskStateInfoAddress;
-  const submitterWalletPath = (
+  ).taskStateInfoAddress.trim();
+  let submitterWalletPath = (
     await prompts({
       type: "text",
       name: "submitterWalletPath",
       message: "Enter the submitter wallet path address",
     })
   ).submitterWalletPath;
-
+  submitterWalletPath = sanitizePath(submitterWalletPath);
   const wallet = fs.readFileSync(submitterWalletPath, "utf-8");
   const submitterKeypair = Keypair.fromSecretKey(
     Uint8Array.from(JSON.parse(wallet))

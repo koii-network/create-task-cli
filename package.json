@@ -16,6 +16,7 @@
     "@_koii/storage-task-sdk": "^1.2.3",
     "@_koii/web3.js": "^0.1.11",
     "@solana/buffer-layout": "^4.0.0",
+    "@solana/spl-token": "0.2.0",
     "borsh": "^0.6.0",
     "dotenv": "^16.0.1",
     "mz": "^2.7.0",
