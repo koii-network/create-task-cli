@@ -67,13 +67,15 @@ export async function checkProgram(): Promise<PublicKey> {
     
 
     // Check if the program has been deployed
+
     const programInfo = await connection.getAccountInfo(programId);
     if (programInfo === null) {
-        throw new Error("Please use koii testnet or mainnet to deploy the program");
+        throw new Error("You are NOT on the right network. KPL Token Feature CANNOT be used. ");
     } else if (!programInfo.executable) {
         throw new Error(`Program is not executable`);
     }
     console.log(`KPL Using program ${programId.toBase58()}`);
+
     return programId;
 }
 function getStakePotAccount(): Keypair {

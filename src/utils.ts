@@ -90,7 +90,7 @@ export async function uploadExecutableFileToIpfs(
     // const storageClient = new Web3Storage({
     //   token: secret_web3_storage_key || "",
     // });
-    const storageClient = new KoiiStorageClient(undefined,undefined,true);
+    const storageClient = new KoiiStorageClient(undefined,undefined,false);
 
     let cid: any;
 

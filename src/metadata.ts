@@ -173,7 +173,7 @@ async function takeInputForMetadata() {
   const metadataPath = join(tmp, "metadata.json");
   fs.writeFileSync(metadataPath, JSON.stringify(metadata));
   // const storageClient = new Web3Storage({ token: web3Key as string });
-  const storageClient = new KoiiStorageClient(undefined,undefined,true);
+  const storageClient = new KoiiStorageClient(undefined,undefined,false);
 
 
   // const upload: any = await getFilesFromPath([metadataPath]);

@@ -183,7 +183,11 @@ async function initializeConnection(walletPath: string) {
 
   // Check if the program has been deployed
   await checkProgram();
-  await KPLCheckProgram();
+  try{
+    await KPLCheckProgram();
+  }catch(e){
+    console.log(e);
+  }
   return { walletPath, payerWallet, connection };
 }
 const sanitizePath = (path:string) => {
@@ -309,7 +313,78 @@ async function main() {
             task_metadata,
             allowed_failed_distributions,
           } = await takeInputForCreateTask(true);
-          // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
+          await checkIsKPLTask();
+
+          if(ISKPLTask === "yes"){
+            let mint_address = (
+              await prompts({
+                type: "text",
+                name: "mint_address",
+                message: "Enter the mint address of the token you want to use for the task",
+              })
+            ).mint_address;
+            mint_address = mint_address.trim();
+
+            const minimumBalanceForRentExemption =
+            (await connection.getMinimumBalanceForRentExemption(
+              space * 1000000
+            )) + 10000;
+
+
+          const response = (
+            await prompts({
+              type: "confirm",
+              name: "response",
+              message: `Your account will be deducted rent exemption(${
+                minimumBalanceForRentExemption / LAMPORTS_PER_SOL
+              } KOII) and bounty amount fees (${
+                total_bounty_amount
+              } Tokens)`,
+            })
+          ).response;
+          if (!response) process.exit(0);
+          const lamports = await connection.getBalance(payerWallet.publicKey);
+          if (lamports < minimumBalanceForRentExemption) {
+            console.error("Insufficient balance for this operation");
+            process.exit(0);
+          }
+
+
+          console.log("Calling Create Task");
+          const { taskStateInfoKeypair, stake_pot_account_pubkey } =
+            await KPLCreateTask(
+              payerWallet as unknown as SolanaKeypair,
+              task_name,
+              task_audit_program_id,
+              total_bounty_amount,
+              bounty_amount_per_round,
+              space * 1000000,
+              task_description?.substring(0, 50),
+              task_executable_network,
+              round_time,
+              audit_window,
+              submission_window,
+              minimum_stake_amount,
+              task_metadata,
+              "",
+              "",
+              allowed_failed_distributions,
+              mint_address
+            );
+          fs.writeFileSync(
+            "taskStateInfoKeypair.json",
+            JSON.stringify(Array.from(taskStateInfoKeypair.secretKey))
+          );
+          console.log("Task Id:", taskStateInfoKeypair.publicKey.toBase58());
+          console.log(
+            "Stake Pot Account Pubkey:",
+            stake_pot_account_pubkey.toBase58()
+          );
+          console.log(
+            "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
+          );
+
+          }else{
           const minimumBalanceForRentExemption =
             (await connection.getMinimumBalanceForRentExemption(
               space * 1000000
@@ -368,6 +443,8 @@ async function main() {
           console.log(
             "Note: Task Id is basically the public key of taskStateInfoKeypair.json"
           );
+     
+        }
           break;
         }
 
@@ -560,9 +637,7 @@ async function main() {
                 data.space * 1000000
               )) + 10000;
 
-            const totalAmount =
-              LAMPORTS_PER_SOL * data.total_bounty_amount +
-              minimumBalanceForRentExemption;
+
             const response = (
               await prompts({
                 type: "confirm",
@@ -576,7 +651,7 @@ async function main() {
             ).response;
             if (!response) process.exit(0);
             const lamports = await connection.getBalance(payerWallet.publicKey);
-            if (lamports < totalAmount) {
+            if (lamports < minimumBalanceForRentExemption) {
               console.error("Insufficient balance for this operation");
               process.exit(0);
             }
