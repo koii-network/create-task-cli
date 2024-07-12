@@ -631,7 +631,7 @@ export async function FundTask(
 ): Promise<void> {
   const amountInRoe = amount * LAMPORTS_PER_SOL;
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
-    amountInRoe,
+    amount:amountInRoe,
   });
   const funderKeypair = Keypair.generate();
   console.log("Making new account", funderKeypair.publicKey.toBase58());
@@ -695,7 +695,7 @@ export async function FundTaskFromMiddleAccount(
 ): Promise<void> {
   const amountInRoe = amount * LAMPORTS_PER_SOL;
   const data = encodeData(TASK_INSTRUCTION_LAYOUTS.FundTask, {
-    amountInRoe,
+    amount:amountInRoe,
   });
 
   const instruction = new TransactionInstruction({
