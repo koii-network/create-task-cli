@@ -14,7 +14,9 @@ import {
   handleManagerAccounts,
   DeleteTask,
 } from "./task_contract";
+import { establishConnection as KPLEstablishConnection, establishPayer as KPLEstablishPayer, checkProgram as KPLCheckProgram, Whitelist as KPLWhitelist, handleManagerAccounts as KPLHandleManagerAccounts, Blacklist as KPLBlacklist } from "./kpl_task_contract/task-program";
 import { uploadIpfs } from "./utils";
+import { Keypair as SolanaKeypair, PublicKey as SolanaPublickey } from "@solana/web3.js";
 import prompts from "prompts";
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
 import fs from "fs";
@@ -24,7 +26,22 @@ import { join } from "path";
 import { tmpdir } from "os";
 import { Web3Storage, getFilesFromPath } from "web3.storage";
 config();
-
+let ISKPLTask:string;
+async function checkIsKPLTask(){
+  ISKPLTask = (
+    await prompts({
+      type: "select",
+      name: "kpltask",
+      message: "Select operation",
+  
+      choices: [
+        { title: "KOII-Task", value: "no" },
+        { title: "KPL-Task", value: "yes" },
+      ],
+    })
+  ).kpltask;
+  console.log("ISKPLTask", ISKPLTask);
+}
 async function main() {
   let payerWallet: Keypair;
   let walletPath: string = "./id.json";
@@ -79,13 +96,14 @@ async function main() {
   console.log(mode);
   // Establish connection to the cluster
   const connection = await establishConnection();
-
+  await KPLEstablishConnection();
+  
   // Determine who pays for the fees
   await establishPayer(payerWallet);
-
+  await KPLEstablishPayer(payerWallet as unknown as SolanaKeypair);
   // Check if the program has been deployed
   await checkProgram();
-
+  await KPLCheckProgram();
   switch (mode) {
     case "create-task": {
       const taskMode = (
@@ -345,27 +363,47 @@ async function main() {
       break;
     }
     case "whitelisting": {
+      await checkIsKPLTask();
       const { programOwnerAddress, taskStateInfoAddress } =
         await takeInputForWhitelisting();
       console.log("Calling Whitelist");
+      if (ISKPLTask == "yes") {
+        console.log(payerWallet);
+        await KPLWhitelist(
+          taskStateInfoAddress as unknown as SolanaPublickey,
+          programOwnerAddress,
+    
+        );
+      }else{
       await Whitelist(
         payerWallet,
         taskStateInfoAddress,
         programOwnerAddress,
         true
       );
+    }
       break;
     }
     case "blacklisting": {
+      await checkIsKPLTask();
       const { programOwnerAddress, taskStateInfoAddress } =
         await takeInputForWhitelisting();
       console.log("Calling blacklisting");
+      if (ISKPLTask == "yes") {
+        console.log(payerWallet);
+        await KPLBlacklist(
+          taskStateInfoAddress as unknown as SolanaPublickey,
+          programOwnerAddress,
+    
+        );
+      }else{
       await Whitelist(
         payerWallet,
         taskStateInfoAddress,
         programOwnerAddress,
         false
       );
+    }
       break;
     }
     case "delete-task": {
@@ -533,9 +571,19 @@ async function main() {
       break;
     }
     case "handle-manager-accounts": {
-      console.log("Calling Withdraw");
+      checkIsKPLTask();
+      console.log("Calling handleManagerAccounts");
       const { operation, signer1, signer2, insertOrDeleteAccount } =
         await takeInputForHandleManagerAccounts();
+      if (ISKPLTask == "yes") {
+        await KPLHandleManagerAccounts(
+          payerWallet as unknown as SolanaKeypair,
+          operation,
+          signer1 as unknown as SolanaKeypair,
+          signer2 as unknown as SolanaKeypair,
+          insertOrDeleteAccount as unknown as SolanaPublickey
+        );
+      } else{
       await handleManagerAccounts(
         payerWallet,
         operation,
@@ -543,6 +591,7 @@ async function main() {
         signer2,
         insertOrDeleteAccount
       );
+    }
       break;
     }
     default:
