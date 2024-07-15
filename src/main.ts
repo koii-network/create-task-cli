@@ -12,6 +12,7 @@ import {
   FundTask,
   Withdraw,
   handleManagerAccounts,
+  DeleteTask,
 } from "./task_contract";
 import { uploadIpfs } from "./utils";
 import prompts from "prompts";
@@ -59,6 +60,7 @@ async function main() {
         { title: "Create a new task", value: "create-task" },
         { title: "Whitelist the task", value: "whitelisting" },
         { title: "Blacklist the task", value: "blacklisting" },
+        { title: "Deleting the task", value: "delete-task" },
         { title: "Activate task", value: "set-active" },
         { title: "Claim reward", value: "claim-reward" },
         { title: "Fund task with more KOII", value: "fund-task" },
@@ -364,6 +366,15 @@ async function main() {
         programOwnerAddress,
         false
       );
+      break;
+    }
+    case "delete-task": {
+      const { stakePotAccount, programOwnerAddress, taskStateInfoAddress } = await takeInputForDeleteTask();
+      await DeleteTask(payerWallet,
+      taskStateInfoAddress,
+      programOwnerAddress,
+      stakePotAccount
+      )
       break;
     }
     case "set-active": {
@@ -889,6 +900,35 @@ async function takeInputForWhitelisting() {
     })
   ).programOwnerAddress;
   return {
+    programOwnerAddress,
+    taskStateInfoAddress: new PublicKey(taskStateInfoAddress),
+  };
+}
+async function takeInputForDeleteTask() {
+  const taskStateInfoAddress = (
+    await prompts({
+      type: "text",
+      name: "taskStateInfoAddress",
+      message: "Enter the task id",
+    })
+  ).taskStateInfoAddress;
+  const programOwnerAddress = (
+    await prompts({
+      type: "text",
+      name: "programOwnerAddress",
+      message:
+        "Enter the path to program owner wallet (Only available to KOII team)",
+    })
+  ).programOwnerAddress;
+  const stakePotAccount = (
+    await prompts({
+      type: "text",
+      name: "stakePotAccount",
+      message: "Enter the stakePotAccount address",
+    })
+  ).stakePotAccount;
+  return {
+    stakePotAccount: new PublicKey(stakePotAccount),
     programOwnerAddress,
     taskStateInfoAddress: new PublicKey(taskStateInfoAddress),
   };

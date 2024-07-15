@@ -209,6 +209,12 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
       BufferLayout.ns64("round"),
     ]),
   },
+  DeleteTask: {
+    index: 15,
+    layout: BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+    ]),
+  },
   HandleManagerAccounts: {
     index: 16,
     layout: BufferLayout.struct([
@@ -587,6 +593,42 @@ export async function Whitelist(
     [payerWallet, programKeypair]
   );
 }
+
+export async function DeleteTask(
+  payerWallet: Keypair,
+  taskStateInfoAddress: PublicKey,
+  PROGRAM_KEYPAIR_PATH: string,
+  stake_pot_account: PublicKey,
+  burn_account_address: PublicKey = new PublicKey("BurnToken2222222222222222222222222222222222")
+): Promise<void> {
+  const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
+
+  console.log("Delete", programKeypair.publicKey.toBase58());
+  const data = encodeData(TASK_INSTRUCTION_LAYOUTS.DeleteTask, {});
+  const [managerAccountPDA] = await PublicKey.findProgramAddress(
+    [Buffer.from('manager')],
+    programId,
+  );
+  const instruction = new TransactionInstruction({
+    keys: [
+      { pubkey: taskStateInfoAddress, isSigner: false, isWritable: true },
+      { pubkey: programKeypair.publicKey, isSigner: true, isWritable: false },
+      { pubkey: stake_pot_account, isSigner: false, isWritable: true },
+      { pubkey: burn_account_address, isSigner: false, isWritable: true },
+      { pubkey: managerAccountPDA, isSigner: false, isWritable: false },
+
+    ],
+    programId,
+    data: data,
+  });
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(instruction),
+    [payerWallet, programKeypair]
+  );
+}
+
+
 export async function SetActive(
   payerWallet: Keypair,
   taskStateInfoAddress: PublicKey,
