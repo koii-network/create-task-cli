@@ -1,4 +1,3 @@
-
 interface UpdateTask {
   task_id: string;
   task_name: string;
@@ -187,8 +186,8 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
   //       "cannot be more than total bounty amount";
   //   }
 
-  if (task.space < 1) {
-    error["space"] = "cannot be less than 1 mb";
+  if (task.space < 0.1 || task.space > 50) {
+    error["space"] = "Space must be between 0.1 MB and 50 MB";
   }
 
   if (!isObjectEmpty(error)) {

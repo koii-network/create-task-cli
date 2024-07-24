@@ -1,4 +1,3 @@
-
 interface Task {
   task_name: string;
   task_executable_network: "DEVELOPMENT" | "ARWEAVE" | "IPFS";
@@ -45,13 +44,8 @@ enum RequirementType {
 
 async function main(metaData: TaskMetadata, task: Task) {
   const error: any = {};
-  const {
-    author,
-    description,
-    repositoryUrl,
-    createdAt,
-    requirementsTags,
-  } = metaData;
+  const { author, description, repositoryUrl, createdAt, requirementsTags } =
+    metaData;
 
   // Check that author is a non-empty string
   if (typeof author !== "string" || author.trim().length === 0) {
@@ -72,7 +66,7 @@ async function main(metaData: TaskMetadata, task: Task) {
   if (typeof createdAt !== "number" || description.trim().length === 0) {
     error["createdAt"] = "Missing";
   }
-  
+
   // Check that requirementsTags is an array of non-empty strings
   if (requirementsTags !== undefined) {
     const result: boolean = validateRequirementsTags(requirementsTags);
@@ -83,8 +77,6 @@ async function main(metaData: TaskMetadata, task: Task) {
   }
 
   // Validating task parameters
-
-
 
   if (!task.task_executable_network) {
     error["task_executable_network"] = "Missing";
@@ -112,8 +104,6 @@ async function main(metaData: TaskMetadata, task: Task) {
   }
 
   // verify storage key
-
-
 
   //   const verify: boolean = await validateSecretKey(task.secret_web3_storage_key);
   //   if (!verify) {
@@ -180,8 +170,8 @@ async function main(metaData: TaskMetadata, task: Task) {
       "cannot be more than total bounty amount";
   }
 
-  if (task.space < 1) {
-    error["space"] = "cannot be less than 1 mb";
+  if (task.space < 0.1 || task.space > 50) {
+    error["space"] = "Space must be between 0.1 MB and 50 MB";
   }
 
   if (!isObjectEmpty(error)) {
