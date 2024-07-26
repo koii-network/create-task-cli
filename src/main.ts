@@ -41,7 +41,7 @@ import validateUpdateTaskInputs from "./validateUpdate";
 import { join } from "path";
 import { tmpdir, homedir } from "os";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
+
 import { KoiiStorageClient } from "@_koii/storage-task-sdk";
 import readYamlFile from "read-yaml-file";
 import fetch from "node-fetch";
@@ -515,11 +515,8 @@ async function main() {
                 ).metadataCid.trim();
                 metaDataCid = ipfsData || "";
               } else {
-                const storageClient = new KoiiStorageClient(
-                  undefined,
-                  undefined,
-                  false
-                );
+      
+                const storageClient = KoiiStorageClient.getInstance({});
 
                 const stakingWalletDesktopNodePath =
                   getWalletPathFromDesktopNode("StakingWallet");
@@ -1176,11 +1173,8 @@ async function main() {
                 ).metadataCid.trim();
                 metaDataCid = ipfsData || "";
               } else {
-                const storageClient = new KoiiStorageClient(
-                  undefined,
-                  undefined,
-                  false
-                );
+
+                const storageClient = KoiiStorageClient.getInstance({});
 
                 // ask user to enter the stakingWallet Keypair path
                 let stakingWalletPath = (

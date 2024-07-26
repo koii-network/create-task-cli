@@ -1,7 +1,7 @@
 # CREATE TASK CLI
 
 ## How to run
-You can run the create task cli by using the command `npx @_koii/create-task-cli`
+You can run the create task cli by using the command `npx @_koii/create-task-cli` with a node version >=18. 
 
 ## Overview
 <p align="center">
