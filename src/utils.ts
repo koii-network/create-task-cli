@@ -6,7 +6,7 @@ import os from "os";
 import fs from "fs";
 import path from "path";
 import yaml from "yaml";
-import { Keypair } from "@_koi/web3.js";
+import { Keypair } from "@_koii/web3.js";
 import * as dotenv from "dotenv";
 dotenv.config();
 import { Web3Storage, getFilesFromPath } from "web3.storage";

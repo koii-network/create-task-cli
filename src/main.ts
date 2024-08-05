@@ -18,7 +18,7 @@ import { establishConnection as KPLEstablishConnection, establishPayer as KPLEst
 import { uploadIpfs } from "./utils";
 import { Keypair as SolanaKeypair, PublicKey as SolanaPublickey } from "@solana/web3.js";
 import prompts from "prompts";
-import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koi/web3.js";
+import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@_koii/web3.js";
 import fs from "fs";
 import { config } from "dotenv";
 import handleMetadata from "./metadata";

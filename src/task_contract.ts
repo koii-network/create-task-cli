@@ -10,7 +10,7 @@ import {
   TransactionInstruction,
   Transaction,
   sendAndConfirmTransaction,
-} from "@_koi/web3.js";
+} from "@_koii/web3.js";
 import fs from "fs";
 import path from "path";
 const BufferLayout = require("@solana/buffer-layout");

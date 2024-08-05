@@ -57,7 +57,7 @@ let programId: PublicKey;
 export async function checkProgram(): Promise<PublicKey> {
     // Read program id from keypair file
     try {
-        programId = new PublicKey("9Sn8j5ZRtGqUM14WQG9KLf5QBgrSCnJL3pWEKrVrLy54");
+        programId = new PublicKey("KPLTRVs6jA7QTthuJH2cEmyCEskFbSV2xpZw46cganN");
       } catch (err) {
         const errMsg = (err as Error).message;
         throw new Error(
