@@ -1,6 +1,6 @@
 {
   "name": "@_koii/create-task-cli",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "",
   "keywords": [],
   "author": "",
@@ -8,9 +8,10 @@
   "main": "./build/export.js",
   "scripts": {
     "start": "ts-node src/main.ts",
-    "pretty": "prettier --write '{,src/**/}*.ts'",
+    "pretty": "prettier --write \"**/*.ts\"",
     "build": "tsc",
-    "lint": "eslint . --quiet --ext .ts,.tsx"
+    "lint": "eslint . --quiet --ext .ts,.tsx",
+    "postbuild": "cpy './src/kpl_task_contract/webasm_bincode_deserializer/**/*' ./build/kpl_task_contract/webasm_bincode_deserializer --parents"
   },
   "dependencies": {
     "@_koii/storage-task-sdk": "1.2.7",
@@ -22,7 +23,7 @@
     "mz": "^2.7.0",
     "node-fetch": "2",
     "node-stream-zip": "^1.15.0",
-    "ora": "^6.1.2",
+    "ora": "5.4.1",
     "prompts": "^2.4.2",
     "read-yaml-file": "^2.1.0",
     "web3.storage": "^4.4.0",
@@ -41,6 +42,7 @@
     "@types/yaml": "^1.9.7",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
+    "cpy-cli": "^5.0.0",
     "eslint": "^7.12.1",
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-jest": "^27.2.2",

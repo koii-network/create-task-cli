@@ -4,6 +4,8 @@ workflow:
       when: never
     - if: '$CI_COMMIT_BRANCH == "master"'
       when: always
+    - if: '$CI_COMMIT_BRANCH == "beta"'
+      when: always
 
 image: node:latest
 stages:
@@ -15,4 +17,21 @@ deploy:
     - npm install
     - npm run build
     - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-    - npm publish -f --access public
+    - |
+      VERSION=$(node -p -e "require('./package.json').version")
+      if [ "$CI_COMMIT_BRANCH" == "master" ]; then
+        if [[ "$VERSION" == *"-"* ]]; then
+          echo "Error: Version for master branch must not contain pre-release identifiers"
+          exit 1
+        fi
+        npm publish --access public
+      elif [ "$CI_COMMIT_BRANCH" == "beta" ]; then
+        if [[ "$VERSION" != *"beta"* ]]; then
+          echo "Error: Version for beta branch must include 'beta'"
+          exit 1
+        fi
+        npm publish --tag beta -f --access public
+      fi
+  only:
+    - master
+    - beta

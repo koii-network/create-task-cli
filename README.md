@@ -17,7 +17,7 @@ Before entering the wallet address: There are two options:
 
 After you enter the wallet address, you can choose from one of the following options. 
 
-1. **Deploy a new task:** As name suggests this option allows you to create new task, once you select this option you will be asked for all necessary inputs required to create a new task.
+1. **Deploy a new task:**  As name suggests this option allows you to create new task, once you select this option you will be asked for all necessary inputs required to create a new task.
 2. **Set task to voting:** This option allows the task to set task to voting state, The task can have 3 states namely AcceptingSubmissions, AcceptingVotes, Completed.
 3. **Whitelist the task:** This option is for KOII only to whitelist the task, once you create a new task it must be whitelisted before it is available for nodes to run.
 4. **Mark task as active/ Inactive:** This option allows to mark the task as active or Inactive. By default when a new task is created it is Inactive by default.
@@ -49,3 +49,8 @@ A KOII task created will be visible to millions of KOII nodes running. They will
 9. Once the voting period is over the task owner will trigger the payout. (`Trigger payout`) which will update the balance of the submitter and voters on the basis of the correctness of their submissions and votes.
 
 10. The submitters and voters can call (`Claim reward`) to get the rewarded KOII to their respective wallet addresses.
+
+
+## Install FAQ
+1. `postbuild` : It requires `cpy-cli` on Windows system. 
+Please use `npm install -g cpy-cli` to install.  

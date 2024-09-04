@@ -11,6 +11,14 @@
     "module": "CommonJS",
     "outDir": "build"
   },
-  "include": ["src/"],
-  "exclude": ["node_modules","build"]
+  "include": ["src/",
+    "src/kpl_task_contract/webasm_bincode_deserializer/bincode_js_bg.wasm",
+    "src/kpl_task_contract/webasm_bincode_deserializer/bincode_js_bg.wasm.d.ts",
+    "src/kpl_task_contract/webasm_bincode_deserializer/bincode_js.d.ts",
+    "src/kpl_task_contract/webasm_bincode_deserializer/bincode_js.js"
+],
+  "exclude": ["node_modules","build"],
+  "assets": [
+
+  ]
 }
