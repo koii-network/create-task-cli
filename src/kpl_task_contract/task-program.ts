@@ -19,7 +19,7 @@ import { getKPLDigits } from "./util";
 import fs from 'mz/fs';
 import path from 'path'
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getOrCreateAssociatedTokenAccount } from '@solana/spl-token';
-import { createTaskInstruction, fundTaskInstruction, updateTaskInstruction, claimRewardInstruction, setActiveInstruction, withdrawInstruction, allowListInstruction, handleManagerAccountsInstruction } from "./instructions";
+import { createTaskInstruction, fundTaskInstruction, updateTaskInstruction, claimRewardInstruction, setActiveInstruction, withdrawInstruction, allowListInstruction, handleManagerAccountsInstruction, deleteTaskInstruction } from "./instructions";
 import { SystemProgram, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import dotenv from 'dotenv';
 import { CreateAccountParams } from "@_koii/web3.js";
@@ -361,6 +361,33 @@ export async function createTask(
         ownerAccount: payerWallet.publicKey
     }, programId);
     await sendAndConfirmTransaction(connection, new Transaction().add(tx), [payerWallet])
-
-
   }
+
+
+  export async function DeleteTask(
+    payerWallet: Keypair,
+    taskStateInfoAddress: PublicKey,
+    PROGRAM_KEYPAIR_PATH: string,
+    stake_pot_account: PublicKey,
+    mint_address:string,
+    burn_account_address: PublicKey = new PublicKey("BurnToken2222222222222222222222222222222222"),
+  ): Promise<void> {
+    const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
+  
+    console.log("Delete", programKeypair.publicKey.toBase58());
+
+    const accounts = {  taskState: taskStateInfoAddress,
+      taskManager: programKeypair.publicKey,
+      stakePot: stake_pot_account,
+      programId,
+      mint_address
+    }
+    console.log(accounts);
+    const instruction = await deleteTaskInstruction(accounts);
+    await sendAndConfirmTransaction(
+      connection,
+      new Transaction().add(instruction),
+      [payerWallet, programKeypair]
+    );
+  }
+  

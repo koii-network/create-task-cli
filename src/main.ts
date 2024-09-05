@@ -25,6 +25,7 @@ import handleMetadata from "./metadata";
 import { join } from "path";
 import { tmpdir } from "os";
 import { Web3Storage, getFilesFromPath } from "web3.storage";
+import { KPLDeleteTask } from "./export";
 config();
 let ISKPLTask:string;
 async function checkIsKPLTask(){
@@ -372,7 +373,6 @@ async function main() {
         await KPLWhitelist(
           taskStateInfoAddress as unknown as SolanaPublickey,
           programOwnerAddress,
-    
         );
       }else{
       await Whitelist(
@@ -408,11 +408,23 @@ async function main() {
     }
     case "delete-task": {
       const { stakePotAccount, programOwnerAddress, taskStateInfoAddress } = await takeInputForDeleteTask();
+      await checkIsKPLTask();
+      if (ISKPLTask == "yes") {
+        let mint = (
+          await prompts({
+            type: "text",
+            name: "mint",
+            message: "Enter mint address",
+          })
+        ).mint;        
+        await KPLDeleteTask(payerWallet as unknown as SolanaKeypair, taskStateInfoAddress as unknown as SolanaPublickey, programOwnerAddress, stakePotAccount as unknown as SolanaPublickey, mint);
+      }else{
       await DeleteTask(payerWallet,
       taskStateInfoAddress,
       programOwnerAddress,
       stakePotAccount
       )
+    }
       break;
     }
     case "set-active": {
