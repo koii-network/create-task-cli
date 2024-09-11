@@ -9,3 +9,4 @@ id.json
 coverage
 package-lock.json
 metadata.json
+dist

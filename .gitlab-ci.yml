@@ -26,7 +26,10 @@ deploy:
         fi
         npm publish --access public
       elif [ "$CI_COMMIT_BRANCH" == "beta" ]; then
-        npm version prerelease --preid=beta --no-git-tag-version
+        if [[ "$VERSION" != *"beta"* ]]; then
+          echo "Error: Version for beta branch must include 'beta'"
+          exit 1
+        fi
         npm publish --tag beta -f --access public
       fi
   only:

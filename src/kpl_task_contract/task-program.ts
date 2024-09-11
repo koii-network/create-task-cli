@@ -163,12 +163,12 @@ export async function createTask(
     new PublicKey(mint_address),
     payerWallet.publicKey,
   );
-  let lamports = await connection.getMinimumBalanceForRentExemption(0);
+  let lamports = await connection.getMinimumBalanceForRentExemption(space)+1000;
   const createTaskStateInstruction = SystemProgram.createAccount({
     fromPubkey: payer.publicKey,
     newAccountPubkey: taskState.publicKey,
     lamports: lamports,
-    space: 0,
+    space: space,
     programId: programId,
   });
   let tx = await createTaskInstruction(createTaskData, {
@@ -249,13 +249,13 @@ export async function updateTask(
     newTaskState.publicKey,
   );
 
-  let lamports = await connection.getMinimumBalanceForRentExemption(0);
+  let lamports = await connection.getMinimumBalanceForRentExemption(space)+1000;
 
   const createTaskStateInstruction = SystemProgram.createAccount({
     fromPubkey: payer.publicKey,
     newAccountPubkey: newTaskState.publicKey,
     lamports: lamports,
-    space: 0,
+    space: space,
     programId: programId,
   });
 
