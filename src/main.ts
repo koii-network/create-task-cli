@@ -12,7 +12,8 @@ import {
   Withdraw,
 } from './koii_task_contract/koii_task_contract';
 import { Connection as SolanaConnection } from '@solana/web3.js';
-import { Connection } from '@_koii/web3.js';
+import { checkIsKPLTask } from './utils/task_type';
+import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL } from '@_koii/web3.js';
 import ora from 'ora';
 import chalk from 'chalk';
 import {
@@ -26,21 +27,18 @@ import {
   Withdraw as KPLWithdraw,
   updateTask as KPLUpdateTask,
 } from './kpl_task_contract/task-program';
-import { parseKPLTaskStateInfo } from './kpl_task_contract/util';
 import {
   uploadExecutableFileToIpfs,
   uploadMetaDataFileToIpfs,
   manualEnterIPFSCIDs,
 } from './utils/ipfs';
 
-import { Keypair, PublicKey, LAMPORTS_PER_SOL } from '@_koii/web3.js';
 import {
   Keypair as SolanaKeypair,
   PublicKey as SolanaPublicKey,
 } from '@solana/web3.js';
 import fs from 'fs';
 import { config } from 'dotenv';
-import { KoiiProgramID, KPLProgramID } from './constant';
 import handleMetadata from './utils/metadata';
 import validateTaskInputs from './utils/validate';
 import validateUpdateTaskInputs from './utils/validateUpdate';
@@ -58,6 +56,7 @@ import downloadRepo from './utils/download_repo';
 import { Task, TaskMetadata } from './utils/validate';
 import { UpdateTask } from './utils/validateUpdate';
 import getTokenBalance from './utils/token';
+import { getTaskStateInfo } from './utils/task_state';
 config();
 process.on('SIGINT', () => {
   console.log('\nExiting...');
@@ -96,45 +95,6 @@ async function initializeConnection() {
     console.log(`${warningEmoji} ${chalk.red.bold(e)}`);
   }
   return { walletPath, payerWallet, connection };
-}
-
-async function checkIsKPLTask(connection: Connection, taskID: string) {
-  const accountInfo = await connection.getAccountInfo(new PublicKey(taskID));
-  if (accountInfo) {
-    const owner = accountInfo.owner.toBase58();
-    if (owner == KPLProgramID) {
-      console.log(`On KPL Task Operations`);
-      return true;
-    }
-    if (owner == KoiiProgramID) {
-      console.log(`On Koii Task Operations`);
-      return false;
-    }
-    throw Error('Task ID Not Correct');
-  }
-}
-
-async function getTaskStateInfo(
-  connection: Connection,
-  taskStateInfoAddress: string,
-) {
-  const taskState = await connection.getAccountInfo(
-    new PublicKey(taskStateInfoAddress),
-  );
-  if (taskState && taskState.data) {
-    const IsKPLTask = await checkIsKPLTask(connection, taskStateInfoAddress);
-    if (IsKPLTask) {
-      const parsedKPLTaskState = await parseKPLTaskStateInfo(
-        connection as unknown as SolanaConnection,
-        taskStateInfoAddress,
-      );
-      return parsedKPLTaskState;
-    } else {
-      return JSON.parse(taskState.data.toString());
-    }
-  } else {
-    throw 'Task not found';
-  }
 }
 
 async function main() {
@@ -382,6 +342,8 @@ async function main() {
               imageUrl: data.imageUrl,
               infoUrl: data.infoUrl,
               requirementsTags: data.requirementsTags,
+              tags: data.tags,
+              environment: data.environment
             };
             fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
 
@@ -610,10 +572,8 @@ async function main() {
 
       console.log('Calling SetActive');
       const { isActive, taskStateInfoAddress } = await takeInputForSetActive();
-      const IsKPLTask = await checkIsKPLTask(
-        connection,
-        taskStateInfoAddress.toBase58(),
-      );
+      const accountInfo = await connection.getAccountInfo(new PublicKey(taskStateInfoAddress.toBase58()));
+      const IsKPLTask = await checkIsKPLTask(accountInfo);
       if (IsKPLTask) {
         await KPLSetActive(
           payerWallet as unknown as SolanaKeypair,
@@ -633,10 +593,8 @@ async function main() {
       console.log('Calling ClaimReward');
       const { claimerWalletPath, beneficiaryAccount, taskStateInfoAddress } =
         await takeInputForClaimReward();
-      const IsKPLTask = await checkIsKPLTask(
-        connection,
-        taskStateInfoAddress.toBase58(),
-      );
+        const accountInfo = await connection.getAccountInfo(new PublicKey(taskStateInfoAddress.toBase58()));
+        const IsKPLTask = await checkIsKPLTask(accountInfo);
       const taskStateJSON = await getTaskStateInfo(
         connection,
         taskStateInfoAddress.toBase58(),
@@ -673,10 +631,8 @@ async function main() {
       console.log('Calling FundTask');
 
       const { taskStateInfoAddress, amount } = await takeInputForFundTask();
-      const IsKPLTask = await checkIsKPLTask(
-        connection,
-        taskStateInfoAddress.toBase58(),
-      );
+      const accountInfo = await connection.getAccountInfo(new PublicKey(taskStateInfoAddress.toBase58()));
+      const IsKPLTask = await checkIsKPLTask(accountInfo);
 
       const taskStateJSON = await getTaskStateInfo(
         connection,
@@ -716,10 +672,8 @@ async function main() {
       console.log('Calling Withdraw');
       const { taskStateInfoAddress, submitterKeypair } =
         await takeInputForWithdraw();
-      const IsKPLTask = await checkIsKPLTask(
-        connection,
-        taskStateInfoAddress.toBase58(),
-      );
+      const accountInfo = await connection.getAccountInfo(new PublicKey(taskStateInfoAddress.toBase58()));
+      const IsKPLTask = await checkIsKPLTask(accountInfo);
       if (IsKPLTask) {
         await KPLWithdraw(
           payerWallet as unknown as SolanaKeypair,
@@ -949,6 +903,8 @@ async function main() {
               imageUrl: data.imageUrl,
               infoUrl: data.infoUrl,
               requirementsTags: data.requirementsTags,
+              tags: data.tags,
+              environment: data.environment
             };
             fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
 

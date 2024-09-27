@@ -1,5 +1,5 @@
 import { Connection, PublicKey, Keypair } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID, getAccount, getOrCreateAssociatedTokenAccount, getMint } from "@solana/spl-token";
+import { getOrCreateAssociatedTokenAccount, getMint } from "@solana/spl-token";
 
 async function getKPLDigits(
     mint_address: PublicKey,

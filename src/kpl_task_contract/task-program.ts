@@ -6,18 +6,12 @@
  */
 import {
   getRpcUrl,
-  getPayer,
   createKeypairFromFile,
-  padStringWithSpaces,
 } from './util';
 import chalk from 'chalk';
 import { Keypair, Connection, PublicKey } from '@solana/web3.js';
 import { getKPLDigits } from './util';
-import fs from 'mz/fs';
-import path from 'path';
 import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
   getOrCreateAssociatedTokenAccount,
 } from '@solana/spl-token';
 import {
@@ -31,8 +25,6 @@ import {
 import { SystemProgram, Transaction } from '@solana/web3.js';
 import { sendAndConfirmTransactionWithRetries } from '../utils/transaction';
 import dotenv from 'dotenv';
-import { CreateAccountParams } from '@_koii/web3.js';
-import { get } from 'http';
 import {
   Connection as KoiiConnection,
   Transaction as KoiiTransaction,
@@ -47,7 +39,6 @@ let connection: Connection;
 export async function establishConnection(): Promise<Connection> {
   const rpcUrl = await getRpcUrl();
   connection = new Connection(rpcUrl, 'confirmed');
-  const version = await connection.getVersion();
   console.log(chalk.green.bold('KPL Program Connection Estabilished.'));
   return connection;
 }
@@ -245,12 +236,7 @@ export async function updateTask(
   const taskStatepubkey = taskAccountInfoPubKey;
   const newTaskState = await Keypair.generate();
   const newStakePot = await getStakePotAccount();
-  const newTaskStateInfo = await connection.getAccountInfo(
-    newTaskState.publicKey,
-  );
-
   let lamports = await connection.getMinimumBalanceForRentExemption(space)+1000;
-
   const createTaskStateInstruction = SystemProgram.createAccount({
     fromPubkey: payer.publicKey,
     newAccountPubkey: newTaskState.publicKey,

@@ -10,7 +10,6 @@ import {
   TransactionInstruction,
   Transaction,
 } from '@_koii/web3.js';
-import fs from 'fs';
 import chalk from 'chalk';
 import { KoiiProgramID } from '../constant';
 import { sendAndConfirmTransactionWithRetries } from '../utils/transaction';
@@ -701,4 +700,3 @@ export async function Withdraw(
   );
 }
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

@@ -1,8 +1,7 @@
 import path from 'path';
 import fs from 'fs';
-import prompts from 'prompts';
 import { promptWithCancel } from './prompts';
-import { tmpdir, homedir } from 'os';
+import { homedir } from 'os';
 import { getConfig } from '../koii_task_contract/utils';
 export async function getSubmitterWalletPath() {
   let submitterWalletPath = (

@@ -23,6 +23,10 @@ import {
   updateTask as KPLUpdateTask,
 } from './kpl_task_contract/task-program';
 
+import downloadRepo from './utils/download_repo'
+import { getTaskStateInfo, parseKPLTaskStateInfo, parseKoiiTaskStateInfo } from './utils/task_state';
+import { checkIsKPLTask } from './utils/task_type';
+
 // Export the FundTask function
 export {
   FundTask,
@@ -45,4 +49,12 @@ export {
   KPLSetActive,
   KPLWithdraw,
   KPLUpdateTask,
+};
+
+export {
+  downloadRepo,
+  getTaskStateInfo,
+  parseKPLTaskStateInfo, 
+  parseKoiiTaskStateInfo,
+  checkIsKPLTask
 };

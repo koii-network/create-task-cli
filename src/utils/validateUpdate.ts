@@ -27,33 +27,12 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
     requirementsTags,
   } = metaData;
 
-  // Check that author is a non-empty string
-  if (typeof author !== 'string' || author.trim().length === 0) {
-    error['author'] = 'Missing';
-  }
 
   // Check that description is a non-empty string
-  if (typeof description !== 'string' || description.trim().length === 0) {
-    error['description'] = 'Missing';
-  }
 
-  // Check that description is a non-empty string
-  if (
-    typeof migrationDescription !== 'string' ||
-    migrationDescription.trim().length === 0
-  ) {
-    error['migrationDescription'] = 'Missing';
-  }
 
-  // Check that repositoryUrl is a non-empty string
-  if (typeof repositoryUrl !== 'string' || repositoryUrl.trim().length === 0) {
-    error['repositoryUrl'] = 'Missing';
-  }
 
-  // Check that description is a non-empty string
-  if (typeof createdAt !== 'number' || description.trim().length === 0) {
-    error['createdAt'] = 'Missing';
-  }
+
 
   // Check that requirementsTags is an array of non-empty strings
 
@@ -72,21 +51,44 @@ async function main(metaData: TaskMetadata, task: UpdateTask) {
   }
 
   // Check if all required properties are present and have valid values
-
+  const missingParams = [];
+  if (!task.task_id) missingParams.push('task_id');
+  if (!task.task_name) missingParams.push('task_name');
+  if (!task.task_executable_network) missingParams.push('task_executable_network');
+  if (!task.round_time) missingParams.push('round_time');
+  if (!task.audit_window) missingParams.push('audit_window');
+  if (!task.submission_window) missingParams.push('submission_window');
+  if (!task.minimum_stake_amount) missingParams.push('minimum_stake_amount');
+  if (!task.bounty_amount_per_round) missingParams.push('bounty_amount_per_round');
+  if (!task.allowed_failed_distributions) missingParams.push('allowed_failed_distributions');
+  if (!task.space) missingParams.push('space');
+  if (!task.task_type) missingParams.push('task_type')
+  if (!task.token_type) missingParams.push('token_type')
+    
+  if (typeof author !== 'string' || author.trim().length === 0) {
+    missingParams.push('author');
+  }
+  
+  if (typeof description !== 'string' || description.trim().length === 0) {
+    missingParams.push('description');
+  }
+  
+  if (typeof repositoryUrl !== 'string' || repositoryUrl.trim().length === 0) {
+    missingParams.push('repositoryUrl');
+  }
   if (
-    !task.task_id ||
-    !task.task_name ||
-    !task.task_executable_network ||
-    !task.round_time ||
-    !task.audit_window ||
-    !task.submission_window ||
-    !task.minimum_stake_amount ||
-    !task.bounty_amount_per_round ||
-    !task.allowed_failed_distributions ||
-    !task.space ||
-    !task.task_type
+    typeof migrationDescription !== 'string' ||
+    migrationDescription.trim().length === 0
   ) {
-    error['taskParams'] = 'task parameter missing';
+    missingParams.push('migrationDescription')
+  }
+  if (typeof createdAt !== 'number') {
+    missingParams.push('createdAt');
+  }
+
+  
+  if (missingParams.length > 0) {
+    error['taskParams'] = 'Task Params Missing: ' + missingParams.join(', ');
   }
 
   // task_name cannot be greater than 24  characters

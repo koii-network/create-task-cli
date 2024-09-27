@@ -7,8 +7,6 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'yaml';
 import { Keypair, PublicKey } from '@_koii/web3.js';
-import { KoiiStorageClient } from '@_koii/storage-task-sdk';
-import ora from 'ora';
 import chalk from 'chalk';
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -84,4 +82,19 @@ export async function createKeypairFromFile(
   const secretKeyString = fs.readFileSync(filePath, { encoding: 'utf8' });
   const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
   return Keypair.fromSecretKey(secretKey);
+}
+
+export async function parseKoiiTaskStateInfo(taskState:any){
+  const taskStateJSON = JSON.parse(taskState.data.toString());
+  taskStateJSON.task_manager = new PublicKey(taskStateJSON.task_manager).toBase58();
+  taskStateJSON.stake_pot_account = new PublicKey(taskStateJSON.stake_pot_account).toBase58();
+  Object.keys(taskStateJSON['distribution_rewards_submission']).forEach(key => {
+    const userObject = taskStateJSON['distribution_rewards_submission'][key];
+    Object.keys(userObject).forEach(userKey => {
+      if (userObject[userKey].submission_value) {
+        userObject[userKey].submission_value = new PublicKey(userObject[userKey].submission_value).toBase58();
+      }
+    });
+  });
+  return taskStateJSON
 }

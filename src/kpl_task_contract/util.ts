@@ -110,12 +110,8 @@ export async function getKPLDigits(
   return decimals;
 }
 export async function parseKPLTaskStateInfo(
-  connection: Connection,
-  taskPublicKey: string,
+  accountInfo:any
 ) {
-  const accountInfo = await connection.getAccountInfo(
-    new PublicKey(taskPublicKey),
-  );
   if (!accountInfo) {
     throw new Error('Failed to find the account');
   }
@@ -130,23 +126,69 @@ export async function parseKPLTaskStateInfo(
     console.error('Failed to deserialize data with:', error);
   }
 }
-function parseTaskState(taskState: any) {
-  taskState.stake_list = objectify(taskState.stake_list);
-  taskState.ip_address_list = objectify(taskState.ip_address_list);
+function parseTaskState (taskState: any) {
+  taskState.stake_list = objectify(taskState.stake_list, true);
+  taskState.ip_address_list = objectify(taskState.ip_address_list, true);
   taskState.distributions_audit_record = objectify(
     taskState.distributions_audit_record,
+    true
   );
   taskState.distributions_audit_trigger = objectify(
     taskState.distributions_audit_trigger,
+    true
   );
-  taskState.submissions = objectify(taskState.submissions, true); // Recursive handling
+  taskState.submissions = objectify(taskState.submissions, true);
   taskState.submissions_audit_trigger = objectify(
     taskState.submissions_audit_trigger,
+    true
   );
   taskState.distribution_rewards_submission = objectify(
     taskState.distribution_rewards_submission,
+    true
   );
-  taskState.available_balances = objectify(taskState.available_balances);
+  taskState.available_balances = objectify(
+    taskState.available_balances,
+    true
+  );
+  try{
+    taskState.task_manager = new PublicKey(taskState.task_manager).toBase58();
+    taskState.stake_pot_account = new PublicKey(taskState.stake_pot_account).toBase58();
+    taskState.stake_pot_seed =  new PublicKey(taskState.stake_pot_seed).toBase58();
+    taskState.token_type = new PublicKey(taskState.token_type).toBase58();
+  }catch(e){
+    console.log(e)
+  }
+  try{
+
+    Object.keys(taskState.distribution_rewards_submission).forEach((roundKey) => {
+      const roundData = taskState.distribution_rewards_submission[roundKey];
+    
+      Object.keys(roundData).forEach((submissionKey) => {
+      const submissionData = roundData[submissionKey];
+    
+
+      if (submissionData.submission_value) {
+
+        submissionData.submission_value = new PublicKey(submissionData.submission_value).toBase58();
+      }
+      });
+    });
+  }catch(e){
+    console.log(e)
+  }
+  try{
+    Object.keys(taskState.distributions_audit_trigger).forEach((roundKey) => {
+      const roundData = taskState.distributions_audit_trigger[roundKey];
+      Object.keys(roundData).forEach((submissionKey) => {
+      const submissionData = roundData[submissionKey];
+      if (submissionData.trigger_by) {
+        submissionData.trigger_by = new PublicKey(submissionData.trigger_by).toBase58();
+      }
+      });
+    });
+  }catch(e){
+    console.log(e)
+  }
   return taskState;
 }
 
