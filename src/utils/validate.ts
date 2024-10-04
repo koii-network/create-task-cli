@@ -26,6 +26,7 @@ export interface TaskMetadata {
   infoUrl?: string;
   tags?: string; 
   environment?: string;
+  koiiOceanUrl?: string;
 }
 
 export interface RequirementTag {

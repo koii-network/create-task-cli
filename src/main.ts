@@ -129,7 +129,7 @@ async function main() {
         'webpacked',
       )} your task before going to the next step. (Press Enter to continue.)`,
       validate: (value: string) =>
-        value.trim() === '' ? true : 'Just press Enter to continue',
+        value.trim() === '' || value.trim() === 'y' || value.trim() === 'yes' ? true : 'Press Enter to continue. Ctrl+C to exit.',
     });
   }
   if (mode == 'update-task') {
@@ -140,10 +140,18 @@ async function main() {
         'webpacked',
       )} your task and keep at least 2 rounds of task bounty in the old task. (Press Enter to continue.)`,
       validate: (value: string) =>
-        value.trim() === '' ? true : 'Just press Enter to continue',
+        value.trim() === '' || value.trim() === 'y' || value.trim() === 'yes' ? true : 'Press Enter to continue. Ctrl+C to exit.',
     });
   }
-
+  if (mode == 'handle-assets') {
+    await promptWithCancel({
+      type: 'text',
+      name: 'confirm',
+      message: `Currently direct IPFS load does not support markdown file display. `,
+      validate: (value: string) =>
+        value.trim() === '' || value.trim() === 'y' || value.trim() === 'yes' ? true : 'Press Enter to continue. Ctrl+C to exit.',
+    });
+  }
   switch (mode) {
     case 'create-repo': {
       await downloadRepo();
@@ -334,6 +342,14 @@ async function main() {
           const ymlPath = await getYmlPath();
 
           await readYamlFile(ymlPath).then(async (data: any) => {
+            if (data.markdownDescriptionPath) {
+              try {
+                const markdownDescription = fs.readFileSync(data.markdownDescriptionPath, 'utf-8');
+                data.description = markdownDescription;
+              } catch (error) {
+                console.error('Failed to read markdown file:', error);
+              }
+            }
             const metaData: TaskMetadata = {
               author: data.author.trim(),
               description: data.description.trim(),
@@ -341,12 +357,14 @@ async function main() {
               createdAt: Date.now(),
               imageUrl: data.imageUrl,
               infoUrl: data.infoUrl,
+              koiiOceanUrl: data.koiiOceanUrl,
               requirementsTags: data.requirementsTags,
               tags: data.tags,
               environment: data.environment
             };
+            console.log(data.description)
             fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
-
+            
             if (data.task_executable_network == 'IPFS') {
               const ipfsMode = (
                 await promptWithCancel({
@@ -602,9 +620,8 @@ async function main() {
       const stake_pot_account = new PublicKey(taskStateJSON.stake_pot_account);
       console.log('Stake Pot Account', stake_pot_account.toString());
       if (IsKPLTask) {
-        const mint_uint8 = Uint8Array.from(taskStateJSON.token_type);
         // Create the PublicKey
-        const token_type = new PublicKey(mint_uint8);
+        const token_type = new PublicKey(taskStateJSON.token_type);
         await KPLClaimReward(
           payerWallet as unknown as SolanaKeypair,
           taskStateInfoAddress as unknown as SolanaPublicKey,
@@ -640,10 +657,10 @@ async function main() {
       );
       const stakePotAccount = new PublicKey(taskStateJSON.stake_pot_account);
       if (IsKPLTask) {
-        const mint_uint8 = Uint8Array.from(taskStateJSON.token_type);
+
 
         // Create the PublicKey
-        const mint_publicKey = new PublicKey(mint_uint8);
+        const mint_publicKey = new PublicKey(taskStateJSON.token_type);
 
         console.log(`Funding your task with ${mint_publicKey} KPL Token.`);
 
@@ -894,6 +911,14 @@ async function main() {
           const ymlPath = await getYmlPath();
 
           await readYamlFile(ymlPath).then(async (data: any) => {
+            if (data.markdownDescriptionPath) {
+              try {
+                const markdownDescription = fs.readFileSync(data.markdownDescriptionPath, 'utf-8');
+                data.description = markdownDescription;
+              } catch (error) {
+                console.error('Failed to read markdown file:', error);
+              }
+            }
             const metaData: TaskMetadata = {
               author: data.author.trim(),
               description: data.description.trim(),
@@ -902,6 +927,7 @@ async function main() {
               migrationDescription: data.migrationDescription,
               imageUrl: data.imageUrl,
               infoUrl: data.infoUrl,
+              koiiOceanUrl: data.koiiOceanUrl,
               requirementsTags: data.requirementsTags,
               tags: data.tags,
               environment: data.environment

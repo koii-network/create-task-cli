@@ -10,3 +10,4 @@ coverage
 package-lock.json
 metadata.json
 dist
+test.md
