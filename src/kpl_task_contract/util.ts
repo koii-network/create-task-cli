@@ -29,7 +29,7 @@ async function getConfig(): Promise<any> {
       console.warn(
         'Failed to read RPC url from CLI config file, falling back to localhost',
       );
-      return 'http://127.0.0.1:8899';
+      return 'https://testnet.koii.network';
     }
   }
 
