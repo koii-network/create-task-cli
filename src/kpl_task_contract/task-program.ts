@@ -357,11 +357,40 @@ export async function createTask(
     signer2?: Keypair,
     insertOrDeleteAccountPubkey?: PublicKey
   ): Promise<void> {
+    if (operation === "init") {
     let tx = await handleManagerAccountsInstruction({operation: "init"}, {
         ownerAccount: payerWallet.publicKey
     }, programId);
     await sendAndConfirmTransaction(connection, new Transaction().add(tx), [payerWallet])
   }
+  if (operation === "insert") {
+    let tx = await handleManagerAccountsInstruction({operation: "insert"}, {
+        ownerAccount: payerWallet.publicKey,
+        signer_1: signer1?.publicKey,
+        signer_2: signer2?.publicKey,
+        targetManager: insertOrDeleteAccountPubkey
+    }, programId);
+
+    const signers = [payerWallet];
+    if (signer1) signers.push(signer1);
+    if (signer2) signers.push(signer2);
+
+    await sendAndConfirmTransaction(connection, new Transaction().add(tx), signers);
+  }
+  if (operation === "remove") {
+    let tx = await handleManagerAccountsInstruction({operation: "remove"}, {
+        ownerAccount: payerWallet.publicKey,
+        signer_1: signer1?.publicKey,
+        signer_2: signer2?.publicKey,
+        targetManager: insertOrDeleteAccountPubkey
+    }, programId);
+    const signers = [payerWallet];
+    if (signer1) signers.push(signer1);
+    if (signer2) signers.push(signer2);
+
+    await sendAndConfirmTransaction(connection, new Transaction().add(tx), signers);
+  }
+}
 
 
   export async function DeleteTask(
