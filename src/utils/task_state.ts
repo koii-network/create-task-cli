@@ -2,8 +2,6 @@ import { Connection, PublicKey } from '@_koii/web3.js';
 import { checkIsKPLTask } from './task_type'; 
 import { parseKPLTaskStateInfo } from '../kpl_task_contract/util';
 import { parseKoiiTaskStateInfo } from '../koii_task_contract/utils';
-import { check } from 'prettier';
-import { parse } from 'path';
 async function getTaskStateInfo(
     connection: Connection,
     taskStateInfoAddress: string,

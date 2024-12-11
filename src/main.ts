@@ -31,6 +31,7 @@ import {
   uploadExecutableFileToIpfs,
   uploadMetaDataFileToIpfs,
   manualEnterIPFSCIDs,
+  validateEligibilityForIPFSUpload,
 } from './utils/ipfs';
 
 import {
@@ -388,7 +389,7 @@ async function main() {
                 stakingWalletKeypair = Keypair.fromSecretKey(
                   Uint8Array.from(JSON.parse(wallet)),
                 );
-
+                await validateEligibilityForIPFSUpload(connection, stakingWalletKeypair.publicKey);
                 // Upload a main.js file
                 task_audit_program_id = await uploadExecutableFileToIpfs(
                   data.task_audit_program,
@@ -971,7 +972,7 @@ async function main() {
                 stakingWalletKeypair = Keypair.fromSecretKey(
                   Uint8Array.from(JSON.parse(wallet)),
                 );
-
+                await validateEligibilityForIPFSUpload(connection, stakingWalletKeypair.publicKey);
                 // Upload a file
                 task_audit_program_id_update = await uploadExecutableFileToIpfs(
                   data.task_audit_program,
@@ -1211,7 +1212,6 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
     stakingWalletKeypair = Keypair.fromSecretKey(
       Uint8Array.from(JSON.parse(wallet)),
     );
-
     task_audit_program = (
       await promptWithCancel({
         type: 'text',

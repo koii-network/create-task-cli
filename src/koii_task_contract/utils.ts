@@ -34,6 +34,11 @@ export function prettyPrintConfig(config: any) {
     chalk.green.bold(config.json_rpc_url),
     ' as your deployment endpoint.',
   );
+  if (!config.json_rpc_url.includes('https://testnet.koii.network')&& !config.json_rpc_url.includes('https://mainnet.koii.network')) {
+    console.log(chalk.red("You are not using the recommended network!"));
+    console.log(chalk.blue("Run ") + chalk.green("koii config set --url testnet") + chalk.blue(" to use testnet"));
+  }
+
   // const configArray = Object.entries(config).map(([key, value]) => ({
   //   Key: key,
   //   Value: typeof value === 'object' ? JSON.stringify(value, null, 2) : value

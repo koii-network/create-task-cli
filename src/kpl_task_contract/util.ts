@@ -13,6 +13,8 @@ import {
 import { Connection } from '@solana/web3.js';
 import { getMint } from '@solana/spl-token';
 import { borsh_bpf_js_deserialize } from './webasm_bincode_deserializer/bincode_js';
+import chalk from 'chalk';
+
 async function getConfig(): Promise<any> {
   const CONFIG_FILE_PATH = path.resolve(
     os.homedir(),
