@@ -155,7 +155,17 @@ async function main() {
   }
   switch (mode) {
     case 'create-repo': {
-      await downloadRepo();
+      // create two options; option one typescript option two javascript
+      const repoZipUrl = await promptWithCancel({
+        type: 'select',
+        name: 'repoZipUrl',
+        message: 'Please select the repository type',
+        choices: [
+          { title: 'Typescript', value: 'https://github.com/koii-network/task-template/archive/refs/heads/master.zip' },
+          { title: 'Javascript', value: 'https://github.com/koii-network/task-template/archive/refs/heads/@javascript.zip' },
+        ],
+      });
+      await downloadRepo(repoZipUrl.repoZipUrl);
       break;
     }
 
