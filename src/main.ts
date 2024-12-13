@@ -161,7 +161,7 @@ async function main() {
         name: 'repoZipUrl',
         message: 'Please select the repository type',
         choices: [
-          { title: 'Typescript', value: 'https://github.com/koii-network/task-template/archive/refs/heads/master.zip' },
+          { title: 'Typescript (Recommended)', value: 'https://github.com/koii-network/task-template/archive/refs/heads/master.zip' },
           { title: 'Javascript', value: 'https://github.com/koii-network/task-template/archive/refs/heads/@javascript.zip' },
         ],
       });
