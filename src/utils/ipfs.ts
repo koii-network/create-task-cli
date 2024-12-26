@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { Keypair } from '@_koii/web3.js';
+import { Connection, Keypair, PublicKey } from '@_koii/web3.js';
 import { KoiiStorageClient } from '@_koii/storage-task-sdk';
 import ora from 'ora';
 import chalk from 'chalk';
@@ -124,4 +124,17 @@ async function isValidCID(cid: string) {
   } catch (error) {
     return false;
   }
+}
+
+
+export async function validateEligibilityForIPFSUpload(connection:Connection, stakingWalletPubkey: PublicKey){
+  // check if the staking wallet key is owned by ""
+  const account = await connection.getAccountInfo(stakingWalletPubkey);
+  if (account?.owner.toBase58() == 'Koiitask22222222222222222222222222222222222' || account?.owner.toBase58() == 'KPLTRVs6jA7QTthuJH2cEmyCEskFbSV2xpZw46cganN') {
+    return true;
+  }
+  console.log(chalk.red.bold("Staking Wallet Status:"));
+  console.log(chalk.red("This is either not a staking wallet or it has lost its staking status due to low rent."));
+  console.log(chalk.yellow("Please run a task on your node to initialize your staking wallet again."));
+  process.exit(1);
 }

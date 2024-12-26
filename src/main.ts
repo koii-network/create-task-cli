@@ -31,6 +31,7 @@ import {
   uploadExecutableFileToIpfs,
   uploadMetaDataFileToIpfs,
   manualEnterIPFSCIDs,
+  validateEligibilityForIPFSUpload,
 } from './utils/ipfs';
 
 import {
@@ -154,7 +155,17 @@ async function main() {
   }
   switch (mode) {
     case 'create-repo': {
-      await downloadRepo();
+      // create two options; option one typescript option two javascript
+      const repoZipUrl = await promptWithCancel({
+        type: 'select',
+        name: 'repoZipUrl',
+        message: 'Please select the repository type',
+        choices: [
+          { title: 'Typescript (Recommended)', value: 'https://github.com/koii-network/task-template/archive/refs/heads/main.zip' },
+          { title: 'Javascript', value: 'https://github.com/koii-network/task-template/archive/refs/heads/@javascript.zip' },
+        ],
+      });
+      await downloadRepo(repoZipUrl.repoZipUrl);
       break;
     }
 
@@ -388,7 +399,7 @@ async function main() {
                 stakingWalletKeypair = Keypair.fromSecretKey(
                   Uint8Array.from(JSON.parse(wallet)),
                 );
-
+                await validateEligibilityForIPFSUpload(connection, stakingWalletKeypair.publicKey);
                 // Upload a main.js file
                 task_audit_program_id = await uploadExecutableFileToIpfs(
                   data.task_audit_program,
@@ -971,7 +982,7 @@ async function main() {
                 stakingWalletKeypair = Keypair.fromSecretKey(
                   Uint8Array.from(JSON.parse(wallet)),
                 );
-
+                await validateEligibilityForIPFSUpload(connection, stakingWalletKeypair.publicKey);
                 // Upload a file
                 task_audit_program_id_update = await uploadExecutableFileToIpfs(
                   data.task_audit_program,
@@ -1211,7 +1222,6 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
     stakingWalletKeypair = Keypair.fromSecretKey(
       Uint8Array.from(JSON.parse(wallet)),
     );
-
     task_audit_program = (
       await promptWithCancel({
         type: 'text',

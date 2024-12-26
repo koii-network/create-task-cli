@@ -4,11 +4,9 @@ import path from 'path';
 import chalk from 'chalk';
 import fetch from 'node-fetch';
 import StreamZip from 'node-stream-zip';
-const downloadRepo = async () => {
-  const repoZipUrl =
-    'https://github.com/koii-network/task-template/archive/refs/heads/master.zip';
+const downloadRepo = async (repoZipUrl: string) => {
   const outputPath = path.resolve(process.cwd(), 'task-template.zip');
-  const outputDir = path.resolve(process.cwd(), 'task-template');
+  const outputDir = path.resolve(process.cwd());
 
   const spinner = ora('Downloading repository...').start();
 
