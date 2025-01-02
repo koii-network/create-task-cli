@@ -80,7 +80,7 @@ export async function checkProgram(): Promise<PublicKey> {
   } else if (!programInfo.executable) {
     throw new Error(`Program is not executable`);
   }
-  console.log(`KPL Program ID: ${programId.toBase58()}`);
+  // console.log(`KPL Program ID: ${programId.toBase58()}`);
 
   return programId;
 }

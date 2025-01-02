@@ -30,9 +30,8 @@ export async function getConfig(): Promise<any> {
 }
 export function prettyPrintConfig(config: any) {
   console.log(
-    'You are using',
+    'RPC Connected: ',
     chalk.green.bold(config.json_rpc_url),
-    ' as your deployment endpoint.',
   );
   if (!config.json_rpc_url.includes('https://testnet.koii.network')&& !config.json_rpc_url.includes('https://mainnet.koii.network')) {
     console.log(chalk.red("You are not using the recommended network!"));
