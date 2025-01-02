@@ -29,7 +29,7 @@ export async function sendAndConfirmTransactionWithRetries(
     }
     if (result?.status == 'Unknown') {
       spinner.fail(
-        `Unknown Signature Status with Signature ${result.signature}. The operation status is unknown. Please check the transaction status manually on the explorer. `,
+        `Unknown Signature Status with Signature https://explorer.koii.live/tx/${result.signature}. The operation status is unknown. Please check the transaction status manually on the explorer. `,
       );
     }
   }
