@@ -399,7 +399,7 @@ async function main() {
                 stakingWalletKeypair = Keypair.fromSecretKey(
                   Uint8Array.from(JSON.parse(wallet)),
                 );
-                await validateEligibilityForIPFSUpload(connection, stakingWalletKeypair.publicKey);
+                await validateEligibilityForIPFSUpload(stakingWalletKeypair.publicKey);
                 // Upload a main.js file
                 task_audit_program_id = await uploadExecutableFileToIpfs(
                   data.task_audit_program,
@@ -982,7 +982,7 @@ async function main() {
                 stakingWalletKeypair = Keypair.fromSecretKey(
                   Uint8Array.from(JSON.parse(wallet)),
                 );
-                await validateEligibilityForIPFSUpload(connection, stakingWalletKeypair.publicKey);
+                await validateEligibilityForIPFSUpload(stakingWalletKeypair.publicKey);
                 // Upload a file
                 task_audit_program_id_update = await uploadExecutableFileToIpfs(
                   data.task_audit_program,

@@ -127,14 +127,40 @@ async function isValidCID(cid: string) {
 }
 
 
-export async function validateEligibilityForIPFSUpload(connection:Connection, stakingWalletPubkey: PublicKey){
+export async function validateEligibilityForIPFSUpload(
+  stakingWalletPubkey: PublicKey,
+) {
   // check if the staking wallet key is owned by ""
-  const account = await connection.getAccountInfo(stakingWalletPubkey);
-  if (account?.owner.toBase58() == 'Koiitask22222222222222222222222222222222222' || account?.owner.toBase58() == 'KPLTRVs6jA7QTthuJH2cEmyCEskFbSV2xpZw46cganN') {
-    return true;
+  const endpoints = [
+    'https://testnet.koii.network',
+    'https://mainnet.koii.network',
+  ];
+  for (const endpoint of endpoints) {
+    try {
+      const connection = new Connection(endpoint, 'confirmed');
+      const account = await connection.getAccountInfo(stakingWalletPubkey);
+      if (
+        account?.owner.toBase58() ==
+          'Koiitask22222222222222222222222222222222222' ||
+        account?.owner.toBase58() ==
+          'KPLTRVs6jA7QTthuJH2cEmyCEskFbSV2xpZw46cganN'
+      ) {
+        return true;
+      }
+    } catch (error) {
+      console.log('Attempting to connect to the next endpoint...');
+    }
   }
-  console.log(chalk.red.bold("Staking Wallet Status:"));
-  console.log(chalk.red("This is either not a staking wallet or it has lost its staking status due to low rent."));
-  console.log(chalk.yellow("Please run a task on your node to initialize your staking wallet again."));
+  console.log(chalk.red.bold('Staking Wallet Status:'));
+  console.log(
+    chalk.red(
+      'This is either not a staking wallet or it has lost its staking status due to low rent.',
+    ),
+  );
+  console.log(
+    chalk.yellow(
+      'Please run a task on your node to initialize your staking wallet again.',
+    ),
+  );
   process.exit(1);
 }
