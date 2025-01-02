@@ -110,13 +110,13 @@ async function main() {
       message: 'Select operation',
 
       choices: [
-        { title: 'Create a New Local Repository', value: 'create-repo' },
-        { title: 'Deploy a New Task', value: 'create-task' },
-        { title: 'Update Existing Task', value: 'update-task' },
+        { title: 'Create Local Repo', value: 'create-repo' },
+        { title: 'Deploy a Task', value: 'create-task' },
+        { title: 'Update a Task', value: 'update-task' },
+        { title: 'Fund Task', value: 'fund-task' },
         { title: 'Activate/Deactivate Task', value: 'set-active' },
-        { title: 'Claim Reward', value: 'claim-reward' },
-        { title: 'Add More Funds to Task', value: 'fund-task' },
-        { title: 'Withdraw Staked Funds from Task', value: 'withdraw' },
+        { title: 'Claim Reward (For VPS Node)', value: 'claim-reward' },
+        { title: 'Withdraw Stake (For VPS Node)', value: 'withdraw' },
         {
           title: 'Upload Assets to IPFS',
           value: 'handle-assets',
@@ -124,13 +124,13 @@ async function main() {
       ],
     })
   ).mode;
-  if (mode == 'create-task') {
+  if (mode == 'create-task' || mode == 'update-task') {
     await promptWithCancel({
       type: 'text',
       name: 'confirm',
-      message: `Please make sure you ${chalk.yellow.bold(
-        'webpacked',
-      )} your task before going to the next step. (Press Enter to continue.)`,
+      message: `Did you run ${chalk.yellow.bold(
+        'npm run webpack/yarn webpack',
+      )} ? (Press Enter to continue.)`,
       validate: (value: string) =>
         value.trim() === '' || value.trim() === 'y' || value.trim() === 'yes' ? true : 'Press Enter to continue. Ctrl+C to exit.',
     });
@@ -139,9 +139,9 @@ async function main() {
     await promptWithCancel({
       type: 'text',
       name: 'confirm',
-      message: `Please make sure you ${chalk.yellow.bold(
-        'webpacked',
-      )} your task and keep at least 2 rounds of task bounty in the old task. (Press Enter to continue.)`,
+      message: `Did you check if you have at least ${chalk.yellow.bold(
+        '2 rounds of task bounty',
+      )} in your current task? (Press Enter to continue.)`,
       validate: (value: string) =>
         value.trim() === '' || value.trim() === 'y' || value.trim() === 'yes' ? true : 'Press Enter to continue. Ctrl+C to exit.',
     });
@@ -150,7 +150,7 @@ async function main() {
     await promptWithCancel({
       type: 'text',
       name: 'confirm',
-      message: `Currently direct IPFS load does not support markdown file display. `,
+      message: `Note: Direct IPFS loads currently do not support displaying Markdown files.`,
       validate: (value: string) =>
         value.trim() === '' || value.trim() === 'y' || value.trim() === 'yes' ? true : 'Press Enter to continue. Ctrl+C to exit.',
     });
@@ -180,11 +180,11 @@ async function main() {
           type: 'select',
           name: 'mode',
           message:
-            'Please select how you want to create the task configuration:',
+            'How would you like to configure the task?',
 
           choices: [
-            { title: 'using config YML', value: 'create-task-yml' },
-            { title: 'using CLI', value: 'create-task-cli' },
+            { title: 'using config-task.yml File (Recommended)', value: 'create-task-yml' },
+            { title: 'using the CLI', value: 'create-task-cli' },
           ],
         })
       ).mode;
@@ -239,9 +239,9 @@ async function main() {
                 type: 'confirm',
                 initial: true,
                 name: 'response',
-                message: `Your account will be deducted rent exemption(${
+                message: `Your account will be charged a rent-exemption fee of ${
                   minimumBalanceForRentExemption / LAMPORTS_PER_SOL
-                } KOII) and bounty amount fees (${total_bounty_amount} Tokens)`,
+                } KOII and a bounty fee of ${total_bounty_amount} tokens.`,
               })
             ).response;
             if (!response) process.exit(0);
@@ -299,7 +299,7 @@ async function main() {
                 type: 'confirm',
                 name: 'response',
                 initial: true,
-                message: `Your account will be deducted ${
+                message: `Your account will be charged ${
                   totalAmount / LAMPORTS_PER_SOL
                 } KOII for creating the task, which includes the rent exemption(${
                   minimumBalanceForRentExemption / LAMPORTS_PER_SOL
@@ -382,11 +382,11 @@ async function main() {
                 await promptWithCancel({
                   type: 'select',
                   name: 'mode',
-                  message: 'Please select your IPFS preferences: ',
+                  message: 'Select your IPFS preference:',
 
                   choices: [
-                    { title: 'Using KOII Storage SDK', value: 'koii-storage' },
-                    { title: 'Manually Input IPFS', value: 'manual' },
+                    { title: 'Use KOII Storage SDK (Recommended)', value: 'koii-storage' },
+                    { title: 'Enter IPFS CID Manually', value: 'manual' },
                   ],
                 })
               ).mode;
@@ -458,11 +458,9 @@ async function main() {
                   type: 'confirm',
                   name: 'response',
                   initial: true,
-                  message: `Your account will be deducted rent exemption(${
+                  message: `Your account will be charged a rent-exemption fee of ${
                     minimumBalanceForRentExemption / LAMPORTS_PER_SOL
-                  } KOII) and bounty amount fees (${
-                    data.total_bounty_amount
-                  } ${TaskData.token_type} Tokens)`,
+                  } KOII and a bounty fee of ${data.total_bounty_amount} ${TaskData.token_type} Tokens.`,
                 })
               ).response;
               if (!response) process.exit(0);
@@ -529,7 +527,7 @@ async function main() {
                   type: 'confirm',
                   name: 'response',
                   initial: true,
-                  message: `Your account will be deducted ${
+                  message: `Your account will be charged ${
                     totalAmount / LAMPORTS_PER_SOL
                   } KOII for creating the task, which includes the rent exemption(${
                     minimumBalanceForRentExemption / LAMPORTS_PER_SOL
@@ -745,7 +743,7 @@ async function main() {
             await promptWithCancel({
               type: 'text',
               name: 'taskId',
-              message: 'Enter id of the task you want to edit',
+              message: 'Enter the task ID you want to update',
             })
           ).taskId;
           taskId = sanitizePath(taskId);
@@ -795,11 +793,11 @@ async function main() {
                 type: 'confirm',
                 name: 'response',
                 initial: true,
-                message: `Your account will be deducted ${
+                message: `Your account will be charged ${
                   totalAmount / LAMPORTS_PER_SOL
-                } KOII for creating the task, which includes the rent exemption (${
+                } KOII for updating the task, which includes the rent exemption (${
                   minimumBalanceForRentExemption / LAMPORTS_PER_SOL
-                } KOII) and bounty amount fees is taken from the old task`,
+                } KOII) and the bounty will be taken from the old task`,
               })
             ).response;
 
@@ -859,11 +857,11 @@ async function main() {
                 type: 'confirm',
                 name: 'response',
                 initial: true,
-                message: `Your account will be deducted ${
+                message: `Your account will be charged ${
                   totalAmount / LAMPORTS_PER_SOL
-                } KOII for creating the task, which includes the rent exemption (${
+                } KOII for updating the task, which includes the rent exemption (${
                   minimumBalanceForRentExemption / LAMPORTS_PER_SOL
-                } KOII) and bounty amount fees is taken from the old task`,
+                } KOII) and the bounty will be taken from the old task`,
               })
             ).response;
 
@@ -954,8 +952,8 @@ async function main() {
                   message: 'Select operation',
 
                   choices: [
-                    { title: 'Using KOII Storage SDK', value: 'koii-storage' },
-                    { title: 'Manually Input IPFS', value: 'manual' },
+                    { title: 'Use KOII Storage SDK (Recommended)', value: 'koii-storage' },
+                    { title: 'Enter IPFS CID Manually', value: 'manual' },
                   ],
                 })
               ).mode;
@@ -1056,11 +1054,11 @@ async function main() {
                 type: 'confirm',
                 name: 'response',
                 initial: true,
-                message: `Your account will be deducted ${
+                message: `Your account will be charged ${
                   totalAmount / LAMPORTS_PER_SOL
-                } KOII for creating the task, which includes the rent exemption (${
+                } KOII for updating the task, which includes the rent exemption (${
                   minimumBalanceForRentExemption / LAMPORTS_PER_SOL
-                } KOII) and bounty amount fees is taken from the old task`,
+                } KOII) and the bounty will be taken from the old task`,
               })
             ).response;
 
@@ -1471,7 +1469,7 @@ async function takeInputForSetActive() {
     await promptWithCancel({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task id',
+      message: 'Enter the Task ID',
     })
   ).taskStateInfoAddress.trim();
   const isActive = (
@@ -1504,7 +1502,7 @@ async function takeInputForClaimReward() {
     await promptWithCancel({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task id',
+      message: 'Enter the Task ID',
     })
   ).taskStateInfoAddress.trim();
   const beneficiaryAccount = (
@@ -1527,7 +1525,7 @@ async function takeInputForFundTask() {
     await promptWithCancel({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task id',
+      message: 'Enter the Task ID',
     })
   ).taskStateInfoAddress.trim();
   const amount = (
@@ -1547,7 +1545,7 @@ async function takeInputForWithdraw() {
     await promptWithCancel({
       type: 'text',
       name: 'taskStateInfoAddress',
-      message: 'Enter the task id',
+      message: 'Enter the Task ID',
     })
   ).taskStateInfoAddress.trim();
   const submitterWalletPath = await getSubmitterWalletPath();

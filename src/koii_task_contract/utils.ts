@@ -30,7 +30,7 @@ export async function getConfig(): Promise<any> {
 }
 export function prettyPrintConfig(config: any) {
   console.log(
-    'Deployment Endpoint Connected: ',
+    'RPC Connected: ',
     chalk.green.bold(config.json_rpc_url),
   );
   if (!config.json_rpc_url.includes('https://testnet.koii.network')&& !config.json_rpc_url.includes('https://mainnet.koii.network')) {

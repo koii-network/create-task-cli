@@ -286,7 +286,7 @@ export async function checkProgram(): Promise<void> {
   } else if (!programInfo.executable) {
     throw new Error(`Program is not executable`);
   }
-  console.log(`Koii Task Program: ${programId.toBase58()}`);
+  // console.log(`Koii Task Program: ${programId.toBase58()}`);
 }
 function encodeData(type: any, fields: any) {
   const allocLength =
