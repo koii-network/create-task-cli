@@ -260,7 +260,7 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
     chalk.green.bold('Your account:'),
     chalk.yellowBright(payerWallet.publicKey.toBase58()),
     chalk.green.bold('contains:'),
-    chalk.yellowBright(lamports / LAMPORTS_PER_SOL),
+    chalk.yellowBright(String(lamports / LAMPORTS_PER_SOL)),
     chalk.green.bold('KOII'),
   );
 }
