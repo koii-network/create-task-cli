@@ -1,20 +1,24 @@
 import {
+  Connection as KoiiConnection,
+  Transaction as KoiiTransaction,
+} from '@_koii/web3.js';
+import {
   Connection,
   Transaction,
   sendAndConfirmTransaction,
-} from '@_koii/web3.js';
+} from '@solana/web3.js';
 import ora from 'ora';
 export async function sendAndConfirmTransactionWithRetries(
-  connection: Connection,
-  transaction: Transaction,
+  connection: KoiiConnection,
+  transaction: KoiiTransaction,
   signerList: any,
   transactionRetryNumber = 10,
 ) {
   const spinner = ora(`Sending Transactions`).start();
   for (let i = 0; i < transactionRetryNumber; i++) {
     const result = await sendAndDoubleConfirmTransaction(
-      connection,
-      transaction,
+      connection as unknown as Connection,
+      transaction as unknown as Transaction,
       signerList,
     );
     if (result?.status == 'Success') {
