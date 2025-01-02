@@ -517,7 +517,7 @@ export async function updateTask(
     data: data,
   });
 
-  const transaction = await sendAndConfirmTransactionWithRetries(
+  await sendAndConfirmTransactionWithRetries(
     connection,
     new Transaction().add(createTaskStateInstruction).add(instruction),
     [payerWallet, newTaskStateInfoKeypair],
@@ -608,12 +608,11 @@ export async function ClaimReward(
     programId,
     data: data,
   });
-  const signature = await sendAndConfirmTransactionWithRetries(
+  await sendAndConfirmTransactionWithRetries(
     connection,
     new Transaction().add(instruction),
     [payerWallet, claimerKeypair],
   );
-  console.log(`Claimed reward with signature: ${signature}`);
 }
 
 export async function FundTask(
