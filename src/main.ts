@@ -93,7 +93,7 @@ async function initializeConnection() {
   try {
     await KPLCheckProgram();
   } catch (e) {
-    console.log(`${warningEmoji} ${chalk.red.bold(e)}`);
+    console.log(`${warningEmoji} ${chalk.red.bold(String(e))}`);
   }
   return { walletPath, payerWallet, connection };
 }
@@ -280,10 +280,10 @@ async function main() {
               JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)),
             );
             console.log('Task ID:', taskStateInfoKeypair.publicKey.toString());
-            console.log(
-              'Stake Pot Account Pubkey:',
-              stake_pot_account_pubkey.toBase58(),
-            );
+            // console.log(
+            //   'Stake Pot Account Pubkey:',
+            //   stake_pot_account_pubkey.toBase58(),
+            // );
           } else {
             const minimumBalanceForRentExemption =
               (await connection.getMinimumBalanceForRentExemption(
@@ -337,10 +337,10 @@ async function main() {
               JSON.stringify(Array.from(taskStateInfoKeypair.secretKey)),
             );
             console.log('Task ID:', taskStateInfoKeypair.publicKey.toBase58());
-            console.log(
-              'Stake Pot Account Pubkey:',
-              stake_pot_account_pubkey.toBase58(),
-            );
+            // console.log(
+            //   'Stake Pot Account Pubkey:',
+            //   stake_pot_account_pubkey.toBase58(),
+            // );
           }
           break;
         }
@@ -512,13 +512,13 @@ async function main() {
                 );
               }
               console.log(
-                'Task Id:',
+                'Task ID:',
                 taskStateInfoKeypair.publicKey.toBase58(),
               );
-              console.log(
-                'Stake Pot Account Pubkey:',
-                stake_pot_account_pubkey.toBase58(),
-              );
+              // console.log(
+              //   'Stake Pot Account Pubkey:',
+              //   stake_pot_account_pubkey.toBase58(),
+              // );
             } else {
               const totalAmount =
                 LAMPORTS_PER_SOL * data.total_bounty_amount +
@@ -579,13 +579,13 @@ async function main() {
                 );
               }
               console.log(
-                'Task Id:',
+                'Task ID:',
                 taskStateInfoKeypair.publicKey.toBase58(),
               );
-              console.log(
-                'Stake Pot Account Pubkey:',
-                stake_pot_account_pubkey.toBase58(),
-              );
+              // console.log(
+              //   'Stake Pot Account Pubkey:',
+              //   stake_pot_account_pubkey.toBase58(),
+              // );
             }
           });
 
@@ -1105,10 +1105,10 @@ async function main() {
                 'Task ID:',
                 newTaskStateInfoKeypair.publicKey.toBase58(),
               );
-              console.log(
-                'Stake Pot Account Pubkey:',
-                newStake_pot_account_pubkey.toBase58(),
-              );
+              // console.log(
+              //   'Stake Pot Account Pubkey:',
+              //   newStake_pot_account_pubkey.toBase58(),
+              // );
             } else {
               const { newTaskStateInfoKeypair, newStake_pot_account_pubkey } =
                 await updateTask(
@@ -1143,10 +1143,10 @@ async function main() {
                 'Task ID:',
                 newTaskStateInfoKeypair.publicKey.toBase58(),
               );
-              console.log(
-                'Stake Pot Account Pubkey:',
-                newStake_pot_account_pubkey.toBase58(),
-              );
+              // console.log(
+              //   'Stake Pot Account Pubkey:',
+              //   newStake_pot_account_pubkey.toBase58(),
+              // );
             }
           });
           break;
