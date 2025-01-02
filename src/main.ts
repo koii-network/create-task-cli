@@ -67,16 +67,18 @@ const warningEmoji = '\u26A0';
 async function initializeConnection() {
   let payerWallet: Keypair;
   const walletPath = await getPayerWalletPath();
-  console.log(
-    chalk.blueBright.bold('We are using '),
-    chalk.yellowBright(walletPath),
-    ' as fee payer.',
-  );
+
   try {
     const wallet = fs.readFileSync(walletPath, 'utf-8');
     payerWallet = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(wallet)));
+    console.log(
+      "Fee Payer Wallet Path: ",
+      chalk.yellowBright(walletPath),
+      "Address:", 
+      chalk.yellowBright(payerWallet.publicKey.toBase58()),
+    );
   } catch (e) {
-    console.error('Wallet is not valid');
+    console.log(chalk.red('Your wallet is not valid'));
     //console.error(logSymbols.error, "Wallet is not valid");
     process.exit();
   }
@@ -373,7 +375,6 @@ async function main() {
               tags: data.tags,
               environment: data.environment
             };
-            console.log(data.description)
             fs.writeFileSync('./metadata.json', JSON.stringify(metaData));
             
             if (data.task_executable_network == 'IPFS') {

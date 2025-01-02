@@ -220,9 +220,11 @@ export async function establishConnection(): Promise<Connection> {
   connection = new Connection(rpcUrl, 'confirmed');
   const version = await connection.getVersion();
   console.log(
-    chalk.green.bold('Connection to cluster established:'),
-    chalk.blueBright.bold('Version: ') +
-      chalk.yellowBright(version['solana-core'].toString()),
+    chalk.blueBright.bold('Validator Version: ') +
+    chalk.yellowBright(version['solana-core'].toString())
+  )
+  console.log(
+    chalk.green.bold('KOII Task Program Connection Established.')
   );
   return connection;
 }
@@ -257,11 +259,9 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
   }
 
   console.log(
-    chalk.green.bold('Your account:'),
-    chalk.yellowBright(payerWallet.publicKey.toBase58()),
-    chalk.green.bold('contains:'),
-    chalk.yellowBright(String(lamports / LAMPORTS_PER_SOL)),
-    chalk.green.bold('KOII'),
+    "Available Funds: ",
+    chalk.green.bold(String(lamports / LAMPORTS_PER_SOL)),
+    'KOII',
   );
 }
 
