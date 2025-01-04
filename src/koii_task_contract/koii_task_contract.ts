@@ -220,9 +220,11 @@ export async function establishConnection(): Promise<Connection> {
   connection = new Connection(rpcUrl, 'confirmed');
   const version = await connection.getVersion();
   console.log(
-    chalk.green.bold('Connection to cluster established:'),
-    chalk.blueBright.bold('Version: ') +
-      chalk.yellowBright(version['solana-core'].toString()),
+    chalk.blueBright.bold('Validator Version: ') +
+    chalk.yellowBright(version['solana-core'].toString())
+  )
+  console.log(
+    chalk.green.bold('KOII Task Program Connection Established.')
   );
   return connection;
 }
@@ -257,11 +259,9 @@ export async function establishPayer(payerWallet: Keypair): Promise<void> {
   }
 
   console.log(
-    chalk.green.bold('Your account:'),
-    chalk.yellowBright(payerWallet.publicKey.toBase58()),
-    chalk.green.bold('contains:'),
-    chalk.yellowBright(lamports / LAMPORTS_PER_SOL),
-    chalk.green.bold('KOII'),
+    "Available Funds: ",
+    chalk.green.bold(String(lamports / LAMPORTS_PER_SOL)),
+    'KOII',
   );
 }
 
@@ -286,7 +286,7 @@ export async function checkProgram(): Promise<void> {
   } else if (!programInfo.executable) {
     throw new Error(`Program is not executable`);
   }
-  console.log(`Koii Task Program: ${programId.toBase58()}`);
+  // console.log(`Koii Task Program: ${programId.toBase58()}`);
 }
 function encodeData(type: any, fields: any) {
   const allocLength =
@@ -517,7 +517,7 @@ export async function updateTask(
     data: data,
   });
 
-  const transaction = await sendAndConfirmTransactionWithRetries(
+  await sendAndConfirmTransactionWithRetries(
     connection,
     new Transaction().add(createTaskStateInstruction).add(instruction),
     [payerWallet, newTaskStateInfoKeypair],
@@ -608,12 +608,11 @@ export async function ClaimReward(
     programId,
     data: data,
   });
-  const signature = await sendAndConfirmTransactionWithRetries(
+  await sendAndConfirmTransactionWithRetries(
     connection,
     new Transaction().add(instruction),
     [payerWallet, claimerKeypair],
   );
-  console.log(`Claimed reward with signature: ${signature}`);
 }
 
 export async function FundTask(
