@@ -31,7 +31,7 @@ import {
   uploadExecutableFileToIpfs,
   uploadMetaDataFileToIpfs,
   manualEnterIPFSCIDs,
-  validateEligibilityForIPFSUpload,
+  validateEligibilityForIPFSUpload
 } from './utils/ipfs';
 
 import {
@@ -167,6 +167,7 @@ async function main() {
           { title: 'Javascript', value: 'https://github.com/koii-network/task-template/archive/refs/heads/@javascript.zip' },
         ],
       });
+      // create two options; option one typescript option two javascript
       await downloadRepo(repoZipUrl.repoZipUrl);
       break;
     }
