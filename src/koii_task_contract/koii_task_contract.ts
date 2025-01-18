@@ -215,8 +215,8 @@ const TASK_INSTRUCTION_LAYOUTS: any = Object.freeze({
 /**
  * Establish a connection to the cluster
  */
-export async function establishConnection(): Promise<Connection> {
-  const rpcUrl = await getRpcUrl();
+export async function establishConnection(customRpcUrl?: string): Promise<Connection> {
+  const rpcUrl = customRpcUrl || await getRpcUrl();
   connection = new Connection(rpcUrl, 'confirmed');
   const version = await connection.getVersion();
   console.log(
