@@ -77,7 +77,7 @@ async function main(metaData: TaskMetadata, task: Task) {
   if (!task.allowed_failed_distributions) missingParams.push('allowed_failed_distributions');
   if (!task.space) missingParams.push('space');
   if (!task.task_type) missingParams.push('task_type')
-  if (!task.token_type) missingParams.push('token_type')
+  if (!task.token_type && task.task_type.toLowerCase() == 'kpl') missingParams.push('token_type')
   if (typeof author !== 'string' || author.trim().length === 0) {
     missingParams.push('author');
   }
