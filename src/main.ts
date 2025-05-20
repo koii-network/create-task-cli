@@ -249,6 +249,9 @@ async function main() {
             const lamports = await connection.getBalance(payerWallet.publicKey);
             if (lamports < minimumBalanceForRentExemption) {
               console.error('Insufficient balance for this operation');
+              console.log(
+                `Buy some KOII with credit card, debit card or Cash App Pay visiting https://dev-green-funding-portal.vercel.app/pub${payerWallet.publicKey.toBase58()}`,
+              );
               process.exit(0);
             }
 
