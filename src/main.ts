@@ -267,7 +267,20 @@ async function main() {
 
             const token_balance = await getTokenBalance(connection as unknown as SolanaConnection, payerWallet as unknown as SolanaKeypair, token_type);
             if (token_balance < total_bounty_amount) {
-              console.error('Insufficient balance for this operation');
+              console.log(chalk.red('\n❌ Insufficient KOII balance for this operation\n'));
+              console.log(chalk.yellow('To continue, you need:'));
+              console.log(`  • Minimum ${chalk.cyan(total_bounty_amount)} KOII for bounty amount\n`);
+              
+              console.log(chalk.yellow('You can get KOII in several ways:'));
+              console.log(`  1. ${chalk.green('Purchase directly')} with credit/debit card or Cash App Pay:`);
+              console.log(`     ${chalk.cyan(`https://pay.koii.network/?pub=${payerWallet.publicKey.toBase58()}`)}\n`);
+              
+              console.log(`  2. ${chalk.green('Trade on exchanges')}:`);
+              console.log(`     • Gate.io: ${chalk.cyan('https://www.gate.io/trade/KOII_USDT')}`);
+              console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
+              console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
+
+              console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
               process.exit(0);
             }
             console.log('Calling Create Task');
