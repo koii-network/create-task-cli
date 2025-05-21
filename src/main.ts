@@ -261,8 +261,7 @@ async function main() {
               console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
               console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
 
-              console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
-              process.exit(0);
+              await recheckBalance(connection, payerWallet, minimumBalanceForRentExemption);
             }
 
             const token_balance = await getTokenBalance(connection as unknown as SolanaConnection, payerWallet as unknown as SolanaKeypair, token_type);
@@ -280,8 +279,7 @@ async function main() {
               console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
               console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
 
-              console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
-              process.exit(0);
+              await recheckBalance(connection, payerWallet, total_bounty_amount);
             }
             console.log('Calling Create Task');
             const { taskStateInfoKeypair, stake_pot_account_pubkey } =
@@ -350,8 +348,7 @@ async function main() {
               console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
               console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
 
-              console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
-              process.exit(0);
+              await recheckBalance(connection, payerWallet, totalAmount);
             }
             console.log('Calling Create Task');
             // TODO: All params for the createTask should be accepted from cli input and should be replaced in the function below
@@ -521,8 +518,7 @@ async function main() {
                 console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
                 console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
   
-                console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
-                process.exit(0);
+                await recheckBalance(connection, payerWallet, minimumBalanceForRentExemption);
               }
 
               const token_balance = await getTokenBalance(connection as unknown as SolanaConnection, payerWallet as unknown as SolanaKeypair, TaskData.token_type);
@@ -540,8 +536,7 @@ async function main() {
                 console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
                 console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
   
-                console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
-                process.exit(0);
+                await recheckBalance(connection, payerWallet, minimumBalanceForRentExemption);
               }
               console.log('Calling Create Task');
               // Before passing it to createTask validate the inputs
@@ -621,8 +616,7 @@ async function main() {
                 console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
                 console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
   
-                console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
-                process.exit(0);
+                await recheckBalance(connection, payerWallet, totalAmount);
               }
 
               console.log('Calling Create Task');
@@ -896,8 +890,7 @@ async function main() {
               console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
               console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
 
-              console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
-              process.exit(0);
+              await recheckBalance(connection, payerWallet, totalAmount);
             }
             const spinner = ora('Calling Update Task').start();
 
@@ -973,8 +966,7 @@ async function main() {
               console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
               console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
 
-              console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
-              process.exit(0);
+              await recheckBalance(connection, payerWallet, totalAmount);
             }
             const spinner = ora('Calling Update Task').start();
 
@@ -1183,8 +1175,7 @@ async function main() {
               console.log(`     • MEXC: ${chalk.cyan('https://www.mexc.com/exchange/KOII_USDT')}`);
               console.log(`     • DEX support: ${chalk.gray('Coming soon!')}\n`);
 
-              console.log(chalk.gray('Once you have sufficient KOII, run this command again.'));
-              process.exit(0);
+              await recheckBalance(connection, payerWallet, totalAmount);
             }
             console.log('Calling Update Task');
             if (TaskData.task_type == 'KPL') {
@@ -1676,6 +1667,35 @@ async function takeInputForWithdraw() {
     submitterKeypair,
   };
 }
+
+async function recheckBalance(connection: Connection, wallet: Keypair, requiredBalance: number) {
+  let currentBalance;
+  do {
+    const recheck = await promptWithCancel({
+      type: 'select',
+      name: 'action',
+      message: 'What would you like to do?',
+      choices: [
+        { title: 'Re-check balance', value: 'recheck' },
+        { title: 'Exit', value: 'exit' }
+      ]
+    });
+
+    if (recheck.action === 'exit') {
+      process.exit(0);
+    }
+
+    currentBalance = await connection.getBalance(wallet.publicKey);
+    if (currentBalance >= requiredBalance) {
+      console.log(chalk.green('\n✓ Sufficient balance detected! Continuing...\n'));
+      return;
+    }
+
+    console.log(chalk.red(`\n❌ Balance still insufficient: ${currentBalance / LAMPORTS_PER_SOL} KOII\n`));
+  // eslint-disable-next-line no-constant-condition
+  } while (true);
+}
+
 main().then(
   () => process.exit(),
   (err) => {
