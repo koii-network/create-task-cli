@@ -105,6 +105,16 @@ function getStakePotAccount(): Keypair {
   }
   return keypair;
 }
+function cleanForUint8Array(str:string) {
+  // Keep only printable ASCII (codes 32–126)
+  return str
+    .split('')
+    .filter(char => {
+      const code = char.charCodeAt(0);
+      return code >= 32 && code <= 126;
+    })
+    .join('');
+}
 export async function createTask(
   payerWallet: Keypair,
   task_name: string,
@@ -128,7 +138,7 @@ export async function createTask(
   const mint_digits = await getKPLDigits(mint_address, connection);
   const createTaskData = {
     task_name: task_name,
-    task_description: task_description,
+    task_description: cleanForUint8Array(task_description),
     task_audit_program: task_audit_program, //must be 64 chracters long
     task_executable_network: task_executable_network, //must be 64 chracters long
     total_bounty_amount: total_bounty_amount,
