@@ -24,6 +24,11 @@ export async function uploadExecutableFileToIpfs(
 
     if (!fs.existsSync(filePath)) {
       spinner.fail(chalk.red('Task audit program file not found'));
+      console.info('💡 Tip: Make sure to:');
+      console.info('   • Run: yarn webpack');
+      console.info(
+        "   • Verify: 'task_audit_program' path in your config-task.yml is correct",
+      );
       process.exit(1);
     }
 
@@ -127,7 +132,6 @@ async function isValidCID(cid: string) {
     return false;
   }
 }
-
 
 export async function validateEligibilityForIPFSUpload(
   stakingWalletPubkey: PublicKey,

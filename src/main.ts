@@ -227,7 +227,7 @@ console.log('   https://www.koii.network/docs/develop/category/koii-command-line
             allowed_failed_distributions,
             task_type,
             token_type,
-          } = await takeInputForCreateTask(true));
+          } = await takeInputForCreateTask(connection, payerWallet, true));
 
           if (task_type == 'KPL') {
             
@@ -434,7 +434,7 @@ console.log('   https://www.koii.network/docs/develop/category/koii-command-line
                 task_audit_program_id = ipfsCid;
                 metaDataCid = ipfsData || '';
               } else {
-                const stakingWalletPath = await getStakingWalletPath();
+                const stakingWalletPath = await getStakingWalletPath(connection, payerWallet);
                 const wallet = fs.readFileSync(stakingWalletPath, 'utf-8');
                 stakingWalletKeypair = Keypair.fromSecretKey(
                   Uint8Array.from(JSON.parse(wallet)),
@@ -855,7 +855,7 @@ console.log('   https://www.koii.network/docs/develop/category/koii-command-line
             allowed_failed_distributions,
             task_type,
             token_type,
-          } = await takeInputForCreateTask(false, taskStateJSON);
+          } = await takeInputForCreateTask(connection, payerWallet, false, taskStateJSON);
           // const [task_name, task_audit_program, total_bounty_amount, bounty_amount_per_round, space] =["Test Task","test audit",100,10,10]
           if (task_type == 'KPL') {
             const minimumBalanceForRentExemption =
@@ -1075,7 +1075,7 @@ console.log('   https://www.koii.network/docs/develop/category/koii-command-line
                 metaDataCid = ipfsData || '';
               } else {
                 // ask user to enter the stakingWallet Keypair path
-                const stakingWalletPath = await getStakingWalletPath();
+                const stakingWalletPath = await getStakingWalletPath(connection, payerWallet);
                 const wallet = fs.readFileSync(stakingWalletPath, 'utf-8');
                 stakingWalletKeypair = Keypair.fromSecretKey(
                   Uint8Array.from(JSON.parse(wallet)),
@@ -1271,7 +1271,7 @@ console.log('   https://www.koii.network/docs/develop/category/koii-command-line
   console.log('Success');
 }
 
-async function takeInputForCreateTask(isBounty: boolean, state?: any) {
+async function takeInputForCreateTask(connection: Connection, payerWallet: Keypair, isBounty: boolean, state?: any) {
   let task_name = (
     await promptWithCancel({
       type: 'text',
@@ -1324,7 +1324,7 @@ async function takeInputForCreateTask(isBounty: boolean, state?: any) {
   let task_audit_program;
   let task_audit_program_id;
   if (task_executable_network == 'IPFS') {
-    const stakingWalletPath = await getStakingWalletPath();
+    const stakingWalletPath = await getStakingWalletPath(connection, payerWallet);
     if (!fs.existsSync(stakingWalletPath)) {
       throw Error('Please make sure that the staking wallet path is correct');
     }
