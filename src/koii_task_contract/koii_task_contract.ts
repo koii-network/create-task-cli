@@ -340,13 +340,14 @@ export async function createTask(
   allowed_failed_distributions: number,
 ): Promise<any> {
   // Checks
-  if (round_time < audit_window + submission_window)
-    throw new Error(
-      'Round time cannot be less than audit_window + submission_window',
-    );
-  if (task_description.length > 64)
-    throw new Error('task_description cannot be greater than 64 characters');
-
+  if (round_time < audit_window + submission_window){
+        console.error(`❌ Round time cannot be less than audit_window + submission_window`);
+        process.exit(1);
+  }
+  if (task_description.length > 64){
+    console.error(`❌ task_description cannot be greater than 64 characters`);
+    process.exit(1);
+  }
   const createTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
     task_description: new TextEncoder().encode(
@@ -454,13 +455,14 @@ export async function updateTask(
   newStake_pot_account_pubkey: PublicKey;
 }> {
   // Checks
-  if (round_time < audit_window + submission_window)
-    throw new Error(
-      'Round time cannot be less than audit_window + submission_window',
-    );
-  if (task_description.length > 64)
-    throw new Error('task_description cannot be greater than 64 characters');
-
+  if (round_time < audit_window + submission_window){
+        console.error(`❌ Round time cannot be less than audit_window + submission_window`);
+        process.exit(1);
+  }
+  if (task_description.length > 64){
+    console.error(`❌ task_description cannot be greater than 64 characters`);
+    process.exit(1);
+  }
   const updateTaskData = {
     task_name: new TextEncoder().encode(padStringWithSpaces(task_name, 24)),
     task_description: new TextEncoder().encode(

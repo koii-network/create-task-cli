@@ -101,7 +101,9 @@ async function initializeConnection() {
 }
 
 async function main() {
-  console.log('Welcome to Koii Create Task CLI! ');
+console.log('🌱 Welcome to the KOII Create Task CLI!');
+console.log('💡 For the best experience, consider installing the KOII CLI:');
+console.log('   https://www.koii.network/docs/develop/category/koii-command-line-tool');
   let walletPath;
   const mode = (
     await promptWithCancel({
