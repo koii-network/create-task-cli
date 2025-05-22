@@ -258,7 +258,7 @@ export async function updateTask(
   let tx = await updateTaskInstruction(
     {
       task_name: task_name,
-      task_description: task_description,
+      task_description: cleanForUint8Array(task_description),
       task_audit_program: task_audit_program,
       task_executable_network: task_executable_network,
       bounty_amount_per_round: bounty_amount_per_round,
