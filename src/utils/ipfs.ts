@@ -40,7 +40,8 @@ export async function uploadExecutableFileToIpfs(
       cid = ipfsData.cid;
       spinner.succeed(chalk.green(`CID of Executable: ${cid}`));
     } else {
-      throw new Error('Storage client not initialized');
+      console.error('Storage client not initialized');
+      process.exit(1);
     }
     console.log(
       `You can access https://ipfs-gateway.koii.live/ipfs/${cid}/main.js to check your executables.`,
@@ -81,7 +82,8 @@ export async function uploadMetaDataFileToIpfs(
       cid = ipfsData.cid;
       spinner.succeed(chalk.green(`CID of Metadata: ${cid}`));
     } else {
-      throw new Error('Storage client not initialized');
+      console.error('Storage client not initialized');
+      process.exit(1);
     }
 
     console.log(

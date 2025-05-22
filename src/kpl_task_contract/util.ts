@@ -27,22 +27,37 @@ async function getConfig(): Promise<any> {
   return yaml.parse(configYml);
 }
 
+export function prettyPrintConfig(config: any) {
+  console.log(
+    'RPC Connected: ',
+    chalk.green.bold(config.json_rpc_url),
+  );
+  if (!config.json_rpc_url.includes('https://testnet.koii.network') && !config.json_rpc_url.includes('https://mainnet.koii.network')) {
+    console.log(chalk.red("You are not using the recommended network!"));
+    console.log(chalk.blue("Run ") + chalk.green("koii config set --url testnet") + chalk.blue(" to use testnet"));
+  }
+
+}
+
 /**
  * Load and parse the Koii CLI config file to determine which RPC url to use
  */
 export async function getRpcUrl(): Promise<string> {
   try {
     const config = await getConfig();
+    prettyPrintConfig(config);
     if (!config.json_rpc_url) throw new Error('Missing RPC URL');
     return config.json_rpc_url;
   } catch (err) {
     console.warn(
-      'Failed to read RPC url from CLI config file, falling back to testnet',
+      '⚠️  Could not read RPC URL from KOII CLI config. Falling back to testnet.'
     );
-    return 'https://testnet.koii.network';
+    console.info(
+      '💡 Tip: For a smoother setup, consider installing the KOII CLI: https://www.koii.network/docs/develop/category/koii-command-line-tool'
+    );
+    return 'https://testnet.koii.network/';
   }
 }
-
 /**
  * Load and parse the Koii CLI config file to determine which payer to use
  */

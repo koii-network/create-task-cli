@@ -33,16 +33,11 @@ export function prettyPrintConfig(config: any) {
     'RPC Connected: ',
     chalk.green.bold(config.json_rpc_url),
   );
-  if (!config.json_rpc_url.includes('https://testnet.koii.network')&& !config.json_rpc_url.includes('https://mainnet.koii.network')) {
+  if (!config.json_rpc_url.includes('https://testnet.koii.network') && !config.json_rpc_url.includes('https://mainnet.koii.network')) {
     console.log(chalk.red("You are not using the recommended network!"));
     console.log(chalk.blue("Run ") + chalk.green("koii config set --url testnet") + chalk.blue(" to use testnet"));
   }
 
-  // const configArray = Object.entries(config).map(([key, value]) => ({
-  //   Key: key,
-  //   Value: typeof value === 'object' ? JSON.stringify(value, null, 2) : value
-  // }));
-  // console.table(configArray);
 }
 /**
  * Load and parse the Koii CLI config file to determine which RPC url to use
@@ -55,7 +50,10 @@ export async function getRpcUrl(): Promise<string> {
     return config.json_rpc_url;
   } catch (err) {
     console.warn(
-      'Failed to read RPC url from CLI config file, falling back to testnet',
+      '⚠️  Could not read RPC URL from KOII CLI config. Falling back to testnet.'
+    );
+    console.info(
+      '💡 Tip: For a smoother setup, consider installing the KOII CLI: https://www.koii.network/docs/develop/category/koii-command-line-tool'
     );
     return 'https://testnet.koii.network/';
   }
@@ -88,7 +86,7 @@ export async function createKeypairFromFile(
   return Keypair.fromSecretKey(secretKey);
 }
 
-export async function parseKoiiTaskStateInfo(taskState:any){
+export async function parseKoiiTaskStateInfo(taskState: any) {
   const taskStateJSON = JSON.parse(taskState.data.toString());
   taskStateJSON.task_manager = new PublicKey(taskStateJSON.task_manager).toBase58();
   taskStateJSON.stake_pot_account = new PublicKey(taskStateJSON.stake_pot_account).toBase58();

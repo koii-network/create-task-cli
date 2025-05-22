@@ -42,9 +42,10 @@ export async function getYmlPath() {
       !fs.existsSync(ymlPath) ||
       (!ymlPath.includes('.yml') && !ymlPath.includes('.yaml'))
     ) {
-      throw Error(
-        'Please make sure that the path to your config-task.yml file is correct.',
-      );
+      console.error(`❌ config-task.yml file not found at: ${ymlPath}`);
+      console.info(`💡 Tip: Make sure the path is correct and points to a .yml or .yaml file.`);
+      console.info(`Example: ./config-task.yml`);
+      process.exit(1);
     }
   }
 
@@ -97,7 +98,15 @@ export async function getPayerWalletPath() {
       ).walletPath;
       walletPath = sanitizePath(walletPath);
       if (!fs.existsSync(walletPath)) {
-        throw Error('Please make sure that the wallet path is correct');
+        console.error(`❌ Wallet file not found at: ${walletPath}`);
+        console.info(`💡 Make sure the path is correct and points to a valid KOII wallet JSON file.`);
+        console.info(`📦 You can use a wallet from either:`)
+        const koiiDesktopNodePath = getKoiiDesktopNodePath();
+        console.info(`   • KOII Desktop Node: ${koiiDesktopNodePath}/wallets/<name>_mainSystemWallet.json`);
+        console.info(`   • KOII CLI: Generate one using the CLI tool.`);
+        console.info(`     Install CLI → https://www.koii.network/docs/develop/command-line-tool/koii-cli/install-cli and create a wallet → https://www.koii.network/docs/develop/command-line-tool/koii-cli/create-wallet`);
+        console.info(`     Create a wallet → https://www.koii.network/docs/develop/command-line-tool/koii-cli/create-wallet`);
+        process.exit(1);
       }
     }
   }
@@ -138,7 +147,12 @@ export async function getStakingWalletPath() {
   }
   stakingWalletPath = sanitizePath(stakingWalletPath);
   if (!fs.existsSync(stakingWalletPath)) {
-    throw Error('Please make sure that the staking wallet path is correct');
+    console.error(`❌ Staking Wallet file not found at: ${stakingWalletPath}`);
+    console.info(`💡 Tip: Make sure the path is correct and points to a .json staking wallet file.`);
+    const koiiDesktopNodePath = getKoiiDesktopNodePath();
+    console.info(`🔍 If you're using KOII Desktop Node, check here:`);
+    console.info(`Example: ${koiiDesktopNodePath}/namespace/<your_wallet_name>_stakingWallet.json`);
+    process.exit(1);
   }
 
   return stakingWalletPath;
