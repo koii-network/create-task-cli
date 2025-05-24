@@ -1,6 +1,6 @@
 {
   "name": "@_koii/create-task-cli",
-  "version": "1.1.13",
+  "version": "1.1.14",
   "description": "",
   "keywords": [],
   "author": "",
@@ -14,7 +14,7 @@
     "postbuild": "cpy './src/kpl_task_contract/webasm_bincode_deserializer/**/*' ./build/kpl_task_contract/webasm_bincode_deserializer --parents"
   },
   "dependencies": {
-    "@_koii/storage-task-sdk": "1.2.7",
+    "@_koii/storage-task-sdk": "1.2.8",
     "@_koii/web3.js": "^0.1.11",
     "@solana/buffer-layout": "^4.0.0",
     "@solana/spl-token": "0.2.0",

@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@_koii/storage-task-sdk@1.2.7":
-  version "1.2.7"
-  resolved "https://registry.npmjs.org/@_koii/storage-task-sdk/-/storage-task-sdk-1.2.7.tgz"
-  integrity sha512-qgCQzdrWtXrbcdZglpi3Ou5fGMd473bSWk9FZjGW4e5YE1jA6gummrzJl6dDZae3rkMeDzoh2wCo2vaPLe30sg==
+"@_koii/storage-task-sdk@1.2.8":
+  version "1.2.8"
+  resolved "https://registry.yarnpkg.com/@_koii/storage-task-sdk/-/storage-task-sdk-1.2.8.tgz#cb0e976c9c30242a7a35dcaa24f76674cc3f386f"
+  integrity sha512-shjkwaGKv/XNU/XcKx8Y17DDqeScZ0R+nMh0kfhDAKdn/tSmX4kOKCK6JYdfGiBgASa26DBbSK9MWq0l81iuvw==
   dependencies:
     "@_koii/web3.js" "^0.1.11"
     bs58 "^5.0.0"
