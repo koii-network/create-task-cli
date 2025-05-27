@@ -8,10 +8,15 @@
   "main": "./build/export.js",
   "scripts": {
     "start": "ts-node src/main.ts",
+    "start-oop": "ts-node src/main-oop.ts",
     "pretty": "prettier --write \"**/*.ts\"",
     "build": "tsc",
     "lint": "eslint . --quiet --ext .ts,.tsx",
-    "postbuild": "cpy './src/kpl_task_contract/webasm_bincode_deserializer/**/*' ./build/kpl_task_contract/webasm_bincode_deserializer --parents"
+    "postbuild": "cpy './src/kpl_task_contract/webasm_bincode_deserializer/**/*' ./build/kpl_task_contract/webasm_bincode_deserializer --parents",
+    "watch": "node watch-animation.js",
+    "watch-oop": "node watch-oop-animation.js",
+    "test-animation": "node test-food-animation.js",
+    "test-oop": "node test-oop-animation.js"
   },
   "dependencies": {
     "@_koii/storage-task-sdk": "1.2.8",
